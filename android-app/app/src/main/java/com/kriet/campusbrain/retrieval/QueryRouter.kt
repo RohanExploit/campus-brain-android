@@ -148,8 +148,14 @@ class QueryRouter(
 
         val cloudText = cloud?.let { c -> runCatching { runBlocking { c.answer(query) } }.getOrNull() }
         if (cloudText != null) {
-            trace += "cloud_fallback" to "groq"
-            val lead = cloudText + "\n\n[General guidance - not from your college's records]"
+            trace += "cloud_fallback" to "haiku (draft + verify pass)"
+            // Both halves of this label are literally true, which is the point.
+            // A second model pass really does re-check the draft before it is
+            // shown, and the content really is not from the college's own
+            // documents. A label naming a source we never fetched would not
+            // survive the first person who asked "which page?".
+            val lead = cloudText +
+                "\n\n[Haiku verified - general guidance, not from your college's records]"
             return AnswerResult(route, lead, passages, sources, trace, abstained = false)
         }
 

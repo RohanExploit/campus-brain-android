@@ -34,7 +34,13 @@ class CloudAnswer(
      * a Context: external files dir, then internal files dir. */
     constructor(context: Context) : this(context.getExternalFilesDir(null), context.filesDir)
 
-    data class Config(val apiKey: String, val model: String)
+    data class Config(
+        val apiKey: String,
+        val model: String,
+        /** Optional laptop Ollama, e.g. http://10.0.0.5:11434. Null disables it. */
+        val ollamaUrl: String? = null,
+        val ollamaModel: String = DEFAULT_OLLAMA_MODEL,
+    )
 
     /**
      * Reads Groq credentials off the device. A missing file is the normal,
@@ -59,9 +65,28 @@ class CloudAnswer(
         withContext(Dispatchers.IO) {
             rateLimitGate.withLock {
                 waitForRateLimitSlot()
-                val result = call(config, query)
+                // Haiku first. If it times out inside 5s or errors, fall back to
+                // the laptop's Qwen over the LAN -- a slower answer beats none, and
+                // the device already proved it can reach the host.
+                val draft = call(config, query) ?: callOllama(config, query, SYSTEM_PROMPT)
                 lastCallAtMs = System.currentTimeMillis()
-                result
+                if (draft == null) null else {
+                    // Second pass: the model checks its own draft before a
+                    // student sees it. This is a measured need, not ceremony.
+                    // Drafts named the National Scholarship Portal (which is
+                    // scholarships only) as the place to get a bonafide
+                    // certificate, and produced "university-exam.in" as though
+                    // it were a real site. Those are exactly the parts a
+                    // student acts on, and acting on them leads nowhere.
+                    waitForRateLimitSlot()
+                    val prompt = "Question: " + query + "\n\nDraft answer:\n" + draft
+                    val verified = call(config, prompt, VERIFIER_PROMPT)
+                        ?: callOllama(config, prompt, VERIFIER_PROMPT)
+                    lastCallAtMs = System.currentTimeMillis()
+                    // Keep the draft if verification fails for any reason: a
+                    // slightly loose answer beats no answer at all.
+                    verified ?: draft
+                }
             }
         }
     }.getOrNull()
@@ -76,7 +101,7 @@ class CloudAnswer(
         if (remaining > 0) delay(remaining)
     }
 
-    private fun call(config: Config, query: String): String? {
+    private fun call(config: Config, query: String, system: String = SYSTEM_PROMPT): String? {
         val anthropic = config.apiKey.startsWith("sk-ant-")
         val endpoint = if (anthropic) ANTHROPIC_ENDPOINT else ENDPOINT
         val connection = URL(endpoint).openConnection() as HttpURLConnection
@@ -99,7 +124,7 @@ class CloudAnswer(
                 payload = JSONObject().apply {
                     put("model", config.model)
                     put("max_tokens", 400)
-                    put("system", SYSTEM_PROMPT)
+                    put("system", system)
                     put("messages", JSONArray().apply {
                         put(JSONObject().put("role", "user").put("content", query))
                     })
@@ -109,7 +134,7 @@ class CloudAnswer(
                 payload = JSONObject().apply {
                     put("model", config.model)
                     put("messages", JSONArray().apply {
-                        put(JSONObject().put("role", "system").put("content", SYSTEM_PROMPT))
+                        put(JSONObject().put("role", "system").put("content", system))
                         put(JSONObject().put("role", "user").put("content", query))
                     })
                 }
@@ -140,12 +165,48 @@ class CloudAnswer(
         }
     }
 
+    /**
+     * Laptop Ollama over the LAN, used only when the cloud call has already
+     * failed. Same contract as [call]: null on any problem, never throws.
+     * Timeout is far longer than the cloud's -- a 4B model on a laptop GPU is
+     * slower than an API, and having got this far a slow answer beats none.
+     */
+    private fun callOllama(config: Config, query: String, system: String): String? {
+        val base = config.ollamaUrl?.trimEnd('/') ?: return null
+        val connection = URL("$base/api/generate").openConnection() as HttpURLConnection
+        return try {
+            connection.requestMethod = "POST"
+            connection.connectTimeout = TIMEOUT_MS
+            connection.readTimeout = OLLAMA_TIMEOUT_MS
+            connection.doOutput = true
+            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+            val payload = JSONObject().apply {
+                put("model", config.ollamaModel)
+                put("prompt", system + "\n\n" + query)
+                put("stream", false)
+                put("options", JSONObject().put("temperature", 0))
+            }
+            connection.outputStream.use { it.write(payload.toString().toByteArray(Charsets.UTF_8)) }
+            if (connection.responseCode !in 200..299) return null
+            val body = connection.inputStream.bufferedReader().use { it.readText() }
+            JSONObject(body).optString("response").trim().takeIf { it.isNotEmpty() }
+        } catch (t: Throwable) {
+            null
+        } finally {
+            connection.disconnect()
+        }
+    }
+
     companion object {
         private const val ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
         private const val ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages"
         private const val DEFAULT_MODEL = "groq/compound-mini"
         private const val CONFIG_FILE_NAME = "config.json"
-        private const val TIMEOUT_MS = 10_000
+        // 5s, not 10. A stalled cloud call must fall through to the laptop
+        // model fast enough that a demo does not visibly hang.
+        private const val TIMEOUT_MS = 5_000
+        private const val OLLAMA_TIMEOUT_MS = 30_000
+        private const val DEFAULT_OLLAMA_MODEL = "qwen3:4b-instruct-2507-q4_K_M"
         private const val MIN_CALL_GAP_MS = 1_500L
 
         // Shared across every CloudAnswer instance in the process, matching
@@ -153,6 +214,30 @@ class CloudAnswer(
         // one clock the 1.5s gap is measured against.
         private val rateLimitGate = Mutex()
         @Volatile private var lastCallAtMs = 0L
+
+        val VERIFIER_PROMPT = """
+            You verify a draft answer for an Indian engineering student before it is
+            shown. Your job is to make it MORE useful, not vaguer.
+
+            KEEP every concrete, correct detail: percentages, fee ranges, document
+            names, office names, typical timelines, statutory helplines, and genuinely
+            national portals such as the National Scholarship Portal for scholarships.
+            Do NOT strip specifics and do NOT add hedges like "if one is available" or
+            "this may vary" to things that are standard practice across Indian
+            institutions.
+
+            Correct ONLY these, because a student acts on them and is sent nowhere:
+            1. A portal named for the wrong purpose. The National Scholarship Portal is
+               scholarships only, never bonafide certificates, examinations or placements.
+            2. Invented or placeholder URLs.
+
+            Where a specific portal cannot be named safely, name the OFFICE instead
+            ("the examination section", "the student welfare office") rather than
+            retreating to vagueness.
+
+            Reply with the improved answer only, 3-5 sentences, no preamble and no
+            mention that you corrected anything.
+        """.trimIndent()
 
         val SYSTEM_PROMPT = """
             You are answering a question for a student at an Indian engineering
@@ -193,7 +278,12 @@ class CloudAnswer(
             val json = JSONObject(text)
             val key = json.optString("groq_api_key").takeIf { it.isNotBlank() } ?: return null
             val model = json.optString("groq_model").takeIf { it.isNotBlank() } ?: DEFAULT_MODEL
-            Config(key, model)
+            // Optional. Absent means no laptop fallback, which is the correct
+            // default for a device that is meant to work with no host nearby.
+            val ollama = json.optString("ollama_url").takeIf { it.isNotBlank() }
+            val ollamaModel = json.optString("ollama_model")
+                .takeIf { it.isNotBlank() } ?: DEFAULT_OLLAMA_MODEL
+            Config(key, model, ollama, ollamaModel)
         }.getOrNull()
     }
 }
