@@ -1,11 +1,14 @@
 package com.kriet.campusbrain.retrieval
 
 import com.kriet.campusbrain.answer.AnswerComposer
+import com.kriet.campusbrain.answer.CloudAnswer
+import com.kriet.campusbrain.answer.TopicGate
 import com.kriet.campusbrain.data.AnswerResult
 import com.kriet.campusbrain.data.BrainDb
 import com.kriet.campusbrain.data.Route
 import com.kriet.campusbrain.data.Source
 import com.kriet.campusbrain.data.query
+import kotlinx.coroutines.runBlocking
 
 /**
  * On-device port of retrieval/router.py.
@@ -22,6 +25,11 @@ class QueryRouter(
     private val tabular: TabularQueries,
     private val graph: GraphTraverse,
     private val prototypes: RoutePrototypes?,
+    // Null in any environment that has not wired a Context in yet (e.g. a
+    // plain unit test constructing QueryRouter directly). A null cloud
+    // client behaves exactly like a cloud call that always fails: the
+    // existing abstention text, unchanged.
+    private val cloud: CloudAnswer? = null,
 ) {
 
     fun answer(rawQuery: String): AnswerResult {
@@ -88,14 +96,65 @@ class QueryRouter(
         trace += "generation" to "extractive"
 
         val composed = AnswerComposer.compose(query, packed)
-        return AnswerResult(
-            route = route,
-            answer = composed.lead,
+        return withCloudFallback(
+            query, route, composed,
             passages = composed.passages.map { it.heading to it.body },
             sources = packed.map { Source(it.docId, it.section) }.distinct(),
             trace = trace,
-            abstained = composed.abstained,
         )
+    }
+
+    // --- cloud fallback ----------------------------------------------------
+
+    /**
+     * The one place AnswerComposer's abstention is allowed to be overridden.
+     * AnswerComposer itself stays pure and offline -- this is deliberately
+     * NOT logic added to it. See its doc comment: abstention there exists
+     * because a wrong confident answer about the corpus is the one failure
+     * that discredits every correct answer beside it. That reasoning still
+     * holds for the corpus. It does not extend to a general-knowledge
+     * question the corpus was never going to have an opinion on -- refusing
+     * those outright is the failure this whole path exists to fix.
+     *
+     * - Not an education question at all (TopicGate says no): keep
+     *   abstaining, but say plainly that it's out of scope rather than
+     *   printing the generic "I don't have enough information" sentence.
+     * - An education question the corpus missed: try Groq. Success is
+     *   labelled as general guidance, never as corpus fact, and is not
+     *   flagged as abstained -- it IS an answer, just not from the
+     *   student's own records.
+     * - Cloud call fails for any reason (no config, no network, rate
+     *   limited, timeout, bad response): fall back to the existing
+     *   abstention text, unchanged.
+     */
+    private fun withCloudFallback(
+        query: String,
+        route: Route,
+        composed: AnswerComposer.Composed,
+        passages: List<Pair<String, String>>,
+        sources: List<Source>,
+        trace: MutableList<Pair<String, String>>,
+    ): AnswerResult {
+        if (!composed.abstained) {
+            return AnswerResult(route, composed.lead, passages, sources, trace, abstained = false)
+        }
+
+        if (!TopicGate.isEducational(query)) {
+            trace += "cloud_fallback" to "skipped (not educational)"
+            val lead = "This app answers questions about college and campus life, " +
+                "and this looks like it falls outside that."
+            return AnswerResult(route, lead, passages, sources, trace, abstained = true)
+        }
+
+        val cloudText = cloud?.let { c -> runCatching { runBlocking { c.answer(query) } }.getOrNull() }
+        if (cloudText != null) {
+            trace += "cloud_fallback" to "groq"
+            val lead = cloudText + "\n\n[General guidance - not from your college's records]"
+            return AnswerResult(route, lead, passages, sources, trace, abstained = false)
+        }
+
+        trace += "cloud_fallback" to "unavailable"
+        return AnswerResult(route, composed.lead, passages, sources, trace, abstained = true)
     }
 
     private fun answerLocal(query: String, trace: MutableList<Pair<String, String>>): AnswerResult {
@@ -115,9 +174,12 @@ class QueryRouter(
             trace += "fused" to "${packed.size} chunks"
             trace += "generation" to "extractive"
             val composed = AnswerComposer.compose(query, packed)
-            return AnswerResult(Route.LOCAL, composed.lead,
-                composed.passages.map { it.heading to it.body },
-                packed.map { Source(it.docId, it.section) }.distinct(), trace, composed.abstained)
+            return withCloudFallback(
+                query, Route.LOCAL, composed,
+                passages = composed.passages.map { it.heading to it.body },
+                sources = packed.map { Source(it.docId, it.section) }.distinct(),
+                trace = trace,
+            )
         }
 
         // Hybrid mode: edges and chunks fail in disjoint places. Edges follow
@@ -131,9 +193,12 @@ class QueryRouter(
         trace += "local_mode" to "hybrid (${edges.size} edges + ${packed.size} chunks)"
         trace += "generation" to "extractive"
         val composed = AnswerComposer.compose(query, packed, prefix = edgeText)
-        return AnswerResult(Route.LOCAL, composed.lead,
-            composed.passages.map { it.heading to it.body },
-            packed.map { Source(it.docId, it.section) }.distinct(), trace, composed.abstained)
+        return withCloudFallback(
+            query, Route.LOCAL, composed,
+            passages = composed.passages.map { it.heading to it.body },
+            sources = packed.map { Source(it.docId, it.section) }.distinct(),
+            trace = trace,
+        )
     }
 
     private fun answerTabular(query: String, trace: MutableList<Pair<String, String>>): AnswerResult {

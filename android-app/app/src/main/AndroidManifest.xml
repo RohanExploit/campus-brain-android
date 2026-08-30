@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- No INTERNET permission, deliberately. The app is offline by design and
-         the absence of the permission is the proof: it cannot phone home even
-         if some dependency tried to. -->
+    <!-- Retrieval over the student corpus is still fully on-device: the
+         router, embedder, FTS5 index, and SQL templates all run against the
+         local SQLite bundle with no network involved. INTERNET exists
+         solely so that when the corpus genuinely has nothing (AnswerComposer
+         abstains) on a question that is still about college/campus life,
+         QueryRouter can ask Groq for general guidance instead of just
+         refusing. ACCESS_NETWORK_STATE lets that fallback check for
+         connectivity before attempting the call rather than always paying
+         for a timeout when the device is offline. Neither permission is
+         used by, or required for, on-device retrieval. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
     <application
         android:name=".App"
