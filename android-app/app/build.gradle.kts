@@ -89,6 +89,11 @@ dependencies {
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.20.0")
 
     testImplementation("junit:junit:4.13.2")
+    // Real org.json for JVM unit tests. Without it android.jar ships a stub
+    // whose methods throw, so every JSONObject parse silently became null
+    // inside runCatching and CloudAnswerTest failed for a reason unrelated
+    // to the code under test.
+    testImplementation("org.json:json:20240303")
     testImplementation("androidx.sqlite:sqlite-bundled:2.5.1")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
 }
