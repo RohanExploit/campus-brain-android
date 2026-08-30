@@ -1,10 +1,10 @@
 <resources>
     <color name="brand">#1F5FA9</color>
     <color name="on_brand">#FFFFFF</color>
-    <color name="route_fact">#2E7D32</color>
+    <color name="route_fact">#1565C0</color>
     <color name="route_local">#6A1B9A</color>
-    <color name="route_global">#EF6C00</color>
-    <color name="route_tabular">#1565C0</color>
+    <color name="route_global">#00897B</color>
+    <color name="route_tabular">#2E7D32</color>
     <color name="grade_pass">#2E7D32</color>
     <color name="grade_fail">#C62828</color>
     <color name="grade_audit">#757575</color>
