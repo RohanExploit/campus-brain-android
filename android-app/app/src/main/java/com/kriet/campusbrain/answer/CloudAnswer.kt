@@ -77,37 +77,62 @@ class CloudAnswer(
     }
 
     private fun call(config: Config, query: String): String? {
-        val connection = URL(ENDPOINT).openConnection() as HttpURLConnection
+        val anthropic = config.apiKey.startsWith("sk-ant-")
+        val endpoint = if (anthropic) ANTHROPIC_ENDPOINT else ENDPOINT
+        val connection = URL(endpoint).openConnection() as HttpURLConnection
         return try {
             connection.requestMethod = "POST"
             connection.connectTimeout = TIMEOUT_MS
             connection.readTimeout = TIMEOUT_MS
             connection.doOutput = true
             connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
-            connection.setRequestProperty("Authorization", "Bearer ${config.apiKey}")
-            // Verified fact: Groq returns 403 Forbidden for the default Java
-            // URLConnection user agent. Omitting this silently breaks every
-            // cloud call, so it is not optional.
+            // Verified: Groq returns 403 for the default Java URLConnection user
+            // agent, so this is not optional on either provider.
             connection.setRequestProperty("User-Agent", "campus-brain/1.0")
 
-            val payload = JSONObject().apply {
-                put("model", config.model)
-                put("messages", JSONArray().apply {
-                    put(JSONObject().put("role", "system").put("content", SYSTEM_PROMPT))
-                    put(JSONObject().put("role", "user").put("content", query))
-                })
+            val payload: JSONObject
+            if (anthropic) {
+                // Anthropic uses its own auth header and a top-level `system`
+                // field rather than a system message inside `messages`.
+                connection.setRequestProperty("x-api-key", config.apiKey)
+                connection.setRequestProperty("anthropic-version", "2023-06-01")
+                payload = JSONObject().apply {
+                    put("model", config.model)
+                    put("max_tokens", 400)
+                    put("system", SYSTEM_PROMPT)
+                    put("messages", JSONArray().apply {
+                        put(JSONObject().put("role", "user").put("content", query))
+                    })
+                }
+            } else {
+                connection.setRequestProperty("Authorization", "Bearer ${config.apiKey}")
+                payload = JSONObject().apply {
+                    put("model", config.model)
+                    put("messages", JSONArray().apply {
+                        put(JSONObject().put("role", "system").put("content", SYSTEM_PROMPT))
+                        put(JSONObject().put("role", "user").put("content", query))
+                    })
+                }
             }
             connection.outputStream.use { it.write(payload.toString().toByteArray(Charsets.UTF_8)) }
 
             if (connection.responseCode !in 200..299) return null
             val body = connection.inputStream.bufferedReader().use { it.readText() }
-            JSONObject(body)
-                .optJSONArray("choices")
-                ?.optJSONObject(0)
-                ?.optJSONObject("message")
-                ?.optString("content")
-                ?.trim()
-                ?.takeIf { it.isNotEmpty() }
+            val json = JSONObject(body)
+            if (anthropic) {
+                json.optJSONArray("content")
+                    ?.optJSONObject(0)
+                    ?.optString("text")
+                    ?.trim()
+                    ?.takeIf { it.isNotEmpty() }
+            } else {
+                json.optJSONArray("choices")
+                    ?.optJSONObject(0)
+                    ?.optJSONObject("message")
+                    ?.optString("content")
+                    ?.trim()
+                    ?.takeIf { it.isNotEmpty() }
+            }
         } catch (t: Throwable) {
             null
         } finally {
@@ -117,6 +142,7 @@ class CloudAnswer(
 
     companion object {
         private const val ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
+        private const val ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages"
         private const val DEFAULT_MODEL = "groq/compound-mini"
         private const val CONFIG_FILE_NAME = "config.json"
         private const val TIMEOUT_MS = 10_000
