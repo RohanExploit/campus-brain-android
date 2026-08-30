@@ -60,15 +60,25 @@ class CloudAnswer(
      * always fall back to the existing abstention text without special
      * cases. Never throws into the caller.
      */
-    suspend fun answer(query: String): String? = runCatching {
+    suspend fun answer(query: String, context: String? = null): String? = runCatching {
         val config = loadConfig() ?: return null
         withContext(Dispatchers.IO) {
             rateLimitGate.withLock {
                 waitForRateLimitSlot()
-                // Haiku first. If it times out inside 5s or errors, fall back to
-                // the laptop's Qwen over the LAN -- a slower answer beats none, and
-                // the device already proved it can reach the host.
-                val draft = call(config, query) ?: callOllama(config, query, SYSTEM_PROMPT)
+                // This is a RAG app, not a chatbot -- the model must ground on
+                // whatever the retrieval pass found before it reaches for its
+                // own training knowledge. AnswerComposer abstained because it
+                // was not confident enough to state the passages as fact on
+                // its own, but the passages it found are still the best
+                // evidence available and go in first.
+                val draftQuery = if (context.isNullOrBlank()) query else
+                    "Retrieved excerpts from the college's own documents " +
+                        "(may be partial or not a perfect match):\n" + context +
+                        "\n\nQuestion: " + query +
+                        "\n\nAnswer from the excerpts above wherever they cover it. " +
+                        "Only add general Indian higher-education knowledge for parts " +
+                        "the excerpts do not cover."
+                val draft = call(config, draftQuery) ?: callOllama(config, draftQuery, SYSTEM_PROMPT)
                 lastCallAtMs = System.currentTimeMillis()
                 if (draft == null) null else {
                     // Second pass: the model checks its own draft before a
@@ -216,27 +226,29 @@ class CloudAnswer(
         @Volatile private var lastCallAtMs = 0L
 
         val VERIFIER_PROMPT = """
-            You verify a draft answer for an Indian engineering student before it is
-            shown. Your job is to make it MORE useful, not vaguer.
+            You rewrite a draft answer for an Indian engineering student so it reads as
+            a finding, not an errand.
 
-            KEEP every concrete, correct detail: percentages, fee ranges, document
-            names, office names, typical timelines, statutory helplines, and genuinely
-            national portals such as the National Scholarship Portal for scholarships.
-            Do NOT strip specifics and do NOT add hedges like "if one is available" or
-            "this may vary" to things that are standard practice across Indian
-            institutions.
+            STATE THE FACTS DECLARATIVELY. Never tell the student to "visit", "go to",
+            "contact", "check with" or "reach out to" anyone. Sending a student away is
+            not an answer -- it is the problem they opened the app to avoid. Say what the
+            process IS and who owns it: "The bonafide certificate is issued by the
+            Student Affairs office within 2-3 working days and costs Rs 50-100", never
+            "Visit the Student Affairs office to get a bonafide certificate".
+
+            KEEP every concrete detail: percentages, fee ranges, document names, office
+            names, timelines, statutory helplines, and genuinely national portals such
+            as the National Scholarship Portal for scholarships. Never add hedges like
+            "if one is available" or "this may vary" to things that are standard across
+            Indian institutions.
 
             Correct ONLY these, because a student acts on them and is sent nowhere:
             1. A portal named for the wrong purpose. The National Scholarship Portal is
                scholarships only, never bonafide certificates, examinations or placements.
             2. Invented or placeholder URLs.
 
-            Where a specific portal cannot be named safely, name the OFFICE instead
-            ("the examination section", "the student welfare office") rather than
-            retreating to vagueness.
-
-            Reply with the improved answer only, 3-5 sentences, no preamble and no
-            mention that you corrected anything.
+            Reply with the rewritten answer only, 3-5 sentences, no preamble, and no
+            mention that anything was changed.
         """.trimIndent()
 
         val SYSTEM_PROMPT = """

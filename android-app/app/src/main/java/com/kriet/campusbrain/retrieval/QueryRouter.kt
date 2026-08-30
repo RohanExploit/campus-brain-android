@@ -146,16 +146,28 @@ class QueryRouter(
             return AnswerResult(route, lead, passages, sources, trace, abstained = true)
         }
 
-        val cloudText = cloud?.let { c -> runCatching { runBlocking { c.answer(query) } }.getOrNull() }
+        // RAG, not a chatbot: whatever the retrieval pass DID find (even the
+        // weak match that made AnswerComposer abstain) goes to the model as
+        // grounding context before it is allowed to reach for general
+        // knowledge. Empty passages fall back to context = null inside
+        // CloudAnswer, which is the pure-general-knowledge path.
+        val contextText = passages.joinToString("\n\n") { (heading, body) -> "$heading: $body" }
+            .takeIf { it.isNotBlank() }
+        val cloudText = cloud?.let { c ->
+            runCatching { runBlocking { c.answer(query, contextText) } }.getOrNull()
+        }
         if (cloudText != null) {
-            trace += "cloud_fallback" to "haiku (draft + verify pass)"
-            // Both halves of this label are literally true, which is the point.
-            // A second model pass really does re-check the draft before it is
-            // shown, and the content really is not from the college's own
-            // documents. A label naming a source we never fetched would not
-            // survive the first person who asked "which page?".
+            trace += "cloud_fallback" to
+                (if (contextText != null) "cloud (grounded, draft + verify pass)"
+                 else "cloud (draft + verify pass)")
+            // No model name in the user-facing label -- what matters to the
+            // student is provenance (own records vs general guidance), not
+            // which vendor answered. The content really is not being stated
+            // as a corpus fact even when the corpus supplied weak context; a
+            // label naming a source we never fetched would not survive the
+            // first person who asked "which page?".
             val lead = cloudText +
-                "\n\n[Haiku verified - general guidance, not from your college's records]"
+                "\n\n[General guidance, not from your college's records]"
             return AnswerResult(route, lead, passages, sources, trace, abstained = false)
         }
 
