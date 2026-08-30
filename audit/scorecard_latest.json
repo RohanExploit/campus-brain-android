@@ -1,0 +1,81 @@
+{
+  "overall_pct": 90.5,
+  "weighted_score": 85.0,
+  "total_pass": 19,
+  "total_audits": 21,
+  "gate_passed": false,
+  "gate_failures": [
+    {
+      "id": "10",
+      "name": "Authorization RBAC"
+    }
+  ],
+  "production_ready": false,
+  "run_at": "2026-08-06T18:31:43.833641+00:00",
+  "category_scores": {
+    "integrity": {
+      "name": "integrity",
+      "weight": 0.2,
+      "passed": 4,
+      "total": 4,
+      "pct": 100.0,
+      "weighted_contribution": 20.0
+    },
+    "security": {
+      "name": "security",
+      "weight": 0.2,
+      "passed": 3,
+      "total": 4,
+      "pct": 75.0,
+      "weighted_contribution": 15.0
+    },
+    "retrieval": {
+      "name": "retrieval",
+      "weight": 0.15,
+      "passed": 5,
+      "total": 5,
+      "pct": 100.0,
+      "weighted_contribution": 15.0
+    },
+    "observability": {
+      "name": "observability",
+      "weight": 0.1,
+      "passed": 2,
+      "total": 2,
+      "pct": 100.0,
+      "weighted_contribution": 10.0
+    },
+    "reliability": {
+      "name": "reliability",
+      "weight": 0.1,
+      "passed": 3,
+      "total": 3,
+      "pct": 100.0,
+      "weighted_contribution": 10.0
+    },
+    "performance": {
+      "name": "performance",
+      "weight": 0.1,
+      "passed": 1,
+      "total": 1,
+      "pct": 100.0,
+      "weighted_contribution": 10.0
+    },
+    "decision": {
+      "name": "decision",
+      "weight": 0.05,
+      "passed": 1,
+      "total": 1,
+      "pct": 100.0,
+      "weighted_contribution": 5.0
+    },
+    "regression": {
+      "name": "regression",
+      "weight": 0.03,
+      "passed": 0,
+      "total": 1,
+      "pct": 0.0,
+      "weighted_contribution": 0.0
+    }
+  }
+}

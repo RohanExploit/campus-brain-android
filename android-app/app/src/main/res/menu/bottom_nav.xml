@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/askFragment" android:icon="@drawable/ic_ask" android:title="@string/tab_ask" />
+    <item android:id="@+id/resultFragment" android:icon="@drawable/ic_result" android:title="@string/tab_result" />
+    <item android:id="@+id/docsFragment" android:icon="@drawable/ic_docs" android:title="@string/tab_docs" />
+</menu>

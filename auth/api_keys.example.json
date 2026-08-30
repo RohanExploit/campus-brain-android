@@ -1,0 +1,11 @@
+[
+  {
+    "key": "REPLACE_WITH_A_RANDOM_ADMIN_KEY",
+    "role": "admin"
+  },
+  {
+    "key": "REPLACE_WITH_A_RANDOM_TENANT_KEY",
+    "role": "tenant",
+    "tenant_id": "tenant_1"
+  }
+]

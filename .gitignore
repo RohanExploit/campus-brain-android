@@ -1,0 +1,68 @@
+# --- Environments / caches ---
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.agent/
+.agents/
+
+# --- Secrets / keys ---
+.env
+.env.*
+!.env.example
+.encryption_key
+auth/api_keys.json
+
+# --- Student PII & derived outputs (retention hold — never in git) ---
+data/
+Dataset/
+Results Dataset/
+graphify-out/
+debug_outputs/
+sample_documents/
+*.duckdb
+*.pkl
+*.pkl.bak
+*.npy
+*.index
+faiss.index
+manifest.db
+*.graphml
+*.parquet
+# raw student spreadsheets (names, DOB, Aadhaar, caste, contact) — never in git
+*.xlsx
+*.csv
+SESSION-STUDENT-DETAILS-2.xlsx
+
+# --- Misc build/output ---
+*.log
+test_enc_*.txt
+test.db
+benchmark_output.txt
+benchmark_*.txt
+*.png
+.gstack/
+.playwright-mcp/
+
+# eval run artifacts (contain answer text w/ student names — PII).
+# The globs are recursive on purpose: `tests/eval/*.jsonl` does NOT match a
+# nested path, so a runner writing to tests/eval/runs/ produced an untracked-
+# but-not-ignored file full of real student names, one `git add -A` away from
+# entering history. Keep these as **/ patterns.
+tests/eval/**/*_results.json
+tests/eval/*_results.json
+tests/eval/**/*.jsonl
+tests/eval/*.jsonl
+tests/eval/bench_runs/
+tests/eval/runs/
+node_modules/
+
+# Office lock/residue files
+~$*
+**/~$*
+
+# The blanket *.png above exists to keep screenshots out of the repo, but it
+# also swallowed the Android launcher icons, and their absence fails the build
+# with "resource mipmap/ic_launcher not found" -- a long way from the cause.
+# These are Flutter template assets, a few KB, and required to build.
+!mobile/android/app/src/main/res/**/*.png

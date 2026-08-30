@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Campus Brain</string>
+    <string name="tab_ask">Ask</string>
+    <string name="tab_result">Results</string>
+    <string name="tab_docs">Documents</string>
+    <string name="ask_hint">Ask about fees, timetables, scholarships…</string>
+    <string name="send">Send</string>
+    <string name="roll_hint">Roll number or name</string>
+    <string name="lookup">Look up</string>
+    <string name="search_docs">Search documents</string>
+    <string name="abstention">I don\'t have enough information to answer that.</string>
+    <string name="offline_banner">Offline · answers come from the on-device corpus</string>
+    <string name="how_i_answered">How I answered this</string>
+    <string name="ask_empty_hint">Ask about fees, timetables, attendance, scholarships, placements or results.\n\nEvery answer shows which of the four routes handled it.</string>
+    <string name="result_hint">Enter a roll number, or part of a name. This is the TABULAR route with a form instead of free text.</string>
+    <string name="no_student">No student found.</string>
+</resources>

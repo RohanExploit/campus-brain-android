@@ -1,0 +1,1529 @@
+{
+  "version": "stress-1",
+  "tenant_id": "tenant_stress",
+  "description": "Stresskit adapted to run_eval schema (Phase-0 baseline)",
+  "questions": [
+    {
+      "id": "F001",
+      "route": "FACT",
+      "query": "How many credits are required to be awarded a B.Tech degree?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "168"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F002",
+      "route": "FACT",
+      "query": "What is the maximum number of credits a student may register for in a regular semester?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "28"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F003",
+      "route": "FACT",
+      "query": "Which grades count as failing?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "FF",
+          "XX"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F004",
+      "route": "FACT",
+      "query": "Does an AB grade mean the student failed?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "AB"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F005",
+      "route": "FACT",
+      "query": "What is the minimum attendance percentage needed to sit the end-semester exam?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "75"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F006",
+      "route": "FACT",
+      "query": "If a student's attendance is 68 percent, what can they do?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "condonation",
+          "documented"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F007",
+      "route": "FACT",
+      "query": "At what CGPA is a student put on academic probation?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "4.50"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F008",
+      "route": "FACT",
+      "query": "How much does it cost to get an answer script re-checked?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "750"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F009",
+      "route": "FACT",
+      "query": "When is the revaluation fee refunded?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "revaluation",
+          "results"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F010",
+      "route": "FACT",
+      "query": "What CGPA earns a degree with Distinction?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "8.50"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F011",
+      "route": "FACT",
+      "query": "Who is disqualified from getting a Distinction?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "improvement",
+          "Students"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F012",
+      "route": "FACT",
+      "query": "What is the annual tuition for an OBC student?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "71",
+          "000"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F013",
+      "route": "FACT",
+      "query": "What do NRI students pay in tuition per year?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "4",
+          "25",
+          "000"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F014",
+      "route": "FACT",
+      "query": "What happens if I pay my fee instalment late?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "200",
+          "6",
+          "000"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F015",
+      "route": "FACT",
+      "query": "Which fee is never refunded?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "12",
+          "500"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F016",
+      "route": "FACT",
+      "query": "How long does it take to get the caution deposit back?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "90"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F017",
+      "route": "FACT",
+      "query": "What is the yearly hostel charge for a two-seater room?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "68",
+          "000"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F018",
+      "route": "FACT",
+      "query": "If I withdraw 30 days after classes start, how much tuition do I get back?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "50"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F019",
+      "route": "FACT",
+      "query": "What is the cash payment limit for fees?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "20",
+          "000"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F020",
+      "route": "FACT",
+      "query": "Is there an extra charge for paying by credit card?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "1.8"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F021",
+      "route": "FACT",
+      "query": "Who is the Director of the Institute?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Dr. Ramchandra Bhosale"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F022",
+      "route": "FACT",
+      "query": "Who runs the Computer Science department?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Dr. Meera Joshi"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F023",
+      "route": "FACT",
+      "query": "How many academic departments does the Institute have?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Six"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F024",
+      "route": "FACT",
+      "query": "When was the AI and Data Science department founded?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "2021"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F025",
+      "route": "FACT",
+      "query": "How many teaching hours per week is a Professor expected to do?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "12"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F026",
+      "route": "FACT",
+      "query": "How many papers must an Associate Professor publish each year?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "reviewed",
+          "papers"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F027",
+      "route": "FACT",
+      "query": "How are conference papers counted towards the publication requirement?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "half"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F028",
+      "route": "FACT",
+      "query": "What is the largest internal seed grant available?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "3",
+          "00",
+          "000"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F029",
+      "route": "FACT",
+      "query": "How often can a faculty member take sabbatical?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "continuous",
+          "service"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F030",
+      "route": "FACT",
+      "query": "What CGPA do I need to sit for campus placements?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "6.00"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F031",
+      "route": "FACT",
+      "query": "How many backlogs disqualify me from placement?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "backlogs",
+          "active"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F032",
+      "route": "FACT",
+      "query": "Can I sit for more companies after accepting an offer?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "1.5",
+          "TPO"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F033",
+      "route": "FACT",
+      "query": "What was the highest package in Computer Science in 2024-25?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "44.0",
+          "LPA"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F034",
+      "route": "FACT",
+      "query": "What was the overall placement rate in 2024-25?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "79.6"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F035",
+      "route": "FACT",
+      "query": "Which company gave the most job offers?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "31"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F036",
+      "route": "FACT",
+      "query": "How long must the summer internship be?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "eight",
+          "weeks"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F037",
+      "route": "FACT",
+      "query": "How many beds are there for female students?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "380"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F038",
+      "route": "FACT",
+      "query": "What time does the hostel gate shut on a Tuesday?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "22",
+          "30"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F039",
+      "route": "FACT",
+      "query": "What is the penalty for keeping an induction plate in my room?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "2",
+          "500"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F040",
+      "route": "FACT",
+      "query": "How many books can an undergraduate borrow?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "4"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F041",
+      "route": "FACT",
+      "query": "What is the daily late fee for an overdue library book?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "5"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F042",
+      "route": "FACT",
+      "query": "What happens if I lose a library book?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "300"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F043",
+      "route": "FACT",
+      "query": "How many print volumes does the library hold?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "84",
+          "600"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F044",
+      "route": "FACT",
+      "query": "What CGPA must I keep to retain the Institute Merit Scholarship?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "8.50"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F045",
+      "route": "FACT",
+      "query": "What is the family income ceiling for means-cum-merit assistance?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "6",
+          "00",
+          "000"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F046",
+      "route": "FACT",
+      "query": "How much is the cash award for representing the country in sport?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "25",
+          "000"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F047",
+      "route": "FACT",
+      "query": "What is the hourly rate under Earn While You Learn?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "180"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F048",
+      "route": "FACT",
+      "query": "What marks split is used for a theory course?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "20",
+          "10",
+          "50"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F049",
+      "route": "FACT",
+      "query": "Can I enter the exam hall 40 minutes late?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "30"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F050",
+      "route": "FACT",
+      "query": "What is the punishment for being caught with a mobile phone in an exam?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "III"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F051",
+      "route": "FACT",
+      "query": "What penalty applies to a repeat malpractice offender?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Rustication",
+          "years"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F052",
+      "route": "FACT",
+      "query": "How big is the campus?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "42"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F053",
+      "route": "FACT",
+      "query": "How much of the daytime load does solar cover?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "31"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F054",
+      "route": "FACT",
+      "query": "Who holds the campus Wi-Fi maintenance contract?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Sahyadri Infotech"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F055",
+      "route": "FACT",
+      "query": "What approval is needed to buy something worth Rs. 8 lakh?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "comparative",
+          "statement"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F056",
+      "route": "FACT",
+      "query": "How long must a grievance take to be resolved?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "30"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F057",
+      "route": "FACT",
+      "query": "What is the maximum mentor to student ratio?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "1",
+          "20"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F058",
+      "route": "FACT",
+      "query": "How long are student academic records kept?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "completion",
+          "programme"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F059",
+      "route": "FACT",
+      "query": "What was total enrolment in 2024-25?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "2",
+          "847"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F060",
+      "route": "FACT",
+      "query": "What was the faculty vacancy rate?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "10.6"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "F061",
+      "route": "FACT",
+      "query": "How many papers were published and how many were Scopus indexed?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "164",
+          "111"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F062",
+      "route": "FACT",
+      "query": "What was the surplus for the year and where did it go?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "7.3"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F063",
+      "route": "FACT",
+      "query": "How long must passwords be?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "12"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F064",
+      "route": "FACT",
+      "query": "Can I put student records into ChatGPT?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "AI"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F065",
+      "route": "FACT",
+      "query": "How quickly must a security incident be reported?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "discovery",
+          "Within"
+        ]
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "F066",
+      "route": "FACT",
+      "query": "How long are network flow logs kept?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "180"
+        ]
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "G001",
+      "route": "GLOBAL",
+      "query": "Which department performs best overall across academics and placement, and which performs worst?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "94.1",
+          "92.4",
+          "79.4",
+          "60.7",
+          "CSE"
+        ]
+      }
+    },
+    {
+      "id": "G002",
+      "route": "GLOBAL",
+      "query": "Is there a relationship between a department's academic results and its placement outcomes?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "CSE"
+        ]
+      }
+    },
+    {
+      "id": "G003",
+      "route": "GLOBAL",
+      "query": "Summarise the Institute's main organisational risks.",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "AI"
+        ]
+      }
+    },
+    {
+      "id": "G004",
+      "route": "GLOBAL",
+      "query": "Which vendors have a relationship with the Institute beyond supplying services?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "31",
+          "19",
+          "HPC",
+          "AMC"
+        ]
+      }
+    },
+    {
+      "id": "G005",
+      "route": "GLOBAL",
+      "query": "What is the total annual value of recurring vendor contracts?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "18",
+          "26",
+          "41",
+          "2",
+          "96",
+          "35",
+          "000"
+        ]
+      }
+    },
+    {
+      "id": "G006",
+      "route": "GLOBAL",
+      "query": "Compare the total first-year cost for a General category student living in a two-seater hostel room versus a day scholar.",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "142000",
+          "12500",
+          "4800",
+          "3200",
+          "68000",
+          "41000",
+          "2",
+          "71",
+          "500",
+          "15000",
+          "1",
+          "62"
+        ]
+      }
+    },
+    {
+      "id": "G007",
+      "route": "GLOBAL",
+      "query": "How does the Institute protect student personal data across its policies?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "2023",
+          "10",
+          "2",
+          "DPDP",
+          "AI"
+        ]
+      }
+    },
+    {
+      "id": "G008",
+      "route": "GLOBAL",
+      "query": "Who reports to the Director?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Dr. Sunanda Kulkarni",
+          "Dr. Iqbal Shaikh",
+          "Registrar Shri Prakash Deshmukh"
+        ]
+      }
+    },
+    {
+      "id": "G009",
+      "route": "GLOBAL",
+      "query": "What are all the ways a student can lose money through penalties in one year?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "6",
+          "000",
+          "5",
+          "1",
+          "2",
+          "500",
+          "750",
+          "200"
+        ]
+      }
+    },
+    {
+      "id": "G010",
+      "route": "GLOBAL",
+      "query": "Which people hold more than one role in the Institute?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "CSE",
+          "AI",
+          "IT"
+        ]
+      }
+    },
+    {
+      "id": "G011",
+      "route": "GLOBAL",
+      "query": "What is the Institute's overall financial health?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "71.4",
+          "64.1",
+          "7.3",
+          "58.9"
+        ]
+      }
+    },
+    {
+      "id": "G012",
+      "route": "GLOBAL",
+      "query": "Compare the disciplinary escalation paths for ragging versus exam malpractice.",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "21"
+        ]
+      }
+    },
+    {
+      "id": "G013",
+      "route": "GLOBAL",
+      "query": "Which committees exist and who chairs each?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Grievance Redressal",
+          "Dean Academics Dr",
+          "Sunanda Kulkarni",
+          "Internal Complaints",
+          "Rukmini Sathe",
+          "Malpractice Enquiry",
+          "Academic Review Committee"
+        ]
+      }
+    },
+    {
+      "id": "G014",
+      "route": "GLOBAL",
+      "query": "What total research funding did the Institute handle in 2024-25?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "4.62",
+          "17",
+          "51.30",
+          "22",
+          "5.13"
+        ]
+      }
+    },
+    {
+      "id": "G015",
+      "route": "GLOBAL",
+      "query": "Which departments are the oldest and which is newest?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "1996",
+          "2021",
+          "AI"
+        ]
+      }
+    },
+    {
+      "id": "G016",
+      "route": "GLOBAL",
+      "query": "What obligations does a faculty member have in a year?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "12",
+          "16",
+          "1",
+          "2",
+          "20"
+        ]
+      }
+    },
+    {
+      "id": "G017",
+      "route": "GLOBAL",
+      "query": "How is a high-value IT purchase approved end to end?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "5",
+          "00",
+          "000",
+          "25",
+          "1.94",
+          "HPC"
+        ]
+      }
+    },
+    {
+      "id": "G018",
+      "route": "GLOBAL",
+      "query": "What are the total hostel beds and how does that compare with enrolment?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "1",
+          "140",
+          "620",
+          "380",
+          "2",
+          "847",
+          "40",
+          "PG"
+        ]
+      }
+    },
+    {
+      "id": "G019",
+      "route": "GLOBAL",
+      "query": "Which scholarships can and cannot be combined?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Institute Merit Scholarship",
+          "Earn While You Learn"
+        ]
+      }
+    },
+    {
+      "id": "G020",
+      "route": "GLOBAL",
+      "query": "Summarise every deadline a student faces in an academic year.",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "20",
+          "05",
+          "01",
+          "15",
+          "10"
+        ]
+      }
+    },
+    {
+      "id": "G021",
+      "route": "GLOBAL",
+      "query": "What is the Institute's sustainability position?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "480",
+          "2024",
+          "31",
+          "210"
+        ]
+      }
+    },
+    {
+      "id": "G022",
+      "route": "GLOBAL",
+      "query": "If the AI & Data Science department were fully staffed, how many faculty would the Institute have sanctioned, and what is the current gap?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "132",
+          "118",
+          "14",
+          "AI"
+        ]
+      }
+    },
+    {
+      "id": "L001",
+      "route": "LOCAL",
+      "query": "Who is the Chief Warden and what department does he head?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Dr. Vasant Rane",
+          "Chief Warden",
+          "Mechanical Engineering"
+        ]
+      }
+    },
+    {
+      "id": "L002",
+      "route": "LOCAL",
+      "query": "Which laboratory did the largest campus recruiter supply equipment for?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Trivendra Systems",
+          "High Performance Computing Laboratory"
+        ]
+      }
+    },
+    {
+      "id": "L003",
+      "route": "LOCAL",
+      "query": "Who administers the grant that funded the HPC Laboratory?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Dr. Iqbal Shaikh"
+        ]
+      }
+    },
+    {
+      "id": "L004",
+      "route": "LOCAL",
+      "query": "The Chief Warden is in charge of which laboratory?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Dr. Vasant Rane",
+          "Advanced Manufacturing Laboratory"
+        ]
+      }
+    },
+    {
+      "id": "L005",
+      "route": "LOCAL",
+      "query": "Who does the Estate Officer report to, and what else does that person control?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Shri Balasaheb Jadhav",
+          "Registrar Shri Prakash Deshmukh"
+        ]
+      }
+    },
+    {
+      "id": "L006",
+      "route": "LOCAL",
+      "query": "Which vendor maintains the hostels, and who is the Chief Warden of those hostels?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Konkan Facility Services",
+          "Dr. Vasant Rane",
+          "Chief Warden"
+        ]
+      }
+    },
+    {
+      "id": "L007",
+      "route": "LOCAL",
+      "query": "Who chairs the Internal Complaints Committee and what other role does she hold?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "ICC"
+        ]
+      }
+    },
+    {
+      "id": "L008",
+      "route": "LOCAL",
+      "query": "The person who coordinates scholarships heads which department?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Dr. Farida Merchant",
+          "Applied Sciences"
+        ]
+      }
+    },
+    {
+      "id": "L009",
+      "route": "LOCAL",
+      "query": "Who is the nodal officer for grievances and what else do they coordinate?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Dr. Farida Merchant",
+          "Applied Sciences"
+        ]
+      }
+    },
+    {
+      "id": "L010",
+      "route": "LOCAL",
+      "query": "The custodian of the IT policy heads how many departments?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "AI"
+        ]
+      }
+    },
+    {
+      "id": "L011",
+      "route": "LOCAL",
+      "query": "Who does the Training and Placement Officer report to, and what committee does that person chair?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Shri Nitin Kharche",
+          "Dr. Sunanda Kulkarni",
+          "Grievance Redressal Committee"
+        ]
+      }
+    },
+    {
+      "id": "L012",
+      "route": "LOCAL",
+      "query": "Which department does the head of the Structural Testing Laboratory lead?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Dr. Shalini Gokhale",
+          "Civil Engineering"
+        ]
+      }
+    },
+    {
+      "id": "L013",
+      "route": "LOCAL",
+      "query": "The vendor running the mess has a contract expiring when, and who is Chief Warden overseeing the mess?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "31",
+          "2026"
+        ]
+      }
+    },
+    {
+      "id": "L014",
+      "route": "LOCAL",
+      "query": "Who approves a sabbatical, and on whose recommendation?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "The Director",
+          "Dr. Ramchandra Bhosale",
+          "Dr. Sunanda Kulkarni"
+        ]
+      }
+    },
+    {
+      "id": "L015",
+      "route": "LOCAL",
+      "query": "The Embedded Systems Laboratory head leads which department, and what patent came from it?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Dr. Anil Pawar",
+          "Telecommunication Engineering"
+        ]
+      }
+    },
+    {
+      "id": "L016",
+      "route": "LOCAL",
+      "query": "An appeal against a grievance decision goes to whom, and what committee does that person chair?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "The Director Dr",
+          "Ramchandra Bhosale",
+          "Ragging Committee"
+        ]
+      }
+    },
+    {
+      "id": "L017",
+      "route": "LOCAL",
+      "query": "Which company both maintains the network and recruits students, and how many offers did it make?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "19"
+        ]
+      }
+    },
+    {
+      "id": "L018",
+      "route": "LOCAL",
+      "query": "The Controller of Examinations issues which two documents in this corpus?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Shri Prakash Deshmukh"
+        ]
+      }
+    },
+    {
+      "id": "L019",
+      "route": "LOCAL",
+      "query": "Who owns the academic regulations document and what is their reporting line?",
+      "gold": {
+        "mode": "contains_any",
+        "expect": [
+          "Dr. Sunanda Kulkarni",
+          "Director Dr",
+          "Ramchandra Bhosale"
+        ]
+      }
+    },
+    {
+      "id": "L020",
+      "route": "LOCAL",
+      "query": "The department with the lowest placement rate is headed by whom, and which lab does it own?",
+      "gold": {
+        "mode": "contains",
+        "expect": [
+          "60.7"
+        ]
+      }
+    },
+    {
+      "id": "U001",
+      "route": "FACT",
+      "query": "What is the PhD tuition fee?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "U002",
+      "route": "FACT",
+      "query": "How many students are enrolled in the Department of Biotechnology?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "false_premise",
+      "unanswerable": true
+    },
+    {
+      "id": "U003",
+      "route": "FACT",
+      "query": "What was the placement percentage in 2019-20?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "out_of_range",
+      "unanswerable": true
+    },
+    {
+      "id": "U004",
+      "route": "FACT",
+      "query": "Who is the Vice Chancellor?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "false_premise",
+      "unanswerable": true
+    },
+    {
+      "id": "U005",
+      "route": "FACT",
+      "query": "What is the CGPA of student roll number 23067571263053?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "wrong_corpus",
+      "unanswerable": true
+    },
+    {
+      "id": "U006",
+      "route": "FACT",
+      "query": "What is the hostel fee for a single-occupancy room?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "U007",
+      "route": "FACT",
+      "query": "How much did Konkan Facility Services charge in 2023-24?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "out_of_range",
+      "unanswerable": true
+    },
+    {
+      "id": "U008",
+      "route": "FACT",
+      "query": "What is the salary of the Director?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "U009",
+      "route": "FACT",
+      "query": "Which IIT is the Institute affiliated with?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "false_premise",
+      "unanswerable": true
+    },
+    {
+      "id": "U010",
+      "route": "FACT",
+      "query": "What is the pass percentage of the Department of Artificial Intelligence and Data Science?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "U011",
+      "route": "FACT",
+      "query": "How many patents were granted in 2023-24?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "out_of_range",
+      "unanswerable": true
+    },
+    {
+      "id": "U012",
+      "route": "FACT",
+      "query": "What is the mess menu for Wednesday?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    }
+  ]
+}

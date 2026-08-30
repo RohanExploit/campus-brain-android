@@ -1,0 +1,31 @@
+{
+  "generated": "2026-08-11T16:34:23.972618+00:00",
+  "golden_version": "1.0",
+  "tenant_id": "tenant_1",
+  "overall_accuracy": 0.6087,
+  "route_classification_accuracy": 0.8478,
+  "n": 46,
+  "per_route": {
+    "FACT": {
+      "correct": 3,
+      "total": 11,
+      "accuracy": 0.2727
+    },
+    "GLOBAL": {
+      "correct": 3,
+      "total": 7,
+      "accuracy": 0.4286
+    },
+    "LOCAL": {
+      "correct": 1,
+      "total": 6,
+      "accuracy": 0.1667
+    },
+    "TABULAR": {
+      "correct": 21,
+      "total": 22,
+      "accuracy": 0.9545
+    }
+  },
+  "notes": "Deterministic baseline: generation+classify temperature=0, num_ctx=2048, qwen3:4b-instruct-2507-q4_K_M. Includes 5b analytical templates. Two back-to-back runs: pass/fail identical on all 46 (score reproducible); one GLOBAL answer (G01) has minor context-ordering text variance that does not change its pass. Replaces the earlier 50.0% temp-0.8 baseline."
+}

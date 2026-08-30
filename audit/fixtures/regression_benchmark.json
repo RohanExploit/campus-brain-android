@@ -1,0 +1,162 @@
+[
+  {
+    "query": "What is the SGPA of student with roll number 23067571242024?",
+    "expected_answer": "7.36",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "roll_no": "23067571242024",
+    "field": "sgpa"
+  },
+  {
+    "query": "What is the SGPA of student with roll number 23069381242010?",
+    "expected_answer": "8.11",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "roll_no": "23069381242010",
+    "field": "sgpa"
+  },
+  {
+    "query": "What is the SGPA of student with roll number 23067571242100?",
+    "expected_answer": "5.45",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "roll_no": "23067571242100",
+    "field": "sgpa"
+  },
+  {
+    "query": "What is the SGPA of student with roll number 23063181242025?",
+    "expected_answer": "6.3",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "roll_no": "23063181242025",
+    "field": "sgpa"
+  },
+  {
+    "query": "What is the SGPA of student with roll number 23067571263067?",
+    "expected_answer": "6.59",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "roll_no": "23067571263067",
+    "field": "sgpa"
+  },
+  {
+    "query": "What is the SGPA of student with roll number 23067571242075?",
+    "expected_answer": "7.61",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "roll_no": "23067571242075",
+    "field": "sgpa"
+  },
+  {
+    "query": "What is the SGPA of student with roll number 24067571242512?",
+    "expected_answer": "7.7",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "roll_no": "24067571242512",
+    "field": "sgpa"
+  },
+  {
+    "query": "What is the SGPA of student with roll number 23067571242111?",
+    "expected_answer": "6.2",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "roll_no": "23067571242111",
+    "field": "sgpa"
+  },
+  {
+    "query": "Did student 23067571263053 pass their semester examination?",
+    "expected_answer": "PASS",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "roll_no": "23067571263053",
+    "field": "result"
+  },
+  {
+    "query": "Did student 23067571242035 pass their semester examination?",
+    "expected_answer": "PASS",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "roll_no": "23067571242035",
+    "field": "result"
+  },
+  {
+    "query": "Did student 23069381242095 pass their semester examination?",
+    "expected_answer": "PASS",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "roll_no": "23069381242095",
+    "field": "result"
+  },
+  {
+    "query": "Did student 24067571242504 pass their semester examination?",
+    "expected_answer": "PASS",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "roll_no": "24067571242504",
+    "field": "result"
+  },
+  {
+    "query": "What grade did student 23067571263048 get in subject BTAIOE505C?",
+    "expected_answer": "CC",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "roll_no": "23067571263048",
+    "subject_code": "BTAIOE505C",
+    "field": "grade"
+  },
+  {
+    "query": "What grade did student 23067571242119 get in subject BTCOE504A?",
+    "expected_answer": "DE",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "roll_no": "23067571242119",
+    "subject_code": "BTCOE504A",
+    "field": "grade"
+  },
+  {
+    "query": "What grade did student 23067571242032 get in subject BTCOL506?",
+    "expected_answer": "DE",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "roll_no": "23067571242032",
+    "subject_code": "BTCOL506",
+    "field": "grade"
+  },
+  {
+    "query": "What grade did student 23067571242061 get in subject BTCOE504A?",
+    "expected_answer": "BC",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "roll_no": "23067571242061",
+    "subject_code": "BTCOE504A",
+    "field": "grade"
+  },
+  {
+    "query": "What is the SGPA of student 9999999999?",
+    "expected_answer": "INSUFFICIENT_EVIDENCE",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "field": "hallucination_guard"
+  },
+  {
+    "query": "List all students in the Quantum Computing department.",
+    "expected_answer": "INSUFFICIENT_EVIDENCE",
+    "query_type": "GLOBAL",
+    "tenant_id": "tenant_1",
+    "field": "hallucination_guard"
+  },
+  {
+    "query": "How many student records are currently flagged for review?",
+    "expected_answer": "1",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "field": "review_count"
+  },
+  {
+    "query": "What is the total number of students in the database?",
+    "expected_answer": "369",
+    "query_type": "TABULAR",
+    "tenant_id": "tenant_1",
+    "field": "student_count"
+  }
+]

@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend (ruff + pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies (from lockfile)
+        run: uv sync --frozen --group dev
+
+      # TEMPORARY. pytest-asyncio is missing from both pyproject.toml's dev
+      # group and uv.lock, so every async test errored with "async def
+      # functions are not natively supported" -- 45 of them. The suite passed
+      # locally only because the plugin had been pip-installed ad hoc into the
+      # dev venv and never recorded, which is why CI had never once run the
+      # full suite.
+      #
+      # It is installed here rather than declared because `uv sync --frozen`
+      # refuses to update the lockfile by design, and regenerating the lock
+      # needs the repo on disk.
+      #
+      # REMOVE THIS STEP once `uv add --dev pytest-asyncio` has been run and
+      # pyproject.toml plus uv.lock are committed.
+      - name: Install pytest-asyncio (temporary, see comment above)
+        run: uv pip install pytest-asyncio
+
+      - name: Lint (ruff)
+        run: uv run ruff check .
+
+      - name: Run tests
+        run: uv run pytest -q
+
+  frontend:
+    name: Frontend (typecheck + lint)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint

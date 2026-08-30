@@ -1,0 +1,30 @@
+# Ruff config — Phase 0 tooling adoption.
+# Conservative ruleset so the existing codebase passes without a mass rewrite;
+# import-sorting (I) and formatting are deferred to a later focused pass.
+line-length = 100
+target-version = "py312"
+
+# The project uses `sys.path.append(...)` bootstrapping before imports in several
+# modules, so E402 (module-import-not-at-top) is expected and intentional here.
+extend-exclude = [
+  "venv",
+  ".venv",
+  ".venv312",
+  "graphify-out",
+  "dashboard",
+  "build",
+  "dist",
+]
+
+[lint]
+select = ["E", "F", "W"]
+ignore = [
+  "E402",  # imports after sys.path bootstrapping (intentional)
+  "E501",  # line length is advisory, not a failure
+  "E741",  # ambiguous var names (e.g. `l`) appear in existing code
+  # E701/E702: multiple statements on one line (colon/semicolon). Pure formatting,
+  # not defects; pervasive in existing code. A future `ruff format` pass collapses
+  # these — deferred here (formatting is out of scope for the Phase 0 lint-clean gate).
+  "E701",
+  "E702",
+]

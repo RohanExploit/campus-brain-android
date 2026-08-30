@@ -1,0 +1,138 @@
+{
+  "_doc": "Paraphrase-robustness set. Each group is ONE question a user actually has, written the several ways a real user writes it. A benchmark measures whether the system can answer a question; this measures whether it answers the SAME question the same way regardless of wording — which is what decides whether a pilot survives contact with real users. Golds for tenant_1 groups are exact figures computed from analytics.duckdb (see tests/eval/README_paraphrase.md for the SQL), not hand-judged.",
+  "_ground_truth_source": "tenant_1 analytics.duckdb: 369 students, 35 FAIL (9.5%), 334 PASS (90.5%), 16 students with >=2 subject failures, 12 with >=3, 89 with SGPA >= 8, BTCOC502 is the most-failed subject (16).",
+  "groups": [
+    {
+      "id": "fail_pct",
+      "tenant": "tenant_1",
+      "intent": "What share of students failed overall?",
+      "gold": { "mode": "contains_any", "expect": ["9.5", "9.49"] },
+      "anti_gold": ["100.0", "100%"],
+      "phrasings": [
+        "What is the fail percentage?",
+        "what percent of students failed",
+        "What is the failure rate?",
+        "How many students failed, as a percentage?",
+        "fail % overall"
+      ]
+    },
+    {
+      "id": "pass_pct",
+      "tenant": "tenant_1",
+      "intent": "What share of students passed overall?",
+      "gold": { "mode": "contains_any", "expect": ["90.5", "90.51"] },
+      "anti_gold": [],
+      "phrasings": [
+        "What is the pass percentage?",
+        "what percent of students passed",
+        "What is the pass rate?",
+        "How many students passed, as a percentage?"
+      ]
+    },
+    {
+      "id": "failed_2_plus",
+      "tenant": "tenant_1",
+      "intent": "How many students failed two or more subjects?",
+      "gold": { "mode": "contains", "expect": ["16"] },
+      "anti_gold": ["35 total failed", "35 students"],
+      "phrasings": [
+        "How many students failed two or more subjects?",
+        "How many students failed 2 or more subjects?",
+        "Number of students with more than one backlog",
+        "how many students have multiple backlogs",
+        "count of students failing at least 2 subjects",
+        "students who failed more than one subject"
+      ]
+    },
+    {
+      "id": "failed_3_plus",
+      "tenant": "tenant_1",
+      "intent": "How many students failed three or more subjects?",
+      "gold": { "mode": "contains", "expect": ["12"] },
+      "anti_gold": [],
+      "phrasings": [
+        "How many students failed three or more subjects?",
+        "How many students failed at least 3 subjects?",
+        "students with more than two backlogs"
+      ]
+    },
+    {
+      "id": "total_students",
+      "tenant": "tenant_1",
+      "intent": "How many students are there in total?",
+      "gold": { "mode": "contains", "expect": ["369"] },
+      "anti_gold": [],
+      "phrasings": [
+        "How many students are there?",
+        "total number of students",
+        "What is the total student count?",
+        "how many students in total"
+      ]
+    },
+    {
+      "id": "failed_count",
+      "tenant": "tenant_1",
+      "intent": "How many students failed overall (student-level result)?",
+      "gold": { "mode": "contains", "expect": ["35"] },
+      "anti_gold": [],
+      "phrasings": [
+        "How many students failed?",
+        "number of students who failed",
+        "count of failed students",
+        "how many students did not pass"
+      ]
+    },
+    {
+      "id": "sgpa_above_8",
+      "tenant": "tenant_1",
+      "intent": "How many students scored 8 SGPA or above?",
+      "gold": { "mode": "contains", "expect": ["89"] },
+      "anti_gold": [],
+      "phrasings": [
+        "How many students scored above 8 SGPA?",
+        "How many students have SGPA of at least 8?",
+        "number of students with SGPA 8 or more",
+        "count students scoring 8 or higher SGPA"
+      ]
+    },
+    {
+      "id": "worst_subject",
+      "tenant": "tenant_1",
+      "intent": "Which subject has the most failures?",
+      "gold": { "mode": "contains", "expect": ["BTCOC502"] },
+      "anti_gold": [],
+      "phrasings": [
+        "Which subject has the most failures?",
+        "what subject do students fail the most",
+        "subject-wise failure count",
+        "which paper has the highest number of failures"
+      ]
+    },
+    {
+      "id": "topper",
+      "tenant": "tenant_1",
+      "intent": "Who has the highest SGPA?",
+      "gold": { "mode": "contains_any", "expect": ["DHUMAL", "8.82"] },
+      "anti_gold": [],
+      "phrasings": [
+        "Who is the topper?",
+        "which student has the highest SGPA",
+        "top student by SGPA",
+        "who scored the highest"
+      ]
+    },
+    {
+      "id": "unanswerable_nirf",
+      "tenant": "tenant_1",
+      "intent": "Something the corpus cannot answer — every phrasing must abstain.",
+      "gold": { "mode": "insufficient", "expect": [] },
+      "anti_gold": [],
+      "phrasings": [
+        "What is our NIRF ranking?",
+        "where do we rank in NIRF",
+        "What NIRF rank did the college get?",
+        "tell me the NIRF ranking of this institute"
+      ]
+    }
+  ]
+}

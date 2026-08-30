@@ -1,0 +1,223 @@
+{
+  "version": "bench-sql-1",
+  "tenant_id": "tenant_bench_sql",
+  "description": "Synthetic result database and TABULAR golds, both generated from tests/eval/bench/build_tabular.py so the answers cannot disagree with the rows the system queries.",
+  "questions": [
+    {
+      "id": "BT001",
+      "route": "TABULAR",
+      "query": "What is the total number of students in the database?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "120"
+          ]
+        ],
+        "bonus": []
+      }
+    },
+    {
+      "id": "BT002",
+      "route": "TABULAR",
+      "query": "How many students passed the semester examination?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "92"
+          ]
+        ],
+        "bonus": []
+      }
+    },
+    {
+      "id": "BT003",
+      "route": "TABULAR",
+      "query": "How many students failed the semester examination?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "28"
+          ]
+        ],
+        "bonus": []
+      }
+    },
+    {
+      "id": "BT004",
+      "route": "TABULAR",
+      "query": "What is the pass percentage?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "76.7"
+          ]
+        ],
+        "bonus": []
+      }
+    },
+    {
+      "id": "BT005",
+      "route": "TABULAR",
+      "query": "How many students failed at least 2 subjects?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "6"
+          ]
+        ],
+        "bonus": []
+      }
+    },
+    {
+      "id": "BT006",
+      "route": "TABULAR",
+      "query": "How many students failed at least 3 subjects?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "6"
+          ]
+        ],
+        "bonus": []
+      }
+    },
+    {
+      "id": "BT007",
+      "route": "TABULAR",
+      "query": "List the top 3 students by SGPA.",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "AARAV"
+          ],
+          [
+            "7.92"
+          ]
+        ],
+        "bonus": []
+      }
+    },
+    {
+      "id": "BT008",
+      "route": "TABULAR",
+      "query": "Who has the highest SGPA?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "AARAV"
+          ]
+        ],
+        "bonus": []
+      }
+    },
+    {
+      "id": "BT009",
+      "route": "TABULAR",
+      "query": "Which students have the lowest SGPA?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "ASMITA"
+          ],
+          [
+            "2.75"
+          ]
+        ],
+        "bonus": []
+      }
+    },
+    {
+      "id": "BT010",
+      "route": "TABULAR",
+      "query": "How many students have an SGPA below 6.0?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "8"
+          ]
+        ],
+        "bonus": []
+      }
+    },
+    {
+      "id": "BT011",
+      "route": "TABULAR",
+      "query": "Which subject has the most failures?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "BT307"
+          ]
+        ],
+        "bonus": []
+      }
+    },
+    {
+      "id": "BT012",
+      "route": "TABULAR",
+      "query": "How many students failed the Professional Elective I paper?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "28"
+          ]
+        ],
+        "bonus": []
+      }
+    },
+    {
+      "id": "BT013",
+      "route": "TABULAR",
+      "query": "What is the average SGPA across all students?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "6.97"
+          ]
+        ],
+        "bonus": []
+      }
+    },
+    {
+      "id": "BT014",
+      "route": "TABULAR",
+      "query": "What is the result of student 23063181243012?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "PASS"
+          ]
+        ],
+        "bonus": []
+      }
+    },
+    {
+      "id": "BT015",
+      "route": "TABULAR",
+      "query": "What is the SGPA of roll number 23063181243012?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "7.92"
+          ]
+        ],
+        "bonus": []
+      }
+    }
+  ]
+}

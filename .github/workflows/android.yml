@@ -1,0 +1,79 @@
+name: Android
+
+# Scoped to mobile/ so a backend commit never triggers an APK build.
+# The reverse is not true -- ci.yml has no path filter -- and that is
+# deliberate: adding one would mean editing an existing file.
+on:
+  push:
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Test and build APK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      # The runner ships JDK 17; the local machine has 23, which the Android
+      # Gradle Plugin rejects. Pinned here so the build does not drift.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.2'
+          channel: stable
+          cache: true
+
+      # Generate the android/ tree ONLY if it is not already committed.
+      #
+      # This guard is load-bearing. Task 7 commits an AndroidManifest.xml
+      # carrying the INTERNET/RECORD_AUDIO/CAMERA permissions and the
+      # networkSecurityConfig reference. Regenerating unconditionally would
+      # overwrite it on every run, and the APK would build green, install
+      # fine, and then fail every request on device with cleartext blocked
+      # and no permissions granted.
+      - name: Create Android project files (first run only)
+        run: |
+          if [ ! -d android ]; then
+            flutter create --platforms=android --project-name company_brain --org com.companybrain .
+          else
+            echo "android/ is committed; skipping generation"
+          fi
+
+      # First run only: lets the generated tree be downloaded and committed.
+      # Harmless afterwards.
+      - name: Upload generated android tree
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-android-tree
+          path: mobile/android
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: company-brain-apk
+          path: mobile/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 30

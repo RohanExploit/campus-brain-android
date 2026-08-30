@@ -1,0 +1,33 @@
+name: company_brain
+description: Phone client for the Company Brain retrieval engine.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: "^3.12.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  sqflite: 2.4.3
+  path_provider: 2.1.6
+  path: 1.9.1
+  # Cloud fallback (Groq) only -- used when the on-device model fails to
+  # initialise. Nothing else in the app needs networking.
+  http: 1.6.0
+  # On-device generation. Needs Dart >=3.12, which is why the CI Flutter
+  # pin moved to 3.47.2 -- no earlier flutter_gemma supports .litertlm.
+  flutter_gemma: 1.6.5
+  # flutter_gemma 1.6+ is a thin core with opt-in engine packages; this is
+  # the .litertlm (LiteRT-LM) inference engine, needed for
+  # gemma-4-E2B-it-gpu.litertlm. Requires flutter_gemma ^1.6.1 (satisfied).
+  flutter_gemma_litertlm: 1.5.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: 4.0.0
+  sqflite_common_ffi: 2.4.2+1
+
+flutter:
+  uses-material-design: true

@@ -1,0 +1,9 @@
+# The repo root .gitignore has a blanket `*.png` rule (it exists to keep stray
+# screenshots and scraped page images out of history). The PWA icons are source,
+# not output: without them the installed home-screen app has no icon and Chrome
+# will not offer "Add to Home screen" at all. Un-ignore exactly those four files
+# and nothing else — any other .png dropped in here stays ignored.
+!icon-192.png
+!icon-512.png
+!icon-maskable-512.png
+!apple-touch-icon.png

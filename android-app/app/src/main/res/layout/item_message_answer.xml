@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_bubble_answer"
+    android:padding="12dp"
+    android:layout_marginVertical="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- The detected route, shown to the user. The point of the app is that
+             it classifies before it answers; hiding that would hide the work. -->
+        <TextView
+            android:id="@+id/routeBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_route_badge"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/traceToggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:textSize="11sp"
+            android:textColor="@color/brand"
+            android:text="@string/how_i_answered" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/answer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textSize="14sp"
+        android:lineSpacingExtra="3dp"
+        android:textIsSelectable="true" />
+
+    <HorizontalScrollView
+        android:id="@+id/sourcesScroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/sources"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" />
+    </HorizontalScrollView>
+
+    <TextView
+        android:id="@+id/passagesToggle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:paddingVertical="4dp"
+        android:textSize="11sp"
+        android:textColor="@color/brand" />
+
+    <TextView
+        android:id="@+id/passages"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:padding="10dp"
+        android:background="#0D000000"
+        android:textSize="12sp"
+        android:lineSpacingExtra="2dp"
+        android:visibility="gone"
+        android:textIsSelectable="true" />
+
+    <TextView
+        android:id="@+id/trace"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:padding="8dp"
+        android:background="#14000000"
+        android:fontFamily="monospace"
+        android:textSize="10sp"
+        android:visibility="gone"
+        android:textIsSelectable="true" />
+</LinearLayout>

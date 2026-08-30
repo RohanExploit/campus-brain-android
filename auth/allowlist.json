@@ -1,0 +1,14 @@
+{
+  "tenant_1": {
+    "users": ["1990648223"],
+    "telegram_users": ["1990648223"],
+    "whatsapp_users": ["9503312346"],
+    "description": "Rohan Gaikwad — primary developer and tester",
+    "roles": {
+      "admin":      ["1990648223"],
+      "registrar":  [],
+      "faculty":    [],
+      "student":    []
+    }
+  }
+}

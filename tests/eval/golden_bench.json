@@ -1,0 +1,3444 @@
+{
+  "version": "bench-1",
+  "tenant_id": "tenant_bench",
+  "description": "Stresskit golds re-derived from the same human expected_answer prose with digit-group normalisation, corpus-provable acronym aliases, and required/bonus separation. v1 remains the decision variable; this file is reported alongside it.",
+  "questions": [
+    {
+      "id": "BF001",
+      "route": "FACT",
+      "query": "What is the sanctioned faculty strength of the Department of Computer Science and Engineering?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "34"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF002",
+      "route": "FACT",
+      "query": "What is the sanctioned faculty strength of the Department of Information Technology?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "26"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF003",
+      "route": "FACT",
+      "query": "What is the sanctioned faculty strength of the Department of Electronics and Telecommunication?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "29"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF004",
+      "route": "FACT",
+      "query": "What is the sanctioned faculty strength of the Department of Mechanical Engineering?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "41"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF005",
+      "route": "FACT",
+      "query": "What is the sanctioned faculty strength of the Department of Civil Engineering?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "33"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF006",
+      "route": "FACT",
+      "query": "What is the sanctioned faculty strength of the Department of Electrical Engineering?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "27"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF007",
+      "route": "FACT",
+      "query": "What is the sanctioned faculty strength of the Department of Artificial Intelligence and Data Science?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "18"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF008",
+      "route": "FACT",
+      "query": "What is the sanctioned faculty strength of the Department of Chemical Engineering?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "22"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF009",
+      "route": "FACT",
+      "query": "When was the High Performance Computing Laboratory commissioned?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2022"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF010",
+      "route": "FACT",
+      "query": "When was the Cyber Security Laboratory commissioned?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2019"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF011",
+      "route": "FACT",
+      "query": "When was the Data Analytics Studio commissioned?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2021"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF012",
+      "route": "FACT",
+      "query": "When was the Advanced Manufacturing Laboratory commissioned?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2017"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF013",
+      "route": "FACT",
+      "query": "When was the Thermal Engineering Laboratory commissioned?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2005"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF014",
+      "route": "FACT",
+      "query": "When was the VLSI Design Laboratory commissioned?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2016"
+          ],
+          [
+            "VLSI"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF015",
+      "route": "FACT",
+      "query": "When was the Structural Testing Laboratory commissioned?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2012"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF016",
+      "route": "FACT",
+      "query": "When was the Power Systems Laboratory commissioned?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2009"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF017",
+      "route": "FACT",
+      "query": "When was the Process Control Laboratory commissioned?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2014"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF018",
+      "route": "FACT",
+      "query": "When was the Network Systems Laboratory commissioned?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2018"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF019",
+      "route": "FACT",
+      "query": "What is the annual contract value for Trivendra Systems?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2600000"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF020",
+      "route": "FACT",
+      "query": "When does the contract with Konkan Facility Services end?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2026"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF021",
+      "route": "FACT",
+      "query": "What is the annual contract value for Nashik Netcom?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2350000"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF022",
+      "route": "FACT",
+      "query": "When does the contract with Konkan Instruments end?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2026"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF023",
+      "route": "FACT",
+      "query": "What is the annual contract value for Pune Bus Lines?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "3200000"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF024",
+      "route": "FACT",
+      "query": "When does the contract with Suvarna Security end?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2026"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF025",
+      "route": "FACT",
+      "query": "What is the bed capacity of Block B?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "300"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF026",
+      "route": "FACT",
+      "query": "Who is the warden of Block C?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Anjali Pawar"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "proper_noun"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF027",
+      "route": "FACT",
+      "query": "What is the annual tuition fee for a General category student?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "142000"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF028",
+      "route": "FACT",
+      "query": "What is the annual tuition fee for a ST category student?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "35500"
+          ],
+          [
+            "ST"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF029",
+      "route": "FACT",
+      "query": "What is the minimum attendance requirement?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "75"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF030",
+      "route": "FACT",
+      "query": "How many credits does the final-year project carry?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "12"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF031",
+      "route": "FACT",
+      "query": "What is the fee for revaluation of a subject?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "750"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF032",
+      "route": "FACT",
+      "query": "What minimum CGPA is required for the award of the degree?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "5.5"
+          ],
+          [
+            "CGPA"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF033",
+      "route": "FACT",
+      "query": "How many titles does the library hold?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "48200"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF034",
+      "route": "FACT",
+      "query": "How many journals does the library subscribe to?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "310"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF035",
+      "route": "FACT",
+      "query": "What is the overdue fine per day in the library?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "5"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF036",
+      "route": "FACT",
+      "query": "How many books may a student borrow at one time?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "4"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF037",
+      "route": "FACT",
+      "query": "What are the library's weekday opening hours?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "08"
+          ],
+          [
+            "00"
+          ],
+          [
+            "22"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF038",
+      "route": "FACT",
+      "query": "How many seats does the library have?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "420"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF039",
+      "route": "FACT",
+      "query": "What CGPA is needed to register with the placement cell?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "6.0"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF040",
+      "route": "FACT",
+      "query": "How long is the compulsory industrial internship?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "8"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF041",
+      "route": "FACT",
+      "query": "How many companies visited the campus in 2024-25?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "87"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF042",
+      "route": "FACT",
+      "query": "How many offers were made in 2024-25?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "612"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF043",
+      "route": "FACT",
+      "query": "What was the highest package recorded in 2024-25?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "44.0"
+          ],
+          [
+            "LPA"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF044",
+      "route": "FACT",
+      "query": "What is the annual value of the Gujar Merit Scholarship?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "40000"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF045",
+      "route": "FACT",
+      "query": "How many students received the Gujar Merit Scholarship in 2024-25?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "22"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF046",
+      "route": "FACT",
+      "query": "What is the annual value of the Rural Excellence Grant?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "25000"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF047",
+      "route": "FACT",
+      "query": "How many students received the Rural Excellence Grant in 2024-25?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "68"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF048",
+      "route": "FACT",
+      "query": "What is the annual value of the Women in Engineering Award?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "30000"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF049",
+      "route": "FACT",
+      "query": "How many students received the Women in Engineering Award in 2024-25?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "41"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF050",
+      "route": "FACT",
+      "query": "What is the annual value of the Sports Achievement Grant?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "18000"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF051",
+      "route": "FACT",
+      "query": "How many students received the Sports Achievement Grant in 2024-25?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "15"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF052",
+      "route": "FACT",
+      "query": "Who chairs the Internal Complaints Committee?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "The Internal Complaints Committee",
+            "Dr. Anjali Pawar"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "proper_noun"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF053",
+      "route": "FACT",
+      "query": "How many members does the Internal Complaints Committee have?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "7"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF054",
+      "route": "FACT",
+      "query": "Who chairs the Anti-Ragging Committee?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "The Anti",
+            "Ragging Committee",
+            "Dr. Vasant Rane"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "proper_noun"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF055",
+      "route": "FACT",
+      "query": "How many members does the Anti-Ragging Committee have?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "11"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF056",
+      "route": "FACT",
+      "query": "Who chairs the Academic Council?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "The Academic Council",
+            "Dr. Nandini Apte"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "proper_noun"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF057",
+      "route": "FACT",
+      "query": "How many members does the Academic Council have?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "15"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF058",
+      "route": "FACT",
+      "query": "Who chairs the Grievance Redressal Cell?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "The Grievance Redressal Cell",
+            "Dr. Sameer Kulkarni"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "proper_noun"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF059",
+      "route": "FACT",
+      "query": "How many members does the Grievance Redressal Cell have?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "6"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF060",
+      "route": "FACT",
+      "query": "Who chairs the Library Advisory Committee?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "The Library Advisory Committee",
+            "Dr. Ramesh Bhosale"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "proper_noun"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF061",
+      "route": "FACT",
+      "query": "How many members does the Library Advisory Committee have?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "5"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF062",
+      "route": "FACT",
+      "query": "Who chairs the Research Advisory Board?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "The Research Advisory Board",
+            "Dr. Iqbal Shaikh"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "proper_noun"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF063",
+      "route": "FACT",
+      "query": "How many members does the Research Advisory Board have?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "9"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF064",
+      "route": "FACT",
+      "query": "Who is the principal investigator of the project \"Edge Inference for Precision Agriculture\"?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Farhan Shaikh"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "proper_noun"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF065",
+      "route": "FACT",
+      "query": "What is the sanctioned amount for the project \"Edge Inference for Precision Agriculture\"?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "3400000"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF066",
+      "route": "FACT",
+      "query": "Who is the principal investigator of the project \"Seismic Retrofitting of Heritage Structures\"?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Ramesh Bhosale"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "proper_noun"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF067",
+      "route": "FACT",
+      "query": "What is the sanctioned amount for the project \"Seismic Retrofitting of Heritage Structures\"?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "5100000"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF068",
+      "route": "FACT",
+      "query": "Who is the principal investigator of the project \"Additive Manufacturing of Turbine Blades\"?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Vasant Rane"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "proper_noun"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF069",
+      "route": "FACT",
+      "query": "What is the sanctioned amount for the project \"Additive Manufacturing of Turbine Blades\"?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "7250000"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF070",
+      "route": "FACT",
+      "query": "Who is the principal investigator of the project \"Low-Power VLSI for Wearable Sensors\"?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Anjali Pawar"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "proper_noun"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF071",
+      "route": "FACT",
+      "query": "What is the sanctioned amount for the project \"Low-Power VLSI for Wearable Sensors\"?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2900000"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF072",
+      "route": "FACT",
+      "query": "When is convocation held?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "12"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF073",
+      "route": "FACT",
+      "query": "When does the odd semester begin?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "15"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF074",
+      "route": "FACT",
+      "query": "What is the fee payment deadline?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "31"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF075",
+      "route": "FACT",
+      "query": "Who is the Director of the Institute?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "The Director",
+            "Dr. Nandini Apte"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "proper_noun"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BF076",
+      "route": "FACT",
+      "query": "Which university is the Institute affiliated to?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Shivaji University"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "proper_noun"
+      },
+      "phrasing": "paraphrase"
+    },
+    {
+      "id": "BF077",
+      "route": "FACT",
+      "query": "In which year was the Institute established?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "1983"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      },
+      "phrasing": "lexical"
+    },
+    {
+      "id": "BG001",
+      "route": "GLOBAL",
+      "query": "Which department has the best placement rate and which has the worst?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "92.4"
+          ],
+          [
+            "57.9"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG002",
+      "route": "GLOBAL",
+      "query": "Which department records the highest average package?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "9.2"
+          ],
+          [
+            "LPA"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG003",
+      "route": "GLOBAL",
+      "query": "Which department has the lowest pass percentage?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "79.4"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG004",
+      "route": "GLOBAL",
+      "query": "How many departments have a pass percentage above 90?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "3"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG005",
+      "route": "GLOBAL",
+      "query": "Do departments with higher pass rates also place better?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Computer Science and Engineering"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BG006",
+      "route": "GLOBAL",
+      "query": "Which is the oldest department and which is the newest?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "1983"
+          ],
+          [
+            "2021"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG007",
+      "route": "GLOBAL",
+      "query": "Which department has the largest sanctioned faculty?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "41"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG008",
+      "route": "GLOBAL",
+      "query": "What is the total annual intake across all departments?",
+      "gold": {
+        "mode": "anchors",
+        "required": [],
+        "bonus": [
+          "690"
+        ],
+        "aliases": {},
+        "kind": "derived_only"
+      }
+    },
+    {
+      "id": "BG009",
+      "route": "GLOBAL",
+      "query": "How many faculty positions are sanctioned across the Institute?",
+      "gold": {
+        "mode": "anchors",
+        "required": [],
+        "bonus": [
+          "230"
+        ],
+        "aliases": {},
+        "kind": "derived_only"
+      }
+    },
+    {
+      "id": "BG010",
+      "route": "GLOBAL",
+      "query": "Which vendor holds the largest annual contract?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "5400000"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG011",
+      "route": "GLOBAL",
+      "query": "What is the total annual value of all recurring vendor contracts?",
+      "gold": {
+        "mode": "anchors",
+        "required": [],
+        "bonus": [
+          "24270000"
+        ],
+        "aliases": {},
+        "kind": "derived_only"
+      }
+    },
+    {
+      "id": "BG012",
+      "route": "GLOBAL",
+      "query": "Which vendors have a relationship with the Institute beyond supplying a service?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "14"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG013",
+      "route": "GLOBAL",
+      "query": "How many vendor contracts expire in 2026?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2026"
+          ]
+        ],
+        "bonus": [
+          "4"
+        ],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG014",
+      "route": "GLOBAL",
+      "query": "Which funding agency has supported the most laboratories?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "TEQIP"
+          ],
+          [
+            "III"
+          ]
+        ],
+        "bonus": [
+          "3"
+        ],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG015",
+      "route": "GLOBAL",
+      "query": "What is the combined grant value of all laboratories?",
+      "gold": {
+        "mode": "anchors",
+        "required": [],
+        "bonus": [
+          "96900000"
+        ],
+        "aliases": {},
+        "kind": "derived_only"
+      }
+    },
+    {
+      "id": "BG016",
+      "route": "GLOBAL",
+      "query": "Which laboratory received the largest grant?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "24500000"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG017",
+      "route": "GLOBAL",
+      "query": "How many laboratories does the Computer Science and Engineering department own?",
+      "gold": {
+        "mode": "anchors",
+        "required": [],
+        "bonus": [
+          "2"
+        ],
+        "aliases": {},
+        "kind": "derived_only"
+      }
+    },
+    {
+      "id": "BG018",
+      "route": "GLOBAL",
+      "query": "What does a General category student pay in the first year, excluding hostel?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "142000"
+          ],
+          [
+            "12500"
+          ],
+          [
+            "4800"
+          ],
+          [
+            "3200"
+          ]
+        ],
+        "bonus": [
+          "162500"
+        ],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG019",
+      "route": "GLOBAL",
+      "query": "How much less does an SC category student pay in tuition than a General student?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "35500"
+          ],
+          [
+            "142000"
+          ]
+        ],
+        "bonus": [
+          "106500"
+        ],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG020",
+      "route": "GLOBAL",
+      "query": "Compare the first-year cost for a General category hosteller and a day scholar.",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "45000"
+          ]
+        ],
+        "bonus": [
+          "162500",
+          "207500"
+        ],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG021",
+      "route": "GLOBAL",
+      "query": "What is the total hostel capacity of the Institute?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "1040"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG022",
+      "route": "GLOBAL",
+      "query": "How many hostel beds are available to female students?",
+      "gold": {
+        "mode": "anchors",
+        "required": [],
+        "bonus": [
+          "420"
+        ],
+        "aliases": {},
+        "kind": "derived_only"
+      }
+    },
+    {
+      "id": "BG023",
+      "route": "GLOBAL",
+      "query": "What was the total scholarship outlay in 2024-25?",
+      "gold": {
+        "mode": "anchors",
+        "required": [],
+        "bonus": [
+          "4080000"
+        ],
+        "aliases": {},
+        "kind": "derived_only"
+      }
+    },
+    {
+      "id": "BG024",
+      "route": "GLOBAL",
+      "query": "Which scholarship reached the most students?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "68"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG025",
+      "route": "GLOBAL",
+      "query": "Which committee meets most often?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "12"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG026",
+      "route": "GLOBAL",
+      "query": "How many committees are chaired by heads of department?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "4"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG027",
+      "route": "GLOBAL",
+      "query": "What is the total sanctioned value of the sponsored research portfolio?",
+      "gold": {
+        "mode": "anchors",
+        "required": [],
+        "bonus": [
+          "18650000"
+        ],
+        "aliases": {},
+        "kind": "derived_only"
+      }
+    },
+    {
+      "id": "BG028",
+      "route": "GLOBAL",
+      "query": "Which agency funds more than one sponsored project?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "SERB"
+          ],
+          [
+            "VLSI"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG029",
+      "route": "GLOBAL",
+      "query": "Which sponsored project has the largest budget and who leads it?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "7250000"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG030",
+      "route": "GLOBAL",
+      "query": "How does the Institute protect student personal data?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2023"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG031",
+      "route": "GLOBAL",
+      "query": "Summarise how a student complaint is escalated.",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Grievance Redressal Cell",
+            "Internal Complaints Committee"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "proper_noun"
+      }
+    },
+    {
+      "id": "BG032",
+      "route": "GLOBAL",
+      "query": "What are the main themes of the Institute's policy documents?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "regulations",
+            "committees"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "soft_prose"
+      }
+    },
+    {
+      "id": "BG033",
+      "route": "GLOBAL",
+      "query": "How many laboratories were funded by AICTE MODROB, and which departments own them?",
+      "gold": {
+        "mode": "anchors",
+        "required": [],
+        "bonus": [
+          "2"
+        ],
+        "aliases": {},
+        "kind": "derived_only"
+      }
+    },
+    {
+      "id": "BG034",
+      "route": "GLOBAL",
+      "query": "How many laboratories were funded by DST FIST, and which departments own them?",
+      "gold": {
+        "mode": "anchors",
+        "required": [],
+        "bonus": [
+          "2"
+        ],
+        "aliases": {},
+        "kind": "derived_only"
+      }
+    },
+    {
+      "id": "BG035",
+      "route": "GLOBAL",
+      "query": "How many laboratories were funded by Institute funds, and which departments own them?",
+      "gold": {
+        "mode": "anchors",
+        "required": [],
+        "bonus": [
+          "3"
+        ],
+        "aliases": {},
+        "kind": "derived_only"
+      }
+    },
+    {
+      "id": "BG036",
+      "route": "GLOBAL",
+      "query": "How many laboratories were funded by TEQIP III, and which departments own them?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "VLSI"
+          ]
+        ],
+        "bonus": [
+          "3"
+        ],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG037",
+      "route": "GLOBAL",
+      "query": "How many laboratories did Godavari Engineering Works equip?",
+      "gold": {
+        "mode": "anchors",
+        "required": [],
+        "bonus": [
+          "2"
+        ],
+        "aliases": {},
+        "kind": "derived_only"
+      }
+    },
+    {
+      "id": "BG038",
+      "route": "GLOBAL",
+      "query": "How many laboratories did Konkan Instruments equip?",
+      "gold": {
+        "mode": "anchors",
+        "required": [],
+        "bonus": [
+          "3"
+        ],
+        "aliases": {},
+        "kind": "derived_only"
+      }
+    },
+    {
+      "id": "BG039",
+      "route": "GLOBAL",
+      "query": "How many laboratories did Nashik Netcom equip?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "VLSI"
+          ]
+        ],
+        "bonus": [
+          "3"
+        ],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG040",
+      "route": "GLOBAL",
+      "query": "How many laboratories did Trivendra Systems equip?",
+      "gold": {
+        "mode": "anchors",
+        "required": [],
+        "bonus": [
+          "2"
+        ],
+        "aliases": {},
+        "kind": "derived_only"
+      }
+    },
+    {
+      "id": "BG041",
+      "route": "GLOBAL",
+      "query": "Which departments have no laboratory listed in the infrastructure register?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "laboratory",
+            "listed"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "soft_prose"
+      }
+    },
+    {
+      "id": "BG042",
+      "route": "GLOBAL",
+      "query": "Which departments established before 1995 place more than 65% of their students?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "3"
+          ],
+          [
+            "71.6"
+          ],
+          [
+            "68.3"
+          ],
+          [
+            "66.2"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG043",
+      "route": "GLOBAL",
+      "query": "Which heads of department also chair a committee?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Sameer Kulkarni",
+            "Information Technology",
+            "Grievance Redressal Cell",
+            "Dr. Anjali Pawar",
+            "Internal Complaints Committee",
+            "Dr. Vasant Rane",
+            "Mechanical Engineering",
+            "Ragging Committee",
+            "Dr. Ramesh Bhosale",
+            "Civil Engineering",
+            "Library Advisory Committee"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "proper_noun"
+      }
+    },
+    {
+      "id": "BG044",
+      "route": "GLOBAL",
+      "query": "Which department has the most faculty per admitted student?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "27"
+          ],
+          [
+            "60"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG045",
+      "route": "GLOBAL",
+      "query": "Which laboratories were commissioned in 2018 or later?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "2022"
+          ],
+          [
+            "2019"
+          ],
+          [
+            "2021"
+          ],
+          [
+            "2018"
+          ]
+        ],
+        "bonus": [
+          "4"
+        ],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG046",
+      "route": "GLOBAL",
+      "query": "Among departments owning a laboratory commissioned since 2018, which places best?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "92.4"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG047",
+      "route": "GLOBAL",
+      "query": "How do the concession categories compare on tuition?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "142000"
+          ],
+          [
+            "71000"
+          ],
+          [
+            "35500"
+          ],
+          [
+            "OBC"
+          ],
+          [
+            "EWS"
+          ],
+          [
+            "SC"
+          ],
+          [
+            "ST"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG048",
+      "route": "GLOBAL",
+      "query": "Which categories pay a reduced development fee?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "6250"
+          ],
+          [
+            "12500"
+          ],
+          [
+            "SC"
+          ],
+          [
+            "ST"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG049",
+      "route": "GLOBAL",
+      "query": "How many students in total received an Institute scholarship in 2024-25?",
+      "gold": {
+        "mode": "anchors",
+        "required": [],
+        "bonus": [
+          "146"
+        ],
+        "aliases": {},
+        "kind": "derived_only"
+      }
+    },
+    {
+      "id": "BG050",
+      "route": "GLOBAL",
+      "query": "Which scholarships are means-tested rather than merit-based?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "250000"
+          ],
+          [
+            "CGPA"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG051",
+      "route": "GLOBAL",
+      "query": "Which wardens are also heads of department?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Vasant Rane",
+            "Dr. Anjali Pawar",
+            "Dr. Sunita Gaikwad"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "proper_noun"
+      }
+    },
+    {
+      "id": "BG052",
+      "route": "GLOBAL",
+      "query": "How does male and female hostel capacity compare?",
+      "gold": {
+        "mode": "anchors",
+        "required": [],
+        "bonus": [
+          "620",
+          "420"
+        ],
+        "aliases": {},
+        "kind": "derived_only"
+      }
+    },
+    {
+      "id": "BG053",
+      "route": "GLOBAL",
+      "query": "Which sponsored projects run for three years or more?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "3"
+          ],
+          [
+            "4"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG054",
+      "route": "GLOBAL",
+      "query": "What overheads does the Institute retain on sponsored research?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "10"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG055",
+      "route": "GLOBAL",
+      "query": "What must a student do to be both placement-eligible and promoted?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "6.0"
+          ],
+          [
+            "0"
+          ],
+          [
+            "4"
+          ],
+          [
+            "75"
+          ],
+          [
+            "CGPA"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BG056",
+      "route": "GLOBAL",
+      "query": "Which authority appears in the most policies, and in what capacity?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "The Registrar"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "proper_noun"
+      }
+    },
+    {
+      "id": "BG057",
+      "route": "GLOBAL",
+      "query": "What deadlines does a first-year student face in their first semester?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "31"
+          ],
+          [
+            "500"
+          ],
+          [
+            "15"
+          ],
+          [
+            "22"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "quotable"
+      }
+    },
+    {
+      "id": "BL001",
+      "route": "LOCAL",
+      "query": "Who heads the department that operates the High Performance Computing Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Meera Joshi"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL002",
+      "route": "LOCAL",
+      "query": "How many faculty are sanctioned in the department that runs the High Performance Computing Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "34"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL003",
+      "route": "LOCAL",
+      "query": "What is the placement percentage of the department that owns the High Performance Computing Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "92.4"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL004",
+      "route": "LOCAL",
+      "query": "Who heads the department that operates the Cyber Security Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Meera Joshi"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL005",
+      "route": "LOCAL",
+      "query": "How many faculty are sanctioned in the department that runs the Cyber Security Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "34"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL006",
+      "route": "LOCAL",
+      "query": "What is the placement percentage of the department that owns the Cyber Security Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "92.4"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL007",
+      "route": "LOCAL",
+      "query": "Who heads the department that operates the Data Analytics Studio?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Farhan Shaikh"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL008",
+      "route": "LOCAL",
+      "query": "How many faculty are sanctioned in the department that runs the Data Analytics Studio?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "18"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL009",
+      "route": "LOCAL",
+      "query": "What is the placement percentage of the department that owns the Data Analytics Studio?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "84.5"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL010",
+      "route": "LOCAL",
+      "query": "Who heads the department that operates the Advanced Manufacturing Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Vasant Rane"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL011",
+      "route": "LOCAL",
+      "query": "How many faculty are sanctioned in the department that runs the Advanced Manufacturing Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "41"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL012",
+      "route": "LOCAL",
+      "query": "What is the placement percentage of the department that owns the Advanced Manufacturing Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "68.3"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL013",
+      "route": "LOCAL",
+      "query": "Who heads the department that operates the Thermal Engineering Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Vasant Rane"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL014",
+      "route": "LOCAL",
+      "query": "How many faculty are sanctioned in the department that runs the Thermal Engineering Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "41"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL015",
+      "route": "LOCAL",
+      "query": "What is the placement percentage of the department that owns the Thermal Engineering Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "68.3"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL016",
+      "route": "LOCAL",
+      "query": "Who heads the department that operates the VLSI Design Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Anjali Pawar"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL017",
+      "route": "LOCAL",
+      "query": "How many faculty are sanctioned in the department that runs the VLSI Design Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "29"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL018",
+      "route": "LOCAL",
+      "query": "What is the placement percentage of the department that owns the VLSI Design Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "71.6"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL019",
+      "route": "LOCAL",
+      "query": "Who heads the department that operates the Structural Testing Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Ramesh Bhosale"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL020",
+      "route": "LOCAL",
+      "query": "How many faculty are sanctioned in the department that runs the Structural Testing Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "33"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL021",
+      "route": "LOCAL",
+      "query": "What is the placement percentage of the department that owns the Structural Testing Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "60.7"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL022",
+      "route": "LOCAL",
+      "query": "Who heads the department that operates the Power Systems Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Sunita Gaikwad"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL023",
+      "route": "LOCAL",
+      "query": "How many faculty are sanctioned in the department that runs the Power Systems Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "27"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL024",
+      "route": "LOCAL",
+      "query": "What is the placement percentage of the department that owns the Power Systems Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "66.2"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL025",
+      "route": "LOCAL",
+      "query": "Who heads the department that operates the Process Control Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Vaishali Rane"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL026",
+      "route": "LOCAL",
+      "query": "How many faculty are sanctioned in the department that runs the Process Control Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "22"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL027",
+      "route": "LOCAL",
+      "query": "What is the placement percentage of the department that owns the Process Control Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "57.9"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL028",
+      "route": "LOCAL",
+      "query": "Who heads the department that operates the Network Systems Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Sameer Kulkarni"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL029",
+      "route": "LOCAL",
+      "query": "How many faculty are sanctioned in the department that runs the Network Systems Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "26"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL030",
+      "route": "LOCAL",
+      "query": "What is the placement percentage of the department that owns the Network Systems Laboratory?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "88.1"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL031",
+      "route": "LOCAL",
+      "query": "The warden of Block A heads which department?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Mechanical Engineering"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL032",
+      "route": "LOCAL",
+      "query": "What is the pass percentage of the department headed by the warden of Block A?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "85.6"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL033",
+      "route": "LOCAL",
+      "query": "The warden of Block C heads which department?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Electronics and Telecommunication"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL034",
+      "route": "LOCAL",
+      "query": "What is the pass percentage of the department headed by the warden of Block C?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "88.2"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL035",
+      "route": "LOCAL",
+      "query": "The warden of Block D heads which department?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Electrical Engineering"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL036",
+      "route": "LOCAL",
+      "query": "What is the pass percentage of the department headed by the warden of Block D?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "86.9"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL037",
+      "route": "LOCAL",
+      "query": "Which department is headed by the chair of the Internal Complaints Committee?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Electronics and Telecommunication"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL038",
+      "route": "LOCAL",
+      "query": "Which department is headed by the chair of the Anti-Ragging Committee?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Mechanical Engineering"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL039",
+      "route": "LOCAL",
+      "query": "Which department is headed by the chair of the Grievance Redressal Cell?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Information Technology"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL040",
+      "route": "LOCAL",
+      "query": "Which department is headed by the chair of the Library Advisory Committee?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Civil Engineering"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL041",
+      "route": "LOCAL",
+      "query": "Which department does the principal investigator of \"Edge Inference for Precision Agriculture\" head?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Artificial Intelligence and Data Science"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL042",
+      "route": "LOCAL",
+      "query": "How many students does the department of the \"Edge Inference for Precision Agriculture\" investigator admit?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "60"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL043",
+      "route": "LOCAL",
+      "query": "Which department does the principal investigator of \"Seismic Retrofitting of Heritage Structures\" head?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Civil Engineering"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL044",
+      "route": "LOCAL",
+      "query": "How many students does the department of the \"Seismic Retrofitting of Heritage Structures\" investigator admit?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "90"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL045",
+      "route": "LOCAL",
+      "query": "Which department does the principal investigator of \"Additive Manufacturing of Turbine Blades\" head?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Mechanical Engineering"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL046",
+      "route": "LOCAL",
+      "query": "How many students does the department of the \"Additive Manufacturing of Turbine Blades\" investigator admit?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "120"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL047",
+      "route": "LOCAL",
+      "query": "Which department does the principal investigator of \"Low-Power VLSI for Wearable Sensors\" head?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Electronics and Telecommunication"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL048",
+      "route": "LOCAL",
+      "query": "How many students does the department of the \"Low-Power VLSI for Wearable Sensors\" investigator admit?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "90"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL049",
+      "route": "LOCAL",
+      "query": "Which vendor maintains the hostels, and who is the warden of Block C?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Konkan Facility Services"
+          ],
+          [
+            "Dr. Anjali Pawar"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL050",
+      "route": "LOCAL",
+      "query": "Who is the custodian of the laboratory with the largest grant?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Shri Ganesh Tarate"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL051",
+      "route": "LOCAL",
+      "query": "The custodian of the High Performance Computing Laboratory chairs which committee?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Research Advisory Board"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL052",
+      "route": "LOCAL",
+      "query": "Which department owns the laboratory whose custodian is Shri Ganesh Tarate, and who heads it?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Dr. Vasant Rane"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL053",
+      "route": "LOCAL",
+      "query": "Who supplied equipment to the laboratory owned by the department Dr. Farhan Shaikh heads?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "Trivendra Systems"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BL054",
+      "route": "LOCAL",
+      "query": "Which company is both a supplier and a campus recruiter, and which lab did it equip?",
+      "gold": {
+        "mode": "anchors",
+        "required": [
+          [
+            "High Performance Computing Laboratory"
+          ]
+        ],
+        "bonus": [],
+        "aliases": {},
+        "kind": "stated"
+      }
+    },
+    {
+      "id": "BU001",
+      "route": "FACT",
+      "query": "What is the PhD tuition fee?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "BU002",
+      "route": "FACT",
+      "query": "How many students are enrolled in the M.Tech programme?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "BU003",
+      "route": "FACT",
+      "query": "What is the mess menu for Wednesday?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "BU004",
+      "route": "FACT",
+      "query": "Which IIT is the Institute affiliated with?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "false_premise",
+      "unanswerable": true
+    },
+    {
+      "id": "BU005",
+      "route": "FACT",
+      "query": "What is the pass percentage of the Department of Aerospace Engineering?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "false_premise",
+      "unanswerable": true
+    },
+    {
+      "id": "BU006",
+      "route": "FACT",
+      "query": "Who is the Dean of Student Affairs?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "BU007",
+      "route": "FACT",
+      "query": "How many patents were granted to the Institute in 2023-24?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "BU008",
+      "route": "FACT",
+      "query": "What is the salary of the Registrar?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "out_of_scope",
+      "unanswerable": true
+    },
+    {
+      "id": "BU009",
+      "route": "FACT",
+      "query": "Which hostel block has air conditioning?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "BU010",
+      "route": "FACT",
+      "query": "What is the Institute's NIRF ranking?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "BU011",
+      "route": "FACT",
+      "query": "How many buses does Pune Bus Lines operate on each route?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "BU012",
+      "route": "FACT",
+      "query": "What is the CGPA of the topper in Civil Engineering?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "out_of_scope",
+      "unanswerable": true
+    },
+    {
+      "id": "BU013",
+      "route": "FACT",
+      "query": "When will the new library building open?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "BU014",
+      "route": "FACT",
+      "query": "What is the annual electricity bill of the campus?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "BU015",
+      "route": "FACT",
+      "query": "Which company recruited the most students from Chemical Engineering?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "BU016",
+      "route": "FACT",
+      "query": "What is the fee for the Data Analytics Studio certification course?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "false_premise",
+      "unanswerable": true
+    },
+    {
+      "id": "BU017",
+      "route": "FACT",
+      "query": "How many international students are enrolled?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "BU018",
+      "route": "FACT",
+      "query": "What is the retirement age for faculty?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "BU019",
+      "route": "FACT",
+      "query": "Who was the Director before Dr. Nandini Apte?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "plausible_gap",
+      "unanswerable": true
+    },
+    {
+      "id": "BU020",
+      "route": "FACT",
+      "query": "What is the hostel fee for a single-occupancy room?",
+      "gold": {
+        "mode": "insufficient",
+        "expect": []
+      },
+      "gap_type": "false_premise",
+      "unanswerable": true
+    }
+  ]
+}

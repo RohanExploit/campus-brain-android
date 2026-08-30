@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingVertical="9dp"
+    android:paddingHorizontal="4dp">
+
+    <TextView
+        android:id="@+id/code"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:fontFamily="monospace"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/credit"
+        android:layout_width="48dp"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:textSize="12sp"
+        android:alpha="0.7" />
+
+    <TextView
+        android:id="@+id/points"
+        android:layout_width="64dp"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:textSize="12sp"
+        android:alpha="0.7" />
+
+    <TextView
+        android:id="@+id/grade"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:minWidth="52dp"
+        android:gravity="center"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="4dp"
+        android:background="@drawable/bg_route_badge"
+        android:textStyle="bold"
+        android:textSize="12sp"
+        android:textColor="@color/on_brand" />
+</LinearLayout>

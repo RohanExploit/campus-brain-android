@@ -1,0 +1,908 @@
+/* ─── Campus Brain — phone client (/m) ───────────────────────────────
+   Designed viewport-first for 390–430px. Reuses the design tokens declared
+   on :root in globals.css so the phone client and the desktop console stay
+   one product; nothing here leaks outside the /m route (the shell overrides
+   live in an inline <style> in src/app/m/layout.tsx, which unmounts with the
+   route). Nothing may ever scroll the page sideways — every wide element
+   (tables, SQL, context) gets its own overflow-x container.
+   ------------------------------------------------------------------- */
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  overflow-x: hidden;
+  background: var(--color-shell);
+}
+
+/* ─── Top bar ─────────────────────────────────────────────────────── */
+
+.topbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+  background: rgba(10, 15, 30, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--color-border);
+  z-index: 10;
+}
+
+.mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(150deg, var(--color-accent), #7c5cff);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.brand {
+  min-width: 0;
+  margin-right: auto;
+}
+.brandName {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.brandSub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-faint);
+  letter-spacing: 0.02em;
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* The status text needs its own box: .brandSub is a flex container (dot + text)
+   and text-overflow does not apply to those, so an over-long string clipped
+   mid-word ("Qwen3 4B on thi") instead of eliding. This span is the element the
+   ellipsis actually acts on. */
+.brandSubText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Native <select>: Android renders it as a bottom sheet — a better tenant
+   picker than anything we would hand-roll, and it needs no JS. */
+.tenantPick {
+  flex-shrink: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 34px;
+  padding: 0 26px 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-elevated);
+  background-image: linear-gradient(45deg, transparent 50%, var(--color-muted) 50%),
+    linear-gradient(135deg, var(--color-muted) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 15px, calc(100% - 9px) 15px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  outline: none;
+}
+.tenantPick:focus-visible {
+  border-color: var(--color-accent);
+}
+
+/* ─── Thread ──────────────────────────────────────────────────────── */
+
+.thread {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 14px 24px;
+}
+
+/* ─── Empty state / onboarding ────────────────────────────────────── */
+
+.hero {
+  padding: 22px 2px 4px;
+  animation: mFadeUp 420ms var(--ease) both;
+}
+.heroTitle {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+  color: var(--color-text);
+  margin: 0 0 8px;
+}
+.heroSub {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+.heroStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+.heroStat {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
+
+.sectionLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: var(--color-faint);
+  margin: 22px 2px 9px;
+}
+
+.chipStack {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+/* Full-width tappable starter question — 56px+ so a thumb cannot miss it. */
+.chipRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 58px;
+  padding: 11px 13px;
+  text-align: left;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 140ms var(--ease), background 140ms var(--ease),
+    transform 90ms var(--ease);
+}
+.chipRow:active {
+  transform: scale(0.985);
+  background: var(--color-elevated);
+  border-color: var(--color-accent);
+}
+.chipIcon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: var(--color-shell);
+  border: 1px solid var(--color-border);
+  color: var(--color-accent);
+}
+.chipText {
+  min-width: 0;
+  flex: 1;
+}
+.chipKind {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--color-faint);
+  margin-bottom: 3px;
+}
+.chipQuery {
+  display: block;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+/* ─── Messages ────────────────────────────────────────────────────── */
+
+.turn {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  animation: mFadeUp 320ms var(--ease) both;
+}
+
+.userBubble {
+  align-self: flex-end;
+  max-width: 88%;
+  padding: 10px 14px;
+  border-radius: 18px 18px 5px 18px;
+  background: var(--color-accent-soft);
+  border: 1px solid rgba(76, 125, 255, 0.3);
+  color: var(--color-text);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.answer {
+  min-width: 0;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.answerAbstain {
+  border-color: rgba(240, 180, 41, 0.35);
+}
+.answerError {
+  border-color: rgba(240, 85, 90, 0.35);
+}
+
+.answerHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent);
+}
+.meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-faint);
+  white-space: nowrap;
+}
+.metaPush {
+  margin-left: auto;
+}
+
+.answerBody {
+  padding: 13px;
+  font-size: var(--text-base);
+  line-height: 1.65;
+  color: var(--color-text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.abstainNote {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0 13px 13px;
+  padding: 9px 11px;
+  border-radius: var(--radius-sm);
+  background: var(--color-warn-bg);
+  border: 1px solid rgba(240, 180, 41, 0.28);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--color-warn);
+}
+.abstainNote svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.fallbackNote {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 13px 13px 0;
+  padding: 9px 11px;
+  border-radius: var(--radius-sm);
+  background: var(--color-warn-bg);
+  border: 1px solid rgba(240, 180, 41, 0.28);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--color-warn);
+  overflow-wrap: anywhere;
+}
+.fallbackNote svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ─── Student record ──────────────────────────────────────────────── */
+
+.studentHead {
+  padding: 13px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--color-border);
+}
+.studentName {
+  font-size: var(--text-lg);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+  width: 100%;
+}
+.studentRoll {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+/* The subject table is the one genuinely wide element — it scrolls inside
+   itself so the page never does. */
+.tableScroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.subjectTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+.subjectTable th {
+  text-align: left;
+  padding: 8px 13px;
+  color: var(--color-faint);
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+.subjectTable td {
+  padding: 9px 13px;
+  border-bottom: 1px solid rgba(38, 50, 74, 0.5);
+  color: var(--color-text);
+  white-space: nowrap;
+}
+.subjectTable tr:last-child td {
+  border-bottom: none;
+}
+
+.studentFoot {
+  padding: 10px 13px;
+  border-top: 1px solid var(--color-border);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+/* ─── Disambiguation ──────────────────────────────────────────────── */
+
+.pickList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 13px 13px;
+}
+.pickRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 13px;
+  text-align: left;
+  background: var(--color-shell);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.pickRow:active {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+.pickName {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+.pickMeta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-muted);
+}
+.pickScore {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-accent);
+}
+
+/* ─── Evidence (provenance) — collapsed by default ────────────────── */
+
+.evidence {
+  border-top: 1px solid var(--color-border);
+  background: rgba(10, 15, 30, 0.45);
+}
+.evidenceSummary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 0 13px;
+  cursor: pointer;
+  list-style: none;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-muted);
+  -webkit-tap-highlight-color: transparent;
+}
+.evidenceSummary::-webkit-details-marker {
+  display: none;
+}
+.evidenceSummary .caret {
+  transition: transform 160ms var(--ease);
+  color: var(--color-faint);
+  flex-shrink: 0;
+}
+.evidence[open] .evidenceSummary .caret {
+  transform: rotate(90deg);
+}
+.evidenceCount {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-faint);
+}
+
+.noEvidence {
+  border-top: 1px solid var(--color-border);
+  background: rgba(10, 15, 30, 0.45);
+  padding: 11px 13px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--color-faint);
+}
+
+.evidenceBody {
+  padding: 2px 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.evidenceGroupLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--color-faint);
+  margin-bottom: 7px;
+}
+.sourceList {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.sourceItem {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  min-width: 0;
+}
+.sourceIndex {
+  flex-shrink: 0;
+  width: 19px;
+  height: 19px;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+}
+.sourceName {
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+.sourceSection {
+  color: var(--color-faint);
+  overflow-wrap: anywhere;
+}
+
+.codeBlock {
+  margin: 0;
+  padding: 10px 11px;
+  background: var(--color-shell);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--color-muted);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: pre;
+}
+.contextBlock {
+  margin: 0;
+  padding: 10px 11px;
+  background: var(--color-shell);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--color-muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow-x: hidden;
+  max-height: 220px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ─── Pending / error ─────────────────────────────────────────────── */
+
+.pending {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 15px 13px;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  min-width: 0;
+}
+.pendingText {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  min-width: 0;
+}
+.pendingTimer {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.errorCard {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 13px;
+  border-radius: var(--radius-lg);
+  background: var(--color-fail-bg);
+  border: 1px solid rgba(240, 85, 90, 0.3);
+  color: var(--color-fail);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.errorCard svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.retry {
+  margin-top: 8px;
+  padding: 7px 13px;
+  min-height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(240, 85, 90, 0.4);
+  background: transparent;
+  color: var(--color-fail);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ─── Composer ────────────────────────────────────────────────────── */
+
+.composer {
+  flex-shrink: 0;
+  padding: 9px 12px calc(9px + env(safe-area-inset-bottom));
+  background: rgba(10, 15, 30, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--color-border);
+}
+.composerRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.fieldWrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-end;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 22px;
+  padding: 4px 4px 4px 14px;
+  transition: border-color 140ms var(--ease);
+}
+.fieldWrap:focus-within {
+  border-color: var(--color-accent);
+}
+/* 16px minimum: anything smaller makes mobile browsers zoom on focus. */
+.field {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  resize: none;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.45;
+  max-height: 122px;
+  padding: 10px 6px 10px 0;
+}
+.iconBtn {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-muted);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 140ms var(--ease), color 140ms var(--ease),
+    border-color 140ms var(--ease), transform 90ms var(--ease);
+}
+.iconBtn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.iconBtn:disabled {
+  opacity: 0.4;
+}
+.micLive {
+  color: var(--color-fail);
+  border-color: rgba(240, 85, 90, 0.45);
+  background: var(--color-fail-bg);
+  animation: mPulse 1.5s var(--ease) infinite;
+}
+.send {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: var(--color-accent);
+  color: #fff;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 140ms var(--ease), transform 90ms var(--ease);
+}
+.send:active:not(:disabled) {
+  transform: scale(0.92);
+}
+.send:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.sendStop {
+  background: var(--color-fail);
+}
+
+.composerNote {
+  margin: 8px 4px 0;
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--color-faint);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+.composerNoteLive {
+  color: var(--color-warn);
+}
+
+/* ─── Motion ──────────────────────────────────────────────────────── */
+
+@keyframes mFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes mPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(240, 85, 90, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(240, 85, 90, 0);
+  }
+}
+
+/* Wider phones / small tablets: keep the column readable, never full-bleed. */
+@media (min-width: 620px) {
+  .topbar,
+  .thread,
+  .composer > * {
+    max-width: 620px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+}
+
+/* ─── Workflow trace ──────────────────────────────────────────────────
+   The pipeline as it runs: Retrieve → Generate → Verify. Steps are driven by
+   NDJSON stage lines from the route, so the rail below is a record of what
+   happened rather than an animation on a timer. */
+
+.trace {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 13px 13px 11px;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  min-width: 0;
+  position: relative;
+}
+
+.traceLive {
+  /* Breathing border while work is in flight, so a slow answer still reads as
+     alive without a separate spinner competing with the step icons. */
+  animation: tracePulse 2s ease-in-out infinite;
+}
+
+@keyframes tracePulse {
+  0%, 100% { border-color: var(--color-border); }
+  50%      { border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border)); }
+}
+
+.traceStep {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 0;
+  min-width: 0;
+  position: relative;
+  /* Each step fades in as its line arrives rather than appearing all at once. */
+  animation: traceIn 260ms ease-out both;
+}
+
+@keyframes traceIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.traceIcon {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--color-faint);
+}
+
+/* Connector between consecutive step icons. */
+.traceRail {
+  position: absolute;
+  left: 8px;
+  top: 23px;
+  width: 1px;
+  height: 11px;
+  background: var(--color-border);
+}
+
+.traceLabel {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+
+.traceDetail {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.traceMs {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.traceTimer {
+  position: absolute;
+  top: 11px;
+  right: 13px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Per-status treatment. Only the active step is emphasised; finished steps
+   recede so the eye lands on what is happening now. */
+.trace_run .traceLabel { color: var(--color-text); }
+.trace_run .traceIcon  { color: var(--color-accent); }
+.trace_ok .traceIcon      { color: var(--color-pass); }
+.trace_revised .traceIcon { color: var(--color-warn); }
+.trace_revised .traceLabel { color: var(--color-warn); }
+.trace_fail .traceIcon    { color: var(--color-fail); }
+.trace_fail .traceLabel   { color: var(--color-faint); text-decoration: line-through; }
+
+.traceDotWait {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-border);
+}
+
+.traceDotRun {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  animation: traceBlink 1s ease-in-out infinite;
+}
+
+@keyframes traceBlink {
+  0%, 100% { opacity: 1;   transform: scale(1); }
+  50%      { opacity: 0.4; transform: scale(0.7); }
+}
+
+/* Someone who asked for less motion gets the states without the movement. */
+@media (prefers-reduced-motion: reduce) {
+  .traceLive,
+  .traceStep,
+  .traceDotRun {
+    animation: none;
+  }
+}

@@ -1,0 +1,12 @@
+import duckdb
+c = duckdb.connect("data/tenants/tenant_1/tabular.duckdb", read_only=True)
+print("=== TABLES ===")
+print(c.execute("SHOW TABLES").fetchall())
+print("\n=== students (sample) ===")
+print(c.execute("SELECT * FROM students LIMIT 3").fetchall())
+print("\n=== student_subjects (sample) ===")
+print(c.execute("SELECT * FROM student_subjects LIMIT 5").fetchall())
+print("\n=== student_subjects schema ===")
+print(c.execute("DESCRIBE student_subjects").fetchall())
+print("\n=== students schema ===")
+print(c.execute("DESCRIBE students").fetchall())

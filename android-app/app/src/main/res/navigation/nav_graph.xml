@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/askFragment">
+
+    <fragment android:id="@+id/askFragment"
+        android:name="com.kriet.campusbrain.ui.ask.AskFragment"
+        android:label="@string/tab_ask" />
+
+    <fragment android:id="@+id/resultFragment"
+        android:name="com.kriet.campusbrain.ui.result.ResultFragment"
+        android:label="@string/tab_result" />
+
+    <fragment android:id="@+id/docsFragment"
+        android:name="com.kriet.campusbrain.ui.docs.DocsFragment"
+        android:label="@string/tab_docs">
+        <action android:id="@+id/toDocDetail" app:destination="@id/docDetailFragment" />
+    </fragment>
+
+    <fragment android:id="@+id/docDetailFragment"
+        android:name="com.kriet.campusbrain.ui.docs.DocDetailFragment"
+        android:label="Document">
+        <argument android:name="docId" app:argType="string" />
+    </fragment>
+
+    <fragment android:id="@+id/selfTestFragment"
+        android:name="com.kriet.campusbrain.ui.selftest.SelfTestFragment"
+        android:label="Self test" />
+</navigation>
