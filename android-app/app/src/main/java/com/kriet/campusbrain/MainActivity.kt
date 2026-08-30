@@ -38,17 +38,19 @@ class MainActivity : AppCompatActivity() {
             withContext(Dispatchers.IO) { BrainRepository.init(applicationContext) }
             when (val s = BrainRepository.state.value) {
                 is InitState.Failed -> {
-                    binding.offlineBanner.text = s.message.lineSequence().first()
+                    binding.statusPillState.text = s.message.lineSequence().first()
                     Toast.makeText(this@MainActivity, s.message, Toast.LENGTH_LONG).show()
                 }
                 is InitState.Ready -> {
                     val m = s.repo.db.meta
-                    binding.offlineBanner.text = getString(R.string.offline_banner) +
-                        "  ·  ${m["document_count"] ?: "?"} docs · ${m["chunk_count"]} chunks"
+                    binding.statusPillDocs.text = "${m["document_count"] ?: "?"} docs"
+                    binding.statusPillChunks.text = "${m["chunk_count"]} chunks"
+                    binding.statusPillDocs.visibility = View.VISIBLE
+                    binding.statusPillChunks.visibility = View.VISIBLE
                     if (!s.repo.fts.available) {
                         // Not a crash, but the user should know retrieval is
                         // running on the degraded keyword path.
-                        binding.offlineBanner.text =
+                        binding.statusPillState.text =
                             "FTS5 unavailable — using LIKE fallback (results will be weaker)"
                     }
                 }
