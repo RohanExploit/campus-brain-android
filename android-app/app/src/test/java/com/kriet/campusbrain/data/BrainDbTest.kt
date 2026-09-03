@@ -1,5 +1,6 @@
 package com.kriet.campusbrain.data
 
+import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -26,19 +27,24 @@ class BrainDbTest {
         return f.absolutePath
     }
 
+    /** Runs a statement with no result rows and no parameters -- CREATE/INSERT literals. */
+    private fun SQLiteConnection.exec(sql: String) {
+        prepare(sql).use { it.step() }
+    }
+
     private fun buildBundle(path: String, withDocuments: Boolean) {
         val conn = BundledSQLiteDriver().open(path)
         try {
-            conn.execSQL("CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
-            conn.execSQL(
+            conn.exec("CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+            conn.exec(
                 "CREATE TABLE chunks (id INTEGER PRIMARY KEY, doc_id TEXT NOT NULL, " +
                     "section TEXT, content TEXT NOT NULL)"
             )
-            conn.execSQL("INSERT INTO chunks (id, doc_id, section, content) VALUES (0, 'a.md', 'Intro', 'hello world')")
-            conn.execSQL("INSERT INTO chunks (id, doc_id, section, content) VALUES (1, 'a.md', NULL, 'second chunk')")
-            conn.execSQL("INSERT INTO chunks (id, doc_id, section, content) VALUES (2, 'b.md', 'Deploy', 'third chunk')")
+            conn.exec("INSERT INTO chunks (id, doc_id, section, content) VALUES (0, 'a.md', 'Intro', 'hello world')")
+            conn.exec("INSERT INTO chunks (id, doc_id, section, content) VALUES (1, 'a.md', NULL, 'second chunk')")
+            conn.exec("INSERT INTO chunks (id, doc_id, section, content) VALUES (2, 'b.md', 'Deploy', 'third chunk')")
             if (withDocuments) {
-                conn.execSQL(
+                conn.exec(
                     "CREATE TABLE documents (doc_id TEXT PRIMARY KEY, title TEXT NOT NULL, " +
                         "category TEXT, chunk_count INTEGER NOT NULL, first_chunk_id INTEGER, preview TEXT)"
                 )
