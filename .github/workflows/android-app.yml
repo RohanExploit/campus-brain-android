@@ -1,0 +1,61 @@
+name: Android App
+
+# Scoped to android-app/ so a backend, dashboard or mobile/ (Flutter) commit
+# never triggers this Gradle build, and vice versa -- the two Android clients
+# are standalone builds on purpose (see android-app/settings.gradle.kts).
+on:
+  push:
+    paths:
+      - 'android-app/**'
+      - '.github/workflows/android-app.yml'
+  pull_request:
+    paths:
+      - 'android-app/**'
+      - '.github/workflows/android-app.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Unit tests and debug APK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android-app
+    steps:
+      - uses: actions/checkout@v4
+
+      # AGP 9 / compileSdk 36 reject the runner's other preinstalled JDKs the
+      # same way they reject a local JDK 23 -- see app/build.gradle.kts.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Unit tests
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+      # brain.db and assets/minilm/ are gitignored (real student PII; an 86MB
+      # model) and absent on a clean checkout. That is a designed-for state,
+      # not a build error: BrainRepository.init() resolves to
+      # InitState.Failed at runtime, so a debug build with no corpus assets
+      # is still a meaningful compile/package health check.
+      - name: Assemble debug APK
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: android-app/app/build/reports/tests/testDebugUnitTest
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: campus-brain-debug-apk
+          path: android-app/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
