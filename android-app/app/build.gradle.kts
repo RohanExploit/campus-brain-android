@@ -91,4 +91,12 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("androidx.sqlite:sqlite-bundled:2.5.1")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+    // CloudAnswer.parseConfig/findConfigFile use org.json.JSONObject. Local unit
+    // tests run against the Android platform's stub android.jar, whose
+    // org.json methods throw "not mocked" rather than working -- silently
+    // caught by parseConfig's runCatching, so every CloudAnswerTest case
+    // observed that as parseConfig always returning null. This reference
+    // implementation (same org.json package) takes precedence on the unit
+    // test classpath and actually works.
+    testImplementation("org.json:json:20260814")
 }

@@ -5,6 +5,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeNoException
 import org.junit.Test
 import java.io.File
 
@@ -17,6 +18,14 @@ import java.io.File
  * The schema built here is the subset of scripts/export_mobile_bundle.py's
  * SCHEMA_SQL these tests touch; see tests/test_export_mobile_bundle.py for the
  * Python-side proof of the writer that produces the real bundle.
+ *
+ * androidx.sqlite:sqlite-bundled ships native SQLite per platform. Resolved
+ * from an Android application module's testImplementation, that can mean the
+ * Android-targeted native binary rather than one this desktop JVM can load,
+ * which fails as UnsatisfiedLinkError/NoClassDefFoundError -- an environment
+ * gap, not a assertion this test should make. [testDb] skips rather than
+ * fails in that case, the same way WordPieceTokenizerTest skips when its
+ * required assets are absent.
  */
 class BrainDbTest {
 
@@ -67,41 +76,51 @@ class BrainDbTest {
         }
     }
 
+    /**
+     * Builds a synthetic bundle and opens it, skipping the test if the native
+     * driver can't load here. LinkageError covers UnsatisfiedLinkError (the
+     * native library itself), NoClassDefFoundError (a class that failed to
+     * link on an earlier test) and ExceptionInInitializerError (its cause) --
+     * all the same underlying "no usable native binary for this JVM" gap.
+     */
+    private fun testDb(withDocuments: Boolean = true): BrainDb {
+        val path = tempDbPath()
+        try {
+            buildBundle(path, withDocuments)
+            return BrainDb.openPath(path, "test")
+        } catch (e: LinkageError) {
+            assumeNoException("bundled SQLite native library not loadable in this JVM", e)
+            throw e
+        }
+    }
+
     @Test fun `meta reads back every key`() {
-        val db = BrainDb.openPath(tempDbPath().also { buildBundle(it, withDocuments = true) }, "test")
+        val db = testDb()
         assertEquals("tenant_test", db.meta["tenant_id"])
         assertEquals("3", db.meta["chunk_count"])
         assertEquals(null, db.meta["not_a_key"])
     }
 
     @Test fun `embeddingDim reads the meta key`() {
-        val db = BrainDb.openPath(tempDbPath().also { buildBundle(it, withDocuments = true) }, "test")
-        assertEquals(4, db.embeddingDim)
+        assertEquals(4, testDb().embeddingDim)
     }
 
     @Test fun `hasTable is true for a real table and false for one that does not exist`() {
-        val db = BrainDb.openPath(tempDbPath().also { buildBundle(it, withDocuments = true) }, "test")
+        val db = testDb()
         assertTrue(db.hasTable("chunks"))
         assertFalse(db.hasTable("graph_edges"))
     }
 
     @Test fun `hasDocumentsTable degrades cleanly on an older bundle`() {
-        val withDocs = BrainDb.openPath(
-            tempDbPath().also { buildBundle(it, withDocuments = true) }, "test"
-        )
-        assertTrue(withDocs.hasDocumentsTable)
+        assertTrue(testDb(withDocuments = true).hasDocumentsTable)
 
         // user_version 1: no documents table. Readers must degrade, not crash --
         // this is exactly the bundle shape DocsRepository.all() falls back for.
-        val withoutDocs = BrainDb.openPath(
-            tempDbPath().also { buildBundle(it, withDocuments = false) }, "test"
-        )
-        assertFalse(withoutDocs.hasDocumentsTable)
+        assertFalse(testDb(withDocuments = false).hasDocumentsTable)
     }
 
     @Test fun `query binds parameters and maps every row in order`() {
-        val db = BrainDb.openPath(tempDbPath().also { buildBundle(it, withDocuments = true) }, "test")
-        val rows = db.conn.query(
+        val rows = testDb().conn.query(
             "SELECT id, content FROM chunks WHERE doc_id = ? ORDER BY id",
             bind = { it.bindText(1, "a.md") },
         ) { it.getLong(0) to it.getText(1) }
@@ -109,8 +128,7 @@ class BrainDbTest {
     }
 
     @Test fun `query returns an empty list rather than throwing on no match`() {
-        val db = BrainDb.openPath(tempDbPath().also { buildBundle(it, withDocuments = true) }, "test")
-        val rows = db.conn.query(
+        val rows = testDb().conn.query(
             "SELECT id FROM chunks WHERE doc_id = ?",
             bind = { it.bindText(1, "missing.md") },
         ) { it.getLong(0) }
@@ -118,8 +136,7 @@ class BrainDbTest {
     }
 
     @Test fun `query with no bind reads every row`() {
-        val db = BrainDb.openPath(tempDbPath().also { buildBundle(it, withDocuments = true) }, "test")
-        val count = db.conn.query("SELECT id FROM chunks") { it.getLong(0) }
+        val count = testDb().conn.query("SELECT id FROM chunks") { it.getLong(0) }
         assertEquals(3, count.size)
     }
 }
