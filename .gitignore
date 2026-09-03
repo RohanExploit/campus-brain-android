@@ -14,7 +14,11 @@ __pycache__/
 auth/api_keys.json
 
 # --- Student PII & derived outputs (retention hold — never in git) ---
-data/
+# Anchored to the repo root: an unanchored `data/` also matches
+# android-app/.../com/kriet/campusbrain/data/, silently swallowing the
+# Android app's data layer -- the same class of bug the *.png note below
+# already caught once, for the launcher icons.
+/data/
 Dataset/
 Results Dataset/
 graphify-out/
