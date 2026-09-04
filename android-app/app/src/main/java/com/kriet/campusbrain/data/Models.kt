@@ -1,49 +1,44 @@
 package com.kriet.campusbrain.data
 
-/** The four retrievers the router dispatches to. Order carries no meaning. */
-enum class Route { TABULAR, FACT, LOCAL, GLOBAL }
+/** One of the backend's four routes (retrieval/router.py). */
+enum class Route { FACT, LOCAL, GLOBAL, TABULAR }
 
-/** One provenance entry: which document an answer leaned on, and where in it. */
-data class Source(val docId: String, val section: String?)
-
-/**
- * One row out of `chunks`, optionally carrying rank/score bookkeeping from the
- * hybrid search fusion.
- *
- * [ftsRank] and [vecRank] are null until a search fills them in; [foundByBoth]
- * is what [com.kriet.campusbrain.retrieval.HybridSearch] uses to report how
- * often the two arms agree.
- */
 data class RetrievedChunk(
     val id: Long,
     val docId: String,
     val section: String?,
     val content: String,
     val score: Double,
+    /** Which arms found this chunk, and at what rank. Feeds the UI trace. */
     val ftsRank: Int? = null,
     val vecRank: Int? = null,
 ) {
     val foundByBoth: Boolean get() = ftsRank != null && vecRank != null
 }
 
+data class Source(val docId: String, val section: String?)
+
 /**
- * One routed, answered, cited question.
+ * A finished answer plus everything needed to explain how it was reached.
  *
- * [passages] and [sources] are empty for TABULAR answers -- they come from
- * SQL, not from a document -- which is a legitimate state, not a bug; see
- * MessageAdapter and AnswerCard-equivalent rendering, which hide those
- * sections entirely rather than showing an empty header.
+ * [trace] mirrors the backend's `metadata` keys (template, debug_sql,
+ * tabular_fallback, local_mode, global_mode, linked_entities) so the phone and
+ * the dashboard describe the same run in the same words.
  */
 data class AnswerResult(
     val route: Route,
+    /** The short answer. For TABULAR this is the full deterministic result. */
     val answer: String,
+    /**
+     * Source passages behind a toggle. Empty for TABULAR, whose answer is the
+     * query result itself and has no passage to show.
+     */
     val passages: List<Pair<String, String>> = emptyList(),
     val sources: List<Source> = emptyList(),
     val trace: List<Pair<String, String>> = emptyList(),
     val abstained: Boolean = false,
 )
 
-/** One row of `students`. `result` is NOT NULL in the bundle; see the export script. */
 data class StudentRow(
     val rollNo: String,
     val name: String?,
@@ -55,7 +50,6 @@ data class StudentRow(
     val seatCancelled: Boolean,
 )
 
-/** One row of `student_subjects`. `gradePoint` is already `base_point * credit`. */
 data class SubjectRow(
     val subjectCode: String,
     val credit: Int,
@@ -64,7 +58,6 @@ data class SubjectRow(
     val rawGradeString: String?,
 )
 
-/** One row of `documents`, or a chunk-derived stand-in on a bundle without that table. */
 data class DocumentSummary(
     val docId: String,
     val title: String,

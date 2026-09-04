@@ -1,8 +1,14 @@
+import java.util.Properties
+
 // AGP 9 has built-in Kotlin support; applying org.jetbrains.kotlin.android
 // on top of it is now an error, not just redundant.
 plugins {
     id("com.android.application")
 }
+
+// Untracked, and deliberately so: it holds the upload key password. Absent on a
+// fresh clone or CI box, which is why every use of it below is guarded.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
 
 android {
     namespace = "com.kriet.campusbrain"
@@ -17,6 +23,7 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
             // The demo device (vivo I2501, Android 16) is arm64-v8a. Restricting
@@ -27,10 +34,36 @@ android {
         }
     }
 
+    signingConfigs {
+        // Created only when the properties file is present. Declaring a release
+        // config with a null storeFile would configure fine and then fail deep
+        // inside the packaging task with an unhelpful message.
+        if (keystorePropertiesFile.exists()) {
+            val keystoreProperties = Properties().apply {
+                keystorePropertiesFile.inputStream().use { load(it) }
+            }
+            create("release") {
+                // Relative in the properties file on purpose: java.util.Properties
+                // treats a backslash as an escape, so a literal Windows path there
+                // would be silently mangled.
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // Left off deliberately: ONNX Runtime and the bundled SQLite both
+            // reach for classes reflectively, and shrinking them is a separate
+            // job with its own keep rules.
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            // Falls back to debug signing so a machine without the upload key can
+            // still produce an installable release build.
+            signingConfig = signingConfigs.findByName("release")
+                ?: signingConfigs.getByName("debug")
         }
     }
 
@@ -88,15 +121,15 @@ dependencies {
     // rules out MediaPipe TextEmbedder (different model, 100d, different space).
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.20.0")
 
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+
     testImplementation("junit:junit:4.13.2")
+    // Real org.json for JVM unit tests. Without it android.jar ships a stub
+    // whose methods throw, so every JSONObject parse silently became null
+    // inside runCatching and CloudAnswerTest failed for a reason unrelated
+    // to the code under test.
+    testImplementation("org.json:json:20240303")
     testImplementation("androidx.sqlite:sqlite-bundled:2.5.1")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
-    // CloudAnswer.parseConfig/findConfigFile use org.json.JSONObject. Local unit
-    // tests run against the Android platform's stub android.jar, whose
-    // org.json methods throw "not mocked" rather than working -- silently
-    // caught by parseConfig's runCatching, so every CloudAnswerTest case
-    // observed that as parseConfig always returning null. This reference
-    // implementation (same org.json package) takes precedence on the unit
-    // test classpath and actually works.
-    testImplementation("org.json:json:20260814")
 }

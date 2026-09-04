@@ -5,6 +5,7 @@ import com.kriet.campusbrain.answer.TopicGate
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -79,5 +80,40 @@ class CloudAnswerTest {
 
     @Test fun `parseConfig returns null for a blank key`() {
         assertNull(CloudAnswer.parseConfig("""{"groq_api_key":""}"""))
+    }
+
+    // --- on-device (small model) tier -----------------------------------
+
+    @Test fun `parseConfig reads the on-device model settings`() {
+        val config = CloudAnswer.parseConfig(
+            """{"groq_api_key":"k","device_url":"http://127.0.0.1:11434","device_model":"gemma2:2b"}"""
+        )
+        assertEquals("http://127.0.0.1:11434", config?.deviceUrl)
+        assertEquals("gemma2:2b", config?.deviceModel)
+    }
+
+    @Test fun `parseConfig accepts a local-only config with no cloud key`() {
+        // The offline setup: no API key at all, but a model on the phone.
+        // This must NOT be treated as "no config" or the on-device tier is
+        // dead in exactly the situation it exists for.
+        val config = CloudAnswer.parseConfig("""{"device_url":"http://127.0.0.1:11434"}""")
+        assertNotNull(config)
+        assertNull(config?.apiKey)
+        assertEquals("http://127.0.0.1:11434", config?.deviceUrl)
+    }
+
+    @Test fun `parseConfig still returns null when no backend at all is configured`() {
+        assertNull(CloudAnswer.parseConfig("""{"groq_model":"some-model"}"""))
+    }
+
+    @Test fun `the on-device prompt forbids inventing facts and names an abstention`() {
+        // The gate in CloudAnswer.answer() only sends this tier grounded
+        // requests; this prompt is the second half of that contract. If these
+        // instructions are ever softened, a 2B model starts supplying rupee
+        // figures from its weights, so they are asserted rather than trusted.
+        val p = CloudAnswer.DEVICE_GROUNDED_PROMPT
+        assertTrue(p.contains("ONLY the excerpts"))
+        assertTrue(p.contains("The college documents I have do not cover this."))
+        assertTrue(p.contains("Never add a number"))
     }
 }
