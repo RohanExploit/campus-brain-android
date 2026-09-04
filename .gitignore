@@ -13,8 +13,12 @@ __pycache__/
 .encryption_key
 auth/api_keys.json
 
-# --- Student PII & derived outputs (retention hold — never in git) ---
-data/
+# --- Corpora & derived outputs (large, regenerable — never in git) ---
+# Leading slash anchors this to the repo root. Without it git matches ANY
+# directory named `data` at any depth, which silently excluded
+# android-app/.../com/kriet/campusbrain/data/ and left the repo unbuildable
+# from a clean clone.
+/data/
 Dataset/
 Results Dataset/
 graphify-out/
