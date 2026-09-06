@@ -11,11 +11,11 @@ plugins {
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 
 android {
-    namespace = "com.kriet.campusbrain"
+    namespace = "com.campusbrain.app"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.kriet.campusbrain"
+        applicationId = "com.campusbrain.app"
         // Distinct from com.companybrain.company_brain, so this app gets its own
         // /sdcard/Android/data/<pkg>/files dir and cannot collide with the
         // Flutter app's bundle.

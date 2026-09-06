@@ -1,0 +1,195 @@
+package com.campusbrain.app.ui.ask
+
+import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import androidx.fragment.app.Fragment
+import com.google.android.material.transition.MaterialFadeThrough
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.campusbrain.app.R
+import com.campusbrain.app.data.AnswerResult
+import com.campusbrain.app.data.BrainRepository
+import com.campusbrain.app.data.InitState
+import com.campusbrain.app.data.auth.Licensing
+import com.campusbrain.app.databinding.FragmentAskBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+/**
+ * The router-driven surface: a question in, a routed and cited answer out.
+ *
+ * Every answer shows which of the four routes handled it and can expand the
+ * decision trace. The point of the system is that it classifies before it
+ * answers; a bubble that only showed prose would hide the part worth seeing.
+ */
+class AskFragment : Fragment() {
+    // Sibling tabs are peers, so they cross-fade rather than slide: a
+    // directional transition would imply a hierarchy the bottom bar does not
+    // have. MaterialFadeThrough carries Material's own easing and duration,
+    // which is why it is used instead of a hand-rolled alpha animation.
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enterTransition = MaterialFadeThrough()
+        exitTransition = MaterialFadeThrough()
+    }
+
+
+    private var _binding: FragmentAskBinding? = null
+    private val binding get() = _binding!!
+    private lateinit var adapter: MessageAdapter
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?,
+    ): View {
+        _binding = FragmentAskBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        adapter = MessageAdapter { docId ->
+            findNavController().navigate(
+                R.id.docDetailFragment, Bundle().apply { putString("docId", docId) })
+        }
+        binding.messages.layoutManager = LinearLayoutManager(requireContext())
+        binding.messages.adapter = adapter
+
+        // One suggestion per route, so a demo can exercise all four in four taps.
+        //
+        // Cleared first. The row is rebuilt from an empty inflated view every
+        // time this fragment's view is created, so today it is a no-op — but
+        // a second pass over a populated row would stack five more chips
+        // behind the first five, and the ones underneath would be the dead
+        // controls this loop is otherwise careful not to produce.
+        binding.chipRow.removeAllViews()
+        SUGGESTIONS.forEach { (label, query) ->
+            val chip = layoutInflater.inflate(R.layout.item_suggestion, binding.chipRow, false)
+            (chip as android.widget.TextView).text = label
+            // The label is what fits on a chip; the question is what gets
+            // asked. A screen reader should hear the second, because "Minimum
+            // attendance" does not tell anyone what pressing it will do.
+            chip.contentDescription = query
+            chip.setOnClickListener { submit(query) }
+            binding.chipRow.addView(chip)
+        }
+
+        binding.input.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                // Blank input is disabled at the button, not just guarded in the
+                // router: it is the one query that could print the roster.
+                binding.send.isEnabled = !s.isNullOrBlank()
+            }
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+        })
+
+        binding.send.setOnClickListener { submit(binding.input.text?.toString().orEmpty()) }
+        binding.input.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEND) {
+                submit(binding.input.text?.toString().orEmpty()); true
+            } else false
+        }
+    }
+
+    private fun submit(query: String) {
+        if (query.isBlank()) return
+        binding.input.setText("")
+        binding.emptyHint.visibility = View.GONE
+        adapter.addUser(query)
+        // Retrieval, embedding and composition take one to three seconds on
+        // the phone. Until now the screen showed the question and then
+        // nothing, which on a device with no network activity to point at
+        // looks exactly like an app that has hung.
+        adapter.showPending(getString(R.string.ask_working))
+        scrollToEnd()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val ready = BrainRepository.state.value as? InitState.Ready
+            val result: AnswerResult? = ready?.let {
+                withContext(Dispatchers.IO) { runCatching { it.repo.router.answer(query) }.getOrNull() }
+            }
+            adapter.clearPending()
+            when {
+                // Two different failures that used to share one sentence. The
+                // corpus being absent is an install problem the student can
+                // act on; a query that threw is not.
+                ready == null -> adapter.addError(
+                    getString(R.string.error_no_corpus_title),
+                    getString(R.string.error_no_corpus_body),
+                )
+                result == null -> adapter.addError(
+                    getString(R.string.error_answer_title),
+                    getString(R.string.error_answer_body),
+                )
+                else -> {
+                    adapter.addAnswer(result)
+                    // The instrumentation point, and it is HERE rather than in
+                    // QueryRouter.answer() -- which is the real chokepoint --
+                    // for two reasons.
+                    //
+                    // The structural one: this is a counter increment on an
+                    // in-memory object, written down only at onStop. Putting
+                    // it at the chokepoint would put it inside the answer path,
+                    // and the obvious implementation there is a row per query
+                    // in user_corpus.db, which is a third writer on a file an
+                    // import already holds an EXCLUSIVE lock on for fifty
+                    // embeddings at a time. See QueryLog's header.
+                    //
+                    // The narrow one: retrieval/ belongs to someone else, and
+                    // an analytics feature is not a reason to reach into it.
+                    //
+                    // Note what is recorded: a route, a boolean, and the doc
+                    // ids the answer cited. Not the question. QueryLog.record
+                    // has no parameter that could carry one.
+                    Licensing.queryLog.record(
+                        route = result.route,
+                        abstained = result.abstained,
+                        citedDocIds = result.sources.map { it.docId },
+                    )
+                    // The opt-in door, and inert unless an admin turned the
+                    // local sample on. Called unconditionally on purpose: the
+                    // check belongs in one place, inside QueryLog, rather than
+                    // being repeated at every call site where it can be got
+                    // wrong once and be wrong forever.
+                    Licensing.queryLog.recordText(query)
+                }
+            }
+            scrollToEnd()
+        }
+    }
+
+    private fun scrollToEnd() {
+        binding.messages.post { binding.messages.scrollToPosition(adapter.itemCount - 1) }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    companion object {
+        /**
+         * Deliberately one per route: FACT, GLOBAL, LOCAL, TABULAR, plus a miss.
+         *
+         * Label and query are separate because the chip used to be captioned
+         * with the question it sent. The first of those is wider than the
+         * screen, so a student saw one pill spanning both edges and no sign
+         * that four more sat off to the right. The label is what fits on a
+         * chip; the query is still the full sentence the router is given, so
+         * the routes each one exercises are unchanged.
+         */
+        val SUGGESTIONS = listOf(
+            "Minimum attendance" to "What is the minimum attendance percentage?",
+            "Scholarships" to "What scholarships are available?",
+            "Hostel allotment" to "Who handles hostel allotment?",
+            "Pass percentage" to "What is the pass percentage?",
+            "Most failures" to "Which subject has the most failures?",
+        )
+    }
+}

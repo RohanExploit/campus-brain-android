@@ -5,27 +5,27 @@
     app:startDestination="@id/askFragment">
 
     <fragment android:id="@+id/askFragment"
-        android:name="com.kriet.campusbrain.ui.ask.AskFragment"
+        android:name="com.campusbrain.app.ui.ask.AskFragment"
         android:label="@string/tab_ask" />
 
     <fragment android:id="@+id/resultFragment"
-        android:name="com.kriet.campusbrain.ui.result.ResultFragment"
+        android:name="com.campusbrain.app.ui.result.ResultFragment"
         android:label="@string/tab_result" />
 
     <fragment android:id="@+id/docsFragment"
-        android:name="com.kriet.campusbrain.ui.docs.DocsFragment"
+        android:name="com.campusbrain.app.ui.docs.DocsFragment"
         android:label="@string/tab_docs">
         <action android:id="@+id/toDocDetail" app:destination="@id/docDetailFragment" />
     </fragment>
 
     <fragment android:id="@+id/docDetailFragment"
-        android:name="com.kriet.campusbrain.ui.docs.DocDetailFragment"
+        android:name="com.campusbrain.app.ui.docs.DocDetailFragment"
         android:label="Document">
         <argument android:name="docId" app:argType="string" />
     </fragment>
 
     <fragment android:id="@+id/selfTestFragment"
-        android:name="com.kriet.campusbrain.ui.selftest.SelfTestFragment"
+        android:name="com.campusbrain.app.ui.selftest.SelfTestFragment"
         android:label="Self test" />
 
     <!--
@@ -39,7 +39,7 @@
       answering path consults it.
     -->
     <fragment android:id="@+id/enrolFragment"
-        android:name="com.kriet.campusbrain.ui.auth.EnrolFragment"
+        android:name="com.campusbrain.app.ui.auth.EnrolFragment"
         android:label="@string/enrol_title" />
 
     <!--
@@ -55,7 +55,7 @@
       free experience look like a sample of a paid one. It is not one.
     -->
     <fragment android:id="@+id/licenseFragment"
-        android:name="com.kriet.campusbrain.ui.license.LicenseFragment"
+        android:name="com.campusbrain.app.ui.license.LicenseFragment"
         android:label="@string/license_title">
         <action android:id="@+id/toAdminAnalytics"
             app:destination="@id/adminAnalyticsFragment" />
@@ -66,7 +66,7 @@
       institutional tier. One way in, so there is one place that decides.
     -->
     <fragment android:id="@+id/adminAnalyticsFragment"
-        android:name="com.kriet.campusbrain.ui.admin.AdminAnalyticsFragment"
+        android:name="com.campusbrain.app.ui.admin.AdminAnalyticsFragment"
         android:label="@string/analytics_title" />
 
     <!--
@@ -74,6 +74,6 @@
       tab: there is nothing to come back to.
     -->
     <fragment android:id="@+id/welcomeFragment"
-        android:name="com.kriet.campusbrain.ui.welcome.WelcomeFragment"
+        android:name="com.campusbrain.app.ui.welcome.WelcomeFragment"
         android:label="@string/app_name" />
 </navigation>
