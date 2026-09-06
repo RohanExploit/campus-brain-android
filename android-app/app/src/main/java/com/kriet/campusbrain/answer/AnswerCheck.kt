@@ -341,9 +341,133 @@ object AnswerCheck {
 
     private fun satisfiesShape(q: Question, lowerSentence: String): Boolean = when (q.need) {
         Need.COUNT -> statesCount(lowerSentence, q.terms)
-        Need.QUANTITY, Need.ELIGIBILITY -> lowerSentence.any(Char::isDigit)
+        // A quantity may be spelled. See the "numbers written as words"
+        // section below for the defect this clause exists to fix.
+        Need.QUANTITY -> lowerSentence.any(Char::isDigit) || statesWordQuantity(lowerSentence)
+        // ELIGIBILITY deliberately stays digits-only. The question there is
+        // always "can I ... with N%", and the work is done by [applyToStated],
+        // which compares N against a threshold it parsed out of the text. A
+        // figure written in words cannot be compared against 60.0, so admitting
+        // one here would only widen the pool of sentences that get quoted back
+        // at a student who asked for a ruling -- a loosening with no verdict
+        // behind it, on the one path where a wrong answer reads as permission.
+        Need.ELIGIBILITY -> lowerSentence.any(Char::isDigit)
         Need.OTHER -> true
     }
+
+    // --- numbers written as words -----------------------------------------
+
+    /**
+     * "Equipment may be borrowed for a maximum of fourteen days."
+     *
+     * Observed on hardware: "how long can I borrow robotics equipment" against
+     * an imported document containing exactly that sentence, and the app
+     * abstained -- while naming the right material as the closest it had. Every
+     * step before this one was right. `how long` is a [Need.QUANTITY] cue, the
+     * sentence clears the two-term floor on "borrowed" and "equipment", and
+     * then [satisfiesShape] asked for a digit and there is no digit in it. The
+     * bundled corpus writes figures as numerals, so nothing had ever tested the
+     * assumption; an imported document written in ordinary prose does not.
+     *
+     * Scope is the whole difficulty here. A word-number is much easier to hit
+     * by accident than a numeral -- "one" is an article in all but name, and
+     * English has no spelling of "35" that turns up in a sentence about
+     * something else. So this recognises a deliberately small vocabulary, and
+     * every rule below is about NOT counting a word that happens to be in it.
+     */
+    private const val CARDINAL_WORDS =
+        """zero|one|two|three|four|five|six|seven|eight|nine|ten|""" +
+            """eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|""" +
+            """twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand"""
+
+    /**
+     * Ordinals are listed so they can be REFUSED, not matched.
+     *
+     * "The fourteenth day of the loan" is a different claim from "fourteen
+     * days", and a student asking how long they may keep something is not
+     * answered by a sentence that names a date. Word boundaries handle the
+     * bare forms for free -- `\bfourteen\b` does not match inside "fourteenth"
+     * -- but they do not handle the hyphenated compound: "twenty-first" would
+     * otherwise be read as the cardinal "twenty" with a suffix the regex never
+     * looked at. Hence the lookahead in [WORD_CARDINAL].
+     *
+     * Two of this file's own test fixtures are the standing proof that the
+     * refusal works: the CSV column list says "first period grade" and
+     * "second period grade", and the deadline tracker says "first announced".
+     */
+    private const val ORDINAL_WORDS =
+        """zeroth|first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|""" +
+            """eleventh|twelfth|thirteenth|fourteenth|fifteenth|sixteenth|seventeenth|""" +
+            """eighteenth|nineteenth|twentieth|thirtieth|fortieth|fiftieth|sixtieth|""" +
+            """seventieth|eightieth|ninetieth|hundredth|thousandth"""
+
+    /**
+     * One spelled number, hyphenated compounds included ("twenty-one",
+     * "forty-five"), and never the cardinal half of an ordinal compound.
+     */
+    private val WORD_CARDINAL = Regex(
+        """\b(?:$CARDINAL_WORDS)(?:-(?:$CARDINAL_WORDS))*\b(?!-(?:$ORDINAL_WORDS)\b)"""
+    )
+
+    /**
+     * "One" is the only cardinal that is also an article, a determiner and a
+     * pronoun, and it is common enough that letting it through unguarded would
+     * turn most of the corpus into a quantity claim. Three uses are refused:
+     *
+     *  - partitive: "one of the documents", "one of the four labs";
+     *  - determiner-pronoun: "the one", "no one", "each one", "which one";
+     *  - bare pronoun subject: "one may apply for condonation", "if one has".
+     *
+     * What survives is "one" with a noun after it -- "borrowed for one week",
+     * "only one student failed" -- which is the use that states a number.
+     *
+     * Applies to the bare word only. "Twenty-one" is not any of these things.
+     */
+    private val DETERMINER_BEFORE_ONE =
+        setOf("no", "the", "any", "each", "every", "this", "that", "which", "some")
+
+    /**
+     * A word that can only follow the PRONOUN "one", never the number. "One of"
+     * is partitive; the modals and auxiliaries are what a bare pronoun subject
+     * takes ("one may apply", "one has to"). A number takes a noun instead.
+     */
+    private val VERB_AFTER_ONE = setOf(
+        "of", "another", "may", "might", "must", "can", "could", "should", "will",
+        "would", "is", "are", "was", "were", "has", "have", "had",
+    )
+
+    /**
+     * Is the cardinal at [range] of [text] being used as a number at all?
+     *
+     * Takes the range rather than a MatchResult because the two callers match
+     * different regexes over the same token and both need the same judgement.
+     *
+     * The neighbours are read by hand rather than with a lookbehind/lookahead:
+     * only spaces and hyphens may separate the word from its neighbour, so a
+     * determiner on the far side of a full stop ("... in the corpus. One week
+     * is allowed.") is not mistaken for this sentence's grammar.
+     */
+    private fun isQuantityUse(text: String, range: IntRange): Boolean {
+        if (text.substring(range) != "one") return true
+
+        val before = text.substring(0, range.first)
+        val gapBefore = before.takeLastWhile { it == ' ' || it == '-' }
+        if (gapBefore.isNotEmpty() &&
+            before.dropLast(gapBefore.length).takeLastWhile { it.isLetter() } in DETERMINER_BEFORE_ONE
+        ) return false
+
+        val after = text.substring(range.last + 1)
+        val gapAfter = after.takeWhile { it == ' ' || it == '-' }
+        if (gapAfter.isNotEmpty() &&
+            after.drop(gapAfter.length).takeWhile { it.isLetter() } in VERB_AFTER_ONE
+        ) return false
+
+        return true
+    }
+
+    /** Does [lowerSentence] state a quantity in words? See [WORD_CARDINAL]. */
+    private fun statesWordQuantity(lowerSentence: String): Boolean =
+        WORD_CARDINAL.findAll(lowerSentence).any { isQuantityUse(lowerSentence, it.range) }
 
     /**
      * A count question is answered by a sentence that states a count OF THE
@@ -359,9 +483,38 @@ object AnswerCheck {
     private val NUMBER_THEN_NOUN =
         Regex("""\b\d[\d,]*(?:\.\d+)?\s*%?\s+(?:of\s+(?:the\s+)?)?([a-z]{3,})""")
 
-    private fun statesCount(lowerSentence: String, terms: List<String>): Boolean =
-        NUMBER_THEN_NOUN.findAll(lowerSentence)
+    /**
+     * The same shape with the numeral spelled out: "fifteen members",
+     * "twenty-one of the students". Kept as a second regex rather than folded into
+     * [NUMBER_THEN_NOUN] as an alternation so the digit path stays byte for
+     * byte what it was -- that path is what every count question against the
+     * bundled corpus goes through, and it is the one with a battery behind it.
+     *
+     * Structurally identical on purpose, including the adjacency: the noun has
+     * to follow the number. "Fifteen active members" does not match, exactly as
+     * "35 active students" does not, because widening the gap is a separate
+     * loosening with its own failure mode and this is not the change that
+     * should make it.
+     *
+     * Group 1 is the number and group 2 the noun, which is the other way round
+     * from [NUMBER_THEN_NOUN]: the number's position is needed by
+     * [isQuantityUse] to tell "one student failed" from "one of the documents".
+     */
+    private val WORD_NUMBER_THEN_NOUN = Regex(
+        """\b((?:$CARDINAL_WORDS)(?:-(?:$CARDINAL_WORDS))*)\b(?!-(?:$ORDINAL_WORDS)\b)""" +
+            """\s+(?:percent\s+|per\s+cent\s+)?(?:of\s+(?:the\s+)?)?([a-z]{3,})"""
+    )
+
+    private fun statesCount(lowerSentence: String, terms: List<String>): Boolean {
+        val digitCount = NUMBER_THEN_NOUN.findAll(lowerSentence)
             .any { m -> terms.any { t -> stemMatch(m.groupValues[1], t) } }
+        if (digitCount) return true
+        return WORD_NUMBER_THEN_NOUN.findAll(lowerSentence).any { m ->
+            val number = m.groups[1] ?: return@any false
+            isQuantityUse(lowerSentence, number.range) &&
+                terms.any { t -> stemMatch(m.groupValues[2], t) }
+        }
+    }
 
     /**
      * Crude singular/plural and derivation tolerance: "student"/"students" and

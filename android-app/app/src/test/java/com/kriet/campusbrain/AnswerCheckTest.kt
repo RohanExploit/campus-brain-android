@@ -22,6 +22,11 @@ import org.junit.Test
  *
  *   sqlite3 brain.db "SELECT content FROM chunks WHERE id = 150"
  *
+ * One group is the exception, and says so where it sits: the imported-document
+ * fixtures in the last section have no chunk id, because the defect they pin is
+ * about a file a user added. They are verbatim from `IngestDeviceTest.doc`
+ * instead -- the same text the device test writes to disk.
+ *
  * These run on the JVM in milliseconds. That matters more than usual here:
  * [AnswerComposer.compose] is on the path for every FACT, LOCAL and GLOBAL
  * answer in the app, so a change that fixes three probes and silently
@@ -477,5 +482,198 @@ class AnswerCheckTest {
             assertFalse("$q -> ${out.reason}", out.abstained)
             assertTrue(q, out.lead.contains("75%"))
         }
+    }
+
+    // --- defect: a duration written in words ------------------------------
+
+    /**
+     * The two fixtures below are the exception to this file's "verbatim out of
+     * brain.db" rule stated at the top, and they have to be: the defect is
+     * about an IMPORTED document, and nothing imported has a chunk id. They are
+     * verbatim from somewhere real all the same -- `IngestDeviceTest.doc`, the
+     * fixture the device ingest test writes to disk and asks these very
+     * questions against. Ids 900/901 are placeholders and are in no database.
+     *
+     * Observed on hardware, 2026-09-06:
+     *
+     *   route=FACT abstained=true userSources=1/6
+     *   a: I don't have enough information to answer that. The closest material
+     *      in the corpus is Quasar Robotics Society, ...
+     *
+     * Retrieval had done its job -- the right chunk was in hand and the right
+     * document was named. `how long` is a QUANTITY cue, "borrowed" and
+     * "equipment" clear the two-term floor, and then the shape test asked for a
+     * digit against a sentence that spells its number out.
+     */
+    private val roboticsSociety = chunk(
+        900, "quasar-robotics-society.txt", "Quasar Robotics Society",
+        "The Quasar Robotics Society meets every Thursday at 5:30 pm in Laboratory 7B of the " +
+            "Mechanical Engineering block. Annual membership costs 1450 rupees, payable to the " +
+            "society treasurer before the last working day of August."
+    )
+
+    /** The paragraph holding the answer. Ranked below the one above on device. */
+    private val roboticsEquipment = chunk(
+        901, "quasar-robotics-society.txt", "Robotics Club Membership and Workshop Schedule 2026",
+        "Equipment may be borrowed for a maximum of fourteen days. A member with overdue " +
+            "equipment cannot borrow again until it is returned, and repeated lateness leads " +
+            "to suspension for one semester."
+    )
+
+    @Test fun `a duration spelled out in words is an answer`() {
+        val out = AnswerComposer.compose(
+            "how long can I borrow robotics equipment",
+            listOf(roboticsSociety, roboticsEquipment),
+            vocabulary = corpusWords,
+        )
+        assertFalse("abstained on a duration written in words: ${out.reason}", out.abstained)
+        assertEquals(
+            "Equipment may be borrowed for a maximum of fourteen days.",
+            out.lead
+        )
+        // Two sentences in that chunk clear the floor and now both clear the
+        // shape test -- the second says "suspension for one semester". The
+        // requirement cue on "maximum" is what separates them, and it is worth
+        // 200 against a chunk-rank tiebreak of at most a handful.
+        assertEquals(
+            "Robotics Club Membership and Workshop Schedule 2026",
+            out.passages.first().heading
+        )
+    }
+
+    @Test fun `an ordinal names a day, not a length of time`() {
+        // "The fourteenth day" and "fourteen days" are different claims, and a
+        // student asking how long they may keep something is not answered by a
+        // date. Word boundaries keep the bare ordinal out on their own; the
+        // hyphenated compound is the one that needs saying out loud.
+        val ordinal = chunk(
+            902, "quasar-robotics-society.txt", "Robotics Club",
+            "Robotics equipment borrowed for a project must be returned on the fourteenth day " +
+                "of the term."
+        )
+        val compound = chunk(
+            903, "quasar-robotics-society.txt", "Robotics Club",
+            "Robotics equipment borrowed for a project is due back on the twenty-first of the " +
+                "following month."
+        )
+        listOf(ordinal, compound).forEach { c ->
+            val out = AnswerComposer.compose(
+                "how long can I borrow robotics equipment", listOf(c), vocabulary = corpusWords)
+            assertTrue("read an ordinal as a duration: ${out.lead}", out.abstained)
+        }
+        // And the cardinal half of that compound is not lost -- "twenty-one" is
+        // still a number.
+        val cardinal = chunk(
+            904, "quasar-robotics-society.txt", "Robotics Club",
+            "Robotics equipment may be borrowed for twenty-one days by final-year students."
+        )
+        val out = AnswerComposer.compose(
+            "how long can I borrow robotics equipment", listOf(cardinal), vocabulary = corpusWords)
+        assertFalse("lost a hyphenated cardinal: ${out.reason}", out.abstained)
+        assertTrue(out.lead, out.lead.contains("twenty-one days"))
+    }
+
+    @Test fun `one of the documents is not a quantity`() {
+        // "One" is the article this rule could most easily be fooled by. A
+        // partitive "one of", a determiner-pronoun "each one" and a bare
+        // pronoun subject "one may" are all uses that state no number.
+        listOf(
+            "The rules for borrowing robotics equipment are set out in one of the annexures.",
+            "Each one is signed by the coordinator before robotics equipment is borrowed.",
+            "One may apply to borrow robotics equipment for a project of any length.",
+        ).forEach { text ->
+            val out = AnswerComposer.compose(
+                "how long can I borrow robotics equipment",
+                listOf(chunk(905, "quasar-robotics-society.txt", "Robotics Club", text)),
+                vocabulary = corpusWords,
+            )
+            assertTrue("read the article as a quantity: ${out.lead}", out.abstained)
+        }
+        // The number "one" survives all three guards.
+        val out = AnswerComposer.compose(
+            "how long can I borrow robotics equipment",
+            listOf(chunk(906, "quasar-robotics-society.txt", "Robotics Club",
+                "Robotics equipment may be borrowed for one week at a time.")),
+            vocabulary = corpusWords,
+        )
+        assertFalse(out.reason, out.abstained)
+        assertTrue(out.lead, out.lead.contains("one week"))
+    }
+
+    @Test fun `a sentence with no figure at all is still refused`() {
+        // The point of the shape test has not moved: a quantity question still
+        // needs a quantity. Only the spelling of one has widened.
+        val out = AnswerComposer.compose(
+            "how long can I borrow robotics equipment",
+            listOf(chunk(907, "quasar-robotics-society.txt", "Robotics Club",
+                "Robotics equipment must be returned to the society treasurer in person.")),
+            vocabulary = corpusWords,
+        )
+        assertTrue("accepted a sentence stating no quantity: ${out.lead}", out.abstained)
+    }
+
+    @Test fun `a count in words still has to be a count of what was asked`() {
+        val counted = chunk(908, "quasar-robotics-society.txt", "Quasar Robotics Society",
+            "The Quasar Robotics Society has fifteen members on its rolls.")
+        val out = AnswerComposer.compose(
+            "how many members does the robotics society have", listOf(counted), vocabulary = corpusWords)
+        assertFalse(out.reason, out.abstained)
+        assertTrue(out.lead, out.lead.contains("fifteen members"))
+
+        // The noun still has to FOLLOW the number, exactly as it must on the
+        // digit path -- "35 active students" does not answer "how many students"
+        // either. Widening that gap is a separate loosening and this is not the
+        // change that should make it.
+        val adjective = chunk(909, "quasar-robotics-society.txt", "Quasar Robotics Society",
+            "The Quasar Robotics Society has fifteen active members drawn from every year.")
+        val loose = AnswerComposer.compose(
+            "how many members does the robotics society have", listOf(adjective), vocabulary = corpusWords)
+        assertTrue("the adjacency rule moved: ${loose.lead}", loose.abstained)
+    }
+
+    @Test fun `at least one subject is not an answer to how many students failed`() {
+        // The trap the existing `counted` fixture already contains: "35
+        // students failed at least one subject this term" holds a bare cardinal
+        // that is not the count. Isolated here so the digit cannot rescue it.
+        val out = AnswerComposer.compose(
+            "how many students failed",
+            listOf(chunk(910, "audit.md", "Results",
+                "Students who failed at least one subject must register for the supplementary " +
+                    "examination.")),
+            vocabulary = corpusWords,
+        )
+        assertTrue("counted a subject as a student: ${out.lead}", out.abstained)
+
+        // And the digit path is untouched. Re-asserted rather than assumed,
+        // because statesCount is the function that changed.
+        val digits = AnswerComposer.compose(
+            "how many students failed",
+            listOf(chunk(911, "audit.md", "Results",
+                "Of the 369 students on the roll, 35 students failed at least one subject this term.")),
+            vocabulary = corpusWords,
+        )
+        assertFalse(digits.reason, digits.abstained)
+        assertTrue(digits.lead, digits.lead.contains("35 students failed"))
+    }
+
+    @Test fun `an eligibility question still needs a figure it can compare`() {
+        // The word-number rule stops short of ELIGIBILITY deliberately. That
+        // path exists to judge the number the student stated, and "two
+        // sessions" cannot be compared against 60% -- admitting it would only
+        // widen the set of sentences quoted back to someone who asked for a
+        // ruling. One fixture, two question shapes, two answers.
+        val sessions = chunk(912, "quasar-robotics-society.txt", "Robotics Club",
+            "Attendance at the workshop is recorded, and a member may miss at most two " +
+                "sessions before losing the seat.")
+
+        val ruling = AnswerComposer.compose(
+            "am I eligible for the workshop with 60% attendance", listOf(sessions), vocabulary = corpusWords)
+        assertTrue("ruled on 60% from a sentence with no comparable figure: ${ruling.lead}",
+            ruling.abstained)
+
+        val counted = AnswerComposer.compose(
+            "how many sessions can I miss", listOf(sessions), vocabulary = corpusWords)
+        assertFalse(counted.reason, counted.abstained)
+        assertTrue(counted.lead, counted.lead.contains("two sessions"))
     }
 }
