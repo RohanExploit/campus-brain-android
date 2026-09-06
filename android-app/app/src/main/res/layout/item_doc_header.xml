@@ -3,10 +3,11 @@
     android:id="@+id/header"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingHorizontal="16dp"
-    android:paddingTop="16dp"
-    android:paddingBottom="6dp"
-    android:textSize="11sp"
+    android:paddingStart="@dimen/gutter"
+    android:paddingEnd="@dimen/gutter"
+    android:paddingTop="@dimen/space_6"
+    android:paddingBottom="@dimen/space_2"
+    android:textSize="@dimen/type_micro"
     android:textStyle="bold"
     android:letterSpacing="0.1"
-    android:textColor="@color/brand" />
+    android:textColor="@color/text_tertiary" />

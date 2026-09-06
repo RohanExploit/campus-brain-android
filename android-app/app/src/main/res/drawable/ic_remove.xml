@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Remove an imported document. Drawn, not an emoji or a platform icon, and
+     in the text ramp rather than grade_fail: the row is not in an error state
+     and a red glyph on every added document would read as one. The confirm
+     dialog is where the action is coloured as destructive. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp" android:height="20dp"
+    android:viewportWidth="24" android:viewportHeight="24"
+    android:tint="@color/text_tertiary">
+    <path android:fillColor="@android:color/white"
+        android:pathData="M9,3h6l1,1h4v2H4V4h4L9,3zM6,7h12l-1,13H7L6,7zM10,9v9h1.5V9H10zM12.5,9v9H14V9H12.5z" />
+</vector>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The selected tab is the only place besides the answer and the send
+     action where the accent appears. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/accent" android:state_checked="true" />
+    <item android:color="@color/text_tertiary" />
+</selector>

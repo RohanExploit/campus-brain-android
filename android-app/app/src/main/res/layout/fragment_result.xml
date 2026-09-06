@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  The lookup screen. Previously a field, a button and roughly a thousand
+  pixels of empty black, captioned with "This is the TABULAR route with a
+  form instead of free text" — internal vocabulary shown to a student. The
+  empty state now explains what the screen is for and disappears on the
+  first result.
+-->
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/ink">
 
     <LinearLayout
         android:id="@+id/searchRow"
@@ -11,53 +19,88 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="12dp"
+        android:paddingStart="@dimen/gutter"
+        android:paddingEnd="@dimen/gutter"
+        android:paddingTop="@dimen/space_4"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <com.google.android.material.textfield.TextInputLayout
+        <EditText
+            android:id="@+id/rollInput"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/rollInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/roll_hint"
-                android:imeOptions="actionSearch"
-                android:inputType="text"
-                android:maxLines="1" />
-        </com.google.android.material.textfield.TextInputLayout>
+            android:minHeight="@dimen/touch_min"
+            android:background="@drawable/bg_input"
+            android:paddingStart="@dimen/space_4"
+            android:paddingEnd="@dimen/space_4"
+            android:paddingTop="@dimen/space_3"
+            android:paddingBottom="@dimen/space_3"
+            android:hint="@string/roll_hint"
+            android:textColorHint="@color/text_tertiary"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/type_body_sm"
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:maxLines="1"
+            android:importantForAutofill="no" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/lookup"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="@string/lookup" />
+            android:layout_height="@dimen/touch_min"
+            android:layout_marginStart="@dimen/space_3"
+            android:text="@string/lookup"
+            android:textColor="@color/on_accent"
+            android:textSize="@dimen/type_body_sm"
+            app:backgroundTint="@color/accent"
+            app:cornerRadius="@dimen/radius_lg" />
     </LinearLayout>
 
-    <TextView
+    <LinearLayout
         android:id="@+id/hint"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:paddingHorizontal="16dp"
-        android:textSize="11sp"
-        android:alpha="0.6"
-        android:text="@string/result_hint"
+        android:orientation="vertical"
+        android:layout_marginStart="@dimen/space_8"
+        android:layout_marginEnd="@dimen/space_8"
         app:layout_constraintTop_toBottomOf="@id/searchRow"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/result_empty_title"
+            android:textSize="@dimen/type_title"
+            android:textStyle="bold"
+            android:letterSpacing="-0.02"
+            android:textColor="@color/text_primary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_3"
+            android:text="@string/result_hint"
+            android:textSize="@dimen/type_body_sm"
+            android:lineSpacingExtra="@dimen/line_extra_body"
+            android:justificationMode="none"
+            android:textColor="@color/text_secondary" />
+    </LinearLayout>
 
     <ScrollView
         android:id="@+id/scroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:padding="12dp"
-        app:layout_constraintTop_toBottomOf="@id/hint"
+        android:clipToPadding="false"
+        android:paddingStart="@dimen/gutter"
+        android:paddingEnd="@dimen/gutter"
+        android:paddingTop="@dimen/space_4"
+        android:paddingBottom="@dimen/space_4"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@id/searchRow"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">

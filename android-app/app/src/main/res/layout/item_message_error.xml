@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  A failure, given the same care as an answer.
+
+  It used to be the answer card with its route badge relabelled "ERROR" and
+  tinted red, which said the router had classified the question and then
+  produced an error — the opposite of what happened. This is its own thing: a
+  headline that names what broke and a line that says what to do next.
+
+  The card is the ordinary surface, not a red one. The icon and the headline
+  carry the alarm; a red-bordered slab in a list of answers reads as damage to
+  the app rather than as one request that did not work.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_surface_card"
+    android:paddingStart="@dimen/space_5"
+    android:paddingEnd="@dimen/space_5"
+    android:paddingTop="@dimen/space_4"
+    android:paddingBottom="@dimen/space_4"
+    android:layout_marginTop="@dimen/space_2"
+    android:layout_marginBottom="@dimen/space_5">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_alert"
+            android:importantForAccessibility="no" />
+
+        <TextView
+            android:id="@+id/errorTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="@dimen/space_3"
+            android:textSize="@dimen/type_body"
+            android:textStyle="bold"
+            android:letterSpacing="-0.01"
+            android:textColor="@color/text_primary"
+            android:justificationMode="none" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/errorBody"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_3"
+        android:textSize="@dimen/type_body_sm"
+        android:textColor="@color/text_secondary"
+        android:lineSpacingExtra="@dimen/line_extra_body"
+        android:justificationMode="none"
+        android:hyphenationFrequency="none" />
+</LinearLayout>

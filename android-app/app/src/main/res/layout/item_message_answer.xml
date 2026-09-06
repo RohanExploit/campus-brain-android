@@ -1,13 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  The answer card.
+
+  Three defects drove the rebuild. Samsung's One UI justifies body text by
+  default, which opened rivers of whitespace through every answer, so
+  justificationMode is pinned to none. The source citations sat in a
+  HorizontalScrollView and truncated mid-word at the screen edge — they stack
+  vertically now and cannot be cut off. And the dividers were black at 8%
+  alpha, drawn for a light theme and completely invisible on this ground.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:background="@drawable/bg_bubble_answer"
-    android:padding="16dp"
-    android:layout_marginVertical="6dp"
-    android:elevation="2dp"
-    android:outlineProvider="background">
+    android:paddingStart="@dimen/space_5"
+    android:paddingEnd="@dimen/space_5"
+    android:paddingTop="@dimen/space_4"
+    android:paddingBottom="@dimen/space_4"
+    android:layout_marginTop="@dimen/space_2"
+    android:layout_marginBottom="@dimen/space_5">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -15,17 +27,22 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <!-- The detected route, shown to the user. The point of the app is that
-             it classifies before it answers; hiding that would hide the work. -->
+        <!-- How the answer was reached. The app's whole claim is that it
+             classifies before it answers, so this stays visible; it is a
+             quiet marker rather than a filled chip competing with the accent. -->
         <TextView
             android:id="@+id/routeBadge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_route_badge"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="2dp"
-            android:textSize="10sp"
-            android:textStyle="bold" />
+            android:paddingStart="@dimen/space_2"
+            android:paddingEnd="@dimen/space_2"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp"
+            android:textSize="@dimen/type_micro"
+            android:textStyle="bold"
+            android:letterSpacing="0.08"
+            android:textColor="@color/on_accent" />
 
         <View
             android:layout_width="0dp"
@@ -36,9 +53,10 @@
             android:id="@+id/traceToggle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="4dp"
-            android:textSize="11sp"
-            android:textColor="@color/brand"
+            android:minHeight="@dimen/touch_min"
+            android:gravity="center_vertical|end"
+            android:textSize="@dimen/type_caption"
+            android:textColor="@color/text_tertiary"
             android:text="@string/how_i_answered" />
     </LinearLayout>
 
@@ -46,61 +64,80 @@
         android:id="@+id/answer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:textSize="14sp"
-        android:lineSpacingExtra="3dp"
+        android:layout_marginTop="@dimen/space_2"
+        android:textSize="@dimen/type_body"
+        android:textColor="@color/text_primary"
+        android:lineSpacingExtra="6dp"
+        android:justificationMode="none"
+        android:hyphenationFrequency="none"
         android:textIsSelectable="true" />
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginTop="12dp"
-        android:background="#14000000" />
-
-    <HorizontalScrollView
+    <!-- Sources. A vertical stack, populated by MessageAdapter. -->
+    <LinearLayout
         android:id="@+id/sourcesScroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:scrollbars="none">
+        android:orientation="vertical"
+        android:layout_marginTop="@dimen/space_4">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/hairline"
+            android:background="@color/hairline" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_3"
+            android:text="@string/sources_label"
+            android:textSize="@dimen/type_micro"
+            android:textColor="@color/text_tertiary"
+            android:letterSpacing="0.06" />
 
         <LinearLayout
             android:id="@+id/sources"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal" />
-    </HorizontalScrollView>
+            android:layout_marginTop="@dimen/space_1"
+            android:orientation="vertical" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/passagesToggle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:paddingVertical="4dp"
-        android:textSize="11sp"
-        android:textColor="@color/brand" />
+        android:layout_marginTop="@dimen/space_2"
+        android:minHeight="@dimen/touch_min"
+        android:gravity="center_vertical"
+        android:textSize="@dimen/type_caption"
+        android:textColor="@color/accent" />
 
     <TextView
         android:id="@+id/passages"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:padding="10dp"
-        android:background="#0D000000"
-        android:textSize="12sp"
-        android:lineSpacingExtra="2dp"
+        android:layout_marginTop="@dimen/space_1"
+        android:padding="@dimen/space_3"
+        android:background="@color/ink_input"
+        android:textSize="@dimen/type_body_sm"
+        android:textColor="@color/text_secondary"
+        android:lineSpacingExtra="@dimen/line_extra_body"
+        android:justificationMode="none"
         android:visibility="gone"
         android:textIsSelectable="true" />
 
+    <!-- The router trace. Monospace is correct here: these are key = value
+         diagnostics, not prose dressed up as technical. -->
     <TextView
         android:id="@+id/trace"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:padding="8dp"
-        android:background="#14000000"
+        android:layout_marginTop="@dimen/space_2"
+        android:padding="@dimen/space_3"
+        android:background="@color/ink_input"
         android:fontFamily="monospace"
-        android:textSize="10sp"
+        android:textSize="@dimen/type_micro"
+        android:textColor="@color/text_tertiary"
         android:visibility="gone"
         android:textIsSelectable="true" />
 </LinearLayout>

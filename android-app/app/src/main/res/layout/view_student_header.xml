@@ -1,59 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  The student card that heads a result.
+
+  It was drawn on bg_bubble_answer, the chat bubble from the Ask tab, so it
+  arrived with one corner squared off as if it were pointing at a message that
+  is not there. It is a plain surface card now.
+
+  Every level of hierarchy here was previously an android:alpha step off one
+  colour. Alpha dims the view rather than choosing a colour, so the "quiet"
+  lines landed on greys that exist nowhere in the palette; they use the text
+  ramp instead.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="@drawable/bg_bubble_answer">
+    android:background="@drawable/bg_surface_card"
+    android:padding="@dimen/space_5">
 
     <TextView
         android:id="@+id/name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="18sp"
-        android:textStyle="bold" />
+        android:textSize="@dimen/type_title"
+        android:textStyle="bold"
+        android:letterSpacing="-0.02"
+        android:textColor="@color/text_primary" />
 
+    <!-- Monospace: a roll number is an identifier a student will read back
+         digit by digit against a printed list. -->
     <TextView
         android:id="@+id/roll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="12sp"
-        android:alpha="0.7"
-        android:fontFamily="monospace" />
+        android:layout_marginTop="@dimen/space_1"
+        android:fontFamily="monospace"
+        android:textSize="@dimen/type_caption"
+        android:textColor="@color/text_tertiary" />
 
+    <!-- students.result verbatim, tinted pass or fail by ResultFragment. -->
     <TextView
         android:id="@+id/resultBadge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="5dp"
+        android:layout_marginTop="@dimen/space_4"
+        android:paddingStart="@dimen/space_3"
+        android:paddingEnd="@dimen/space_3"
+        android:paddingTop="@dimen/space_1"
+        android:paddingBottom="@dimen/space_1"
         android:background="@drawable/bg_route_badge"
         android:textStyle="bold"
-        android:textSize="14sp"
-        android:textColor="@color/on_brand" />
+        android:textSize="@dimen/type_body_sm"
+        android:letterSpacing="0.04"
+        android:textColor="@color/on_accent" />
 
     <LinearLayout
         android:id="@+id/tiles"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="@dimen/space_5"
         android:orientation="horizontal" />
 
     <TextView
         android:id="@+id/flags"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:textSize="12sp"
+        android:layout_marginTop="@dimen/space_4"
+        android:textSize="@dimen/type_caption"
+        android:textColor="@color/text_secondary"
+        android:lineSpacingExtra="@dimen/line_extra_body"
+        android:justificationMode="none"
         android:visibility="gone" />
 
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/hairline"
+        android:layout_marginTop="@dimen/space_5"
+        android:background="@color/hairline" />
+
+    <!-- The stored-versus-recomputed SGPA line. Monospace because it is a
+         diagnostic, and tertiary until the two disagree — ResultFragment
+         raises it to grade_fail on a mismatch, which is the one thing on this
+         card a student should not have to hunt for. -->
     <TextView
         android:id="@+id/verify"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:textSize="10sp"
-        android:alpha="0.55"
-        android:fontFamily="monospace" />
+        android:layout_marginTop="@dimen/space_3"
+        android:fontFamily="monospace"
+        android:textSize="@dimen/type_micro"
+        android:textColor="@color/text_tertiary" />
 </LinearLayout>

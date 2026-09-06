@@ -1,28 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  One document, read end to end.
+
+  This screen is the proof behind a citation: a student taps a source on the
+  Ask tab and lands here, so the title has to be the same title the chip
+  showed. It is a fixed block above the list rather than the first row of it,
+  so it stays put while the passages scroll under it and the student never
+  loses track of which document they are reading.
+
+  The root paints @color/ink rather than inheriting it. This is the one
+  destination that arrives on a MaterialSharedAxis(Z); a transparent root
+  would let the Documents list show through it for the length of the
+  transition.
+-->
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/ink">
 
     <TextView
         android:id="@+id/title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:padding="16dp"
-        android:textSize="16sp"
+        android:paddingStart="@dimen/gutter"
+        android:paddingEnd="@dimen/gutter"
+        android:paddingTop="@dimen/space_5"
+        android:textSize="@dimen/type_title"
         android:textStyle="bold"
+        android:letterSpacing="-0.02"
+        android:textColor="@color/text_primary"
+        android:maxLines="2"
+        android:ellipsize="end"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- The same passage count the Documents row showed. Arriving here from a
+         citation should confirm the number, not spring a different one. -->
+    <TextView
+        android:id="@+id/meta"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/gutter"
+        android:paddingEnd="@dimen/gutter"
+        android:paddingTop="@dimen/space_1"
+        android:paddingBottom="@dimen/space_4"
+        android:textSize="@dimen/type_caption"
+        android:textColor="@color/text_tertiary"
+        app:layout_constraintTop_toBottomOf="@id/title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <View
+        android:id="@+id/titleRule"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/hairline"
+        android:background="@color/hairline"
+        app:layout_constraintTop_toBottomOf="@id/meta"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- paddingTop is what gives the first passage its air: item_chunk carries
+         its separator on top and drops it for position 0, so the item itself
+         contributes nothing above the first line. -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/chunks"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        android:paddingBottom="16dp"
-        app:layout_constraintTop_toBottomOf="@id/title"
+        android:paddingTop="@dimen/space_4"
+        android:paddingBottom="@dimen/space_6"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@id/titleRule"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

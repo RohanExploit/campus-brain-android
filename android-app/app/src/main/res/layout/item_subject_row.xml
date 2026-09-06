@@ -1,47 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  One subject in a result.
+
+  No horizontal padding of its own: the ScrollView in fragment_result already
+  supplies the gutter, so the row runs edge to edge inside it and its right
+  column lines up with the right edge of the student card above.
+
+  The old row faded the credit and grade-point columns with android:alpha,
+  which dims the whole view including any background and produces a grey the
+  palette never defines. They are set in the text ramp now — the unit is
+  tertiary because it is a label, the figure is secondary because it is data.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingVertical="9dp"
-    android:paddingHorizontal="4dp">
+    android:paddingTop="@dimen/space_3"
+    android:paddingBottom="@dimen/space_3">
 
+    <!-- Monospace on the subject code alone: it is an identifier, and the
+         fixed advance keeps a column of them from ragging. -->
     <TextView
         android:id="@+id/code"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:fontFamily="monospace"
-        android:textSize="13sp" />
+        android:textSize="@dimen/type_body_sm"
+        android:textColor="@color/text_primary"
+        android:maxLines="1"
+        android:ellipsize="end" />
 
     <TextView
         android:id="@+id/credit"
-        android:layout_width="48dp"
+        android:layout_width="@dimen/col_numeric"
         android:layout_height="wrap_content"
         android:gravity="end"
-        android:textSize="12sp"
-        android:alpha="0.7" />
+        android:textSize="@dimen/type_caption"
+        android:textColor="@color/text_tertiary" />
 
     <TextView
         android:id="@+id/points"
-        android:layout_width="64dp"
+        android:layout_width="@dimen/col_numeric"
         android:layout_height="wrap_content"
         android:gravity="end"
-        android:textSize="12sp"
-        android:alpha="0.7" />
+        android:textSize="@dimen/type_caption"
+        android:textColor="@color/text_secondary" />
 
+    <!-- Tinted per grade by ResultFragment. The shape stays; only the fill
+         changes, so the corners survive. -->
     <TextView
         android:id="@+id/grade"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:minWidth="52dp"
+        android:layout_marginStart="@dimen/space_4"
+        android:minWidth="@dimen/badge_min_width"
         android:gravity="center"
-        android:paddingHorizontal="10dp"
-        android:paddingVertical="4dp"
+        android:paddingStart="@dimen/space_2"
+        android:paddingEnd="@dimen/space_2"
+        android:paddingTop="@dimen/space_1"
+        android:paddingBottom="@dimen/space_1"
         android:background="@drawable/bg_route_badge"
         android:textStyle="bold"
-        android:textSize="12sp"
-        android:textColor="@color/on_brand" />
+        android:textSize="@dimen/type_caption"
+        android:letterSpacing="0.04"
+        android:textColor="@color/on_accent" />
 </LinearLayout>

@@ -1,5 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The question is context, not content: it recedes so the answer can lead.
+     Asymmetric corner on the trailing edge anchors it to the right. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <corners android:topLeftRadius="16dp" android:topRightRadius="16dp"
-        android:bottomLeftRadius="16dp" android:bottomRightRadius="4dp" />
-    <solid android:color="@color/brand" />
+    <solid android:color="@color/ink_input" />
+    <corners
+        android:topLeftRadius="@dimen/radius_md"
+        android:topRightRadius="@dimen/radius_md"
+        android:bottomLeftRadius="@dimen/radius_md"
+        android:bottomRightRadius="@dimen/space_1" />
 </shape>

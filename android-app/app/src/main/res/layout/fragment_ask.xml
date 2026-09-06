@@ -3,43 +3,81 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/ink">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/messages"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        android:paddingHorizontal="12dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
+        android:paddingStart="@dimen/gutter"
+        android:paddingEnd="@dimen/gutter"
+        android:paddingTop="@dimen/space_2"
+        android:paddingBottom="@dimen/space_4"
+        android:scrollbars="none"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/suggestions"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <TextView
+    <!--
+      The empty state. Previously one 13sp line at 60% alpha floating in the
+      vertical centre of a black screen, which read as an app that had failed
+      to load rather than one waiting for a question. It now says what the
+      thing is and what it can be asked.
+    -->
+    <LinearLayout
         android:id="@+id/emptyHint"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="32dp"
-        android:gravity="center"
-        android:textSize="13sp"
-        android:alpha="0.6"
-        android:text="@string/ask_empty_hint"
+        android:orientation="vertical"
+        android:layout_marginStart="@dimen/space_8"
+        android:layout_marginEnd="@dimen/space_8"
         app:layout_constraintTop_toTopOf="@id/messages"
         app:layout_constraintBottom_toBottomOf="@id/messages"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <!-- One suggestion per route, so all four can be demonstrated in four taps. -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/ask_empty_title"
+            android:textSize="@dimen/type_title"
+            android:textStyle="bold"
+            android:letterSpacing="-0.02"
+            android:textColor="@color/text_primary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_3"
+            android:text="@string/ask_empty_hint"
+            android:textSize="@dimen/type_body_sm"
+            android:lineSpacingExtra="@dimen/line_extra_body"
+            android:justificationMode="none"
+            android:textColor="@color/text_secondary" />
+    </LinearLayout>
+
+    <!--
+      One suggestion per route, so all four can be shown in four taps.
+
+      clipToPadding is left at its default. Set to false it let the chips draw
+      straight through paddingEnd and off the right bezel, so the last pill on
+      screen always had its cap sliced off. The fading edge is what tells the
+      student the row scrolls: there is no scrollbar, and without it a row of
+      chips that happens to fill the width reads as a fixed banner.
+    -->
     <HorizontalScrollView
         android:id="@+id/suggestions"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:scrollbars="none"
-        android:paddingHorizontal="12dp"
-        android:paddingBottom="6dp"
+        android:requiresFadingEdge="horizontal"
+        android:fadingEdgeLength="@dimen/space_6"
+        android:paddingStart="@dimen/gutter"
+        android:paddingEnd="@dimen/gutter"
+        android:paddingBottom="@dimen/space_3"
         app:layout_constraintBottom_toTopOf="@id/inputRow"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -57,35 +95,51 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="8dp"
+        android:background="@color/ink"
+        android:paddingStart="@dimen/gutter"
+        android:paddingEnd="@dimen/gutter"
+        android:paddingTop="@dimen/space_2"
+        android:paddingBottom="@dimen/space_3"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <com.google.android.material.textfield.TextInputLayout
+        <!-- A plain EditText on our own background rather than an
+             OutlinedBox: Material's outlined field brings its own container
+             colour, corner radius and label behaviour, none of which belong
+             to this palette. -->
+        <EditText
+            android:id="@+id/input"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+            android:minHeight="@dimen/touch_min"
+            android:background="@drawable/bg_input"
+            android:paddingStart="@dimen/space_4"
+            android:paddingEnd="@dimen/space_4"
+            android:paddingTop="@dimen/space_3"
+            android:paddingBottom="@dimen/space_3"
+            android:hint="@string/ask_hint"
+            android:textColorHint="@color/text_tertiary"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/type_body_sm"
+            android:imeOptions="actionSend"
+            android:inputType="text"
+            android:maxLines="3"
+            android:importantForAutofill="no" />
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/input"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/ask_hint"
-                android:imeOptions="actionSend"
-                android:inputType="text"
-                android:maxLines="3" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <!-- Disabled while the field is blank. A blank query is the input that
-             would otherwise fall through the router to the roster branch. -->
-        <com.google.android.material.button.MaterialButton
+        <!-- Circular and accent-filled when actionable. The old grey pill read
+             as permanently disabled. Disabled state is a real separate style,
+             not the same sprite at lower opacity. -->
+        <ImageButton
             android:id="@+id/send"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_width="@dimen/touch_min"
+            android:layout_height="@dimen/touch_min"
+            android:layout_marginStart="@dimen/space_3"
+            android:background="@drawable/bg_send"
+            android:src="@drawable/ic_send"
+            android:scaleType="centerInside"
             android:enabled="false"
-            android:text="@string/send" />
+            android:contentDescription="@string/send" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

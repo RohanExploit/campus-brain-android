@@ -4,15 +4,122 @@
     <string name="tab_ask">Ask</string>
     <string name="tab_result">Results</string>
     <string name="tab_docs">Documents</string>
-    <string name="ask_hint">Ask about fees, timetables, scholarships…</string>
+    <!-- Must fit the field at 14sp without clipping. An EditText clips a
+         hint rather than ellipsizing it, so an over-long hint loses its last
+         word mid-glyph and the trailing "…" never draws at all. The empty
+         state above carries the full list of topics; this only has to start
+         the sentence. -->
+    <string name="ask_hint">Ask about fees, timetables…</string>
     <string name="send">Send</string>
     <string name="roll_hint">Roll number or name</string>
     <string name="lookup">Look up</string>
     <string name="search_docs">Search documents</string>
     <string name="abstention">I don\'t have enough information to answer that.</string>
-    <string name="offline_banner">Offline · answers come from the on-device corpus</string>
+    <!-- The header pairs this with a live dot, so it states the fact rather
+         than explaining itself in a sentence that had to be truncated. -->
+    <string name="offline_banner">Offline</string>
+    <string name="sources_label">SOURCES</string>
+    <string name="ask_empty_title">Ask the college anything</string>
+    <string name="result_empty_title">Look up a result</string>
     <string name="how_i_answered">How I answered this</string>
-    <string name="ask_empty_hint">Ask about fees, timetables, attendance, scholarships, placements or results.\n\nEvery answer shows which of the four routes handled it.</string>
-    <string name="result_hint">Enter a roll number, or part of a name. This is the TABULAR route with a form instead of free text.</string>
+    <string name="ask_empty_hint">Fees, timetables, attendance, scholarships, placements, results. Every answer shows the document it came from.</string>
+    <!-- Was: "This is the TABULAR route with a form instead of free text."
+         Internal vocabulary on a screen a student reads. -->
+    <string name="result_hint">Type a roll number, or any part of a name. Results are read from this college\'s own records, on the phone.</string>
     <string name="no_student">No student found.</string>
+
+    <!-- Work in progress. Plain language, present tense, and honest about
+         what is happening: retrieval reads the documents on the phone. -->
+    <string name="ask_working">Looking through the documents…</string>
+
+    <!--
+      Failure copy. Two rules: say what actually broke, and say what the
+      student can do next. A bare "something went wrong" makes an offline app
+      look like a network app having a bad day, which is the one impression
+      this product cannot afford.
+    -->
+    <string name="error_no_corpus_title">The documents are not on this device</string>
+    <string name="error_no_corpus_body">The bundled corpus did not unpack when the app was installed. Reinstalling restores it. Nothing you have typed has left the phone.</string>
+    <string name="error_answer_title">That question could not be answered</string>
+    <string name="error_answer_body">Retrieval failed part way through. Rewording the question usually clears it. If it keeps happening, long-press the title to run the self test, which reports which part is broken.</string>
+
+    <!--
+      Document import.
+
+      Two audiences read this copy and they want opposite things. A student
+      adding a timetable wants to know it worked and that they can ask about
+      it now. A student whose PDF was refused wants to know why and what to do
+      instead. So every terminal state below names the outcome in the title
+      and the next move in the body, and none of them says "error".
+    -->
+    <string name="add_document">Add a document</string>
+    <string name="import_indexing">Indexing the document…</string>
+    <!-- Shown while the chunk count is not yet knowable. The bar is
+         indeterminate here and there is no count line, because a fraction the
+         app cannot compute is worse than no fraction at all. -->
+    <string name="import_extracting">Reading and splitting the file…</string>
+    <!-- "23 of 51 passages". The second argument arrives already pluralised. -->
+    <string name="import_progress_fmt">%1$d of %2$s</string>
+
+    <!-- The count line above the list. Three cases and not one with a clause
+         bolted on: before the student adds anything, the corpus is simply the
+         college's and should not be described as a split. -->
+    <string name="docs_count_fmt">%1$d documents in the on-device corpus</string>
+    <string name="docs_count_split_fmt">%1$d college documents · %2$d added by you</string>
+    <string name="docs_count_filtered_fmt">%1$d of %2$d documents match</string>
+
+    <!-- The document's own title in the headline, because "Added" on its own
+         does not tell a student which of the two files they just picked
+         actually landed. -->
+    <string name="import_ok_title_fmt">Added “%1$s”</string>
+    <string name="import_ok_body_fmt">Indexed as %1$s. From your next question it is searched alongside the college\'s own documents.</string>
+    <!-- The one thing a student must be able to act on: it is answerable now. -->
+    <string name="import_ok_action">Ask about it</string>
+    <string name="import_dismiss">Dismiss</string>
+
+    <!--
+      The honest limitation, stated where the claim is made rather than buried.
+
+      An imported document is indexed for keyword and vector retrieval but has
+      no graph edges: the bundle's edges came from an offline extraction step,
+      and inventing them on the phone would push made-up relationships into the
+      LOCAL route.
+
+      The precise consequence is narrower than "it is invisible to LOCAL", and
+      the copy must not overclaim in either direction. QueryRouter.answerLocal
+      falls back to hybrid search when the graph misses, and that fallback does
+      cover the user corpus — so a relationship question CAN be answered from
+      an imported document. What cannot happen is being reached by following an
+      edge from another document. Hence: searchable everywhere, linked nowhere.
+    -->
+    <string name="import_graph_note">Searched by keyword and by meaning, whatever the question. It has no links into the college\'s relationship map, so nothing will reach it by following a reference from another document.</string>
+    <!-- Same document, no embedder. Keyword only is a real degradation and
+         saying nothing would make the weaker results look like bad retrieval. -->
+    <string name="import_keyword_only_note">The on-device language model is not available, so this document is searchable by the words it contains but not by meaning.</string>
+
+    <string name="import_unsupported_title">That file could not be read</string>
+    <string name="import_failed_title">That document was not added</string>
+    <string name="import_no_repo">The documents are not available on this device, so there is nowhere to add this one. Reinstalling restores the corpus.</string>
+    <!-- A shared file that arrives while another import is running. Queuing
+         would mean holding a Uri whose read grant we cannot renew. -->
+    <string name="import_busy">Another document is still being added. Wait for it to finish, then try again.</string>
+
+    <!-- Provenance. The college's own documents are never marked; only the
+         import is. See the comment on Source in data/Models.kt. The Documents
+         tab's own "Added by you" heading is not duplicated here: it comes from
+         UserCorpusDb.ADDED_CATEGORY, and a second copy would drift. -->
+    <string name="source_added_by_you">Added by you — not a college document</string>
+
+    <string name="remove_document">Remove</string>
+    <string name="remove_title">Remove this document?</string>
+    <string name="remove_body">It will be deleted from this phone and will no longer be searched. The college\'s own documents are not affected.</string>
+    <string name="remove_confirm">Remove</string>
+    <string name="remove_cancel">Keep</string>
+    <string name="remove_failed">That document could not be removed.</string>
+
+    <!-- The detail screen, reached from a Documents row or from a citation
+         under an answer. The provenance rides on the passage count rather than
+         taking a line of its own: it is the same fact the row already showed,
+         and this screen's job is the document, not its paperwork. -->
+    <string name="detail_added_meta_fmt">%1$s · added by you</string>
 </resources>

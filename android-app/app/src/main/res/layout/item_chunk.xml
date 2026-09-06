@@ -1,25 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  One passage of a document.
+
+  The old row set the section heading in @color/brand, which is now the
+  near-black launcher ground — the heading was drawing black on black. It is a
+  quiet label in the same register as the Documents list headers instead.
+
+  The separator sits at the top of the item rather than the bottom so the last
+  passage does not end on a dangling rule; ChunkAdapter hides it for position 0.
+  It is inset by the gutter with the text, which is why it lives here and not
+  in a DividerItemDecoration.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingHorizontal="16dp"
-    android:paddingVertical="10dp">
+    android:paddingStart="@dimen/gutter"
+    android:paddingEnd="@dimen/gutter"
+    android:paddingBottom="@dimen/space_5">
+
+    <View
+        android:id="@+id/rule"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/hairline"
+        android:layout_marginBottom="@dimen/space_5"
+        android:background="@color/hairline" />
 
     <TextView
         android:id="@+id/section"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="11sp"
+        android:layout_marginBottom="@dimen/space_2"
+        android:textSize="@dimen/type_micro"
         android:textStyle="bold"
-        android:textColor="@color/brand" />
+        android:letterSpacing="0.1"
+        android:textColor="@color/text_tertiary" />
 
     <TextView
         android:id="@+id/content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textSize="13sp"
-        android:lineSpacingExtra="2dp"
+        android:textSize="@dimen/type_body_sm"
+        android:textColor="@color/text_secondary"
+        android:lineSpacingExtra="@dimen/line_extra_body"
+        android:justificationMode="none"
+        android:hyphenationFrequency="none"
         android:textIsSelectable="true" />
 </LinearLayout>

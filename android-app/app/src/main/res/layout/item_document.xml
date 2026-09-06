@@ -1,35 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  A document row. The passage count is data, so it is set in the body face;
+  the old row put it in monospace, which dressed a plain number up as
+  something technical and made the list read like a file browser.
+
+  The remove button is GONE for every bundled document and there is no code
+  path that shows it for one — a student must never be offered the deletion of
+  a college record they did not add and cannot restore. It sits outside the
+  text column so a two-line title cannot push it off the row, and it carries
+  its own 48dp touch target rather than borrowing the row's.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
     android:background="?attr/selectableItemBackground"
-    android:paddingHorizontal="16dp"
-    android:paddingVertical="12dp">
+    android:paddingStart="@dimen/gutter"
+    android:paddingEnd="@dimen/space_2"
+    android:paddingTop="@dimen/space_3"
+    android:paddingBottom="@dimen/space_3"
+    android:minHeight="@dimen/touch_min">
 
-    <TextView
-        android:id="@+id/title"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        android:layout_weight="1"
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/preview"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:maxLines="2"
-        android:ellipsize="end"
-        android:textSize="12sp"
-        android:alpha="0.65" />
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/type_body"
+            android:textColor="@color/text_primary"
+            android:textStyle="bold"
+            android:letterSpacing="-0.01"
+            android:maxLines="2"
+            android:ellipsize="end" />
 
-    <TextView
-        android:id="@+id/meta"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textSize="10sp"
-        android:alpha="0.5"
-        android:fontFamily="monospace" />
+        <TextView
+            android:id="@+id/preview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_1"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:justificationMode="none"
+            android:textSize="@dimen/type_body_sm"
+            android:textColor="@color/text_secondary" />
+
+        <TextView
+            android:id="@+id/meta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_1"
+            android:textSize="@dimen/type_caption"
+            android:textColor="@color/text_tertiary" />
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/remove"
+        android:layout_width="@dimen/touch_min"
+        android:layout_height="@dimen/touch_min"
+        android:layout_marginStart="@dimen/space_2"
+        android:src="@drawable/ic_remove"
+        android:scaleType="centerInside"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/remove_document"
+        android:visibility="gone" />
 </LinearLayout>

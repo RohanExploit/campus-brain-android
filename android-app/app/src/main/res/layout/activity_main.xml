@@ -1,77 +1,91 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  The old scaffold spent a 230px slab of Material blue on a title and a
+  subtitle, then a separate banner row below it, before any content began.
+  On a 2400px screen that is a tenth of the display gone before the student
+  sees anything. Here the identity, the offline claim and the corpus size
+  share one 56dp row on the app's own ground.
+-->
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/ink"
     android:fitsSystemWindows="true">
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="@color/brand"
-        app:title="@string/app_name"
-        app:titleTextColor="@color/on_brand"
-        app:subtitle="@string/app_subtitle"
-        app:subtitleTextColor="@color/on_brand"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Not decoration: the app holds no INTERNET permission, so this states a
-         property the build actually enforces. Shown as a row of pills rather
-         than a run-on sentence so OFFLINE and the live corpus counts are each
-         readable at a glance. -->
     <LinearLayout
-        android:id="@+id/offlineBanner"
+        android:id="@+id/header"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:background="#08000000"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="6dp"
-        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        android:minHeight="56dp"
+        android:paddingStart="@dimen/gutter"
+        android:paddingEnd="@dimen/gutter"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/app_name"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/type_title"
+            android:textStyle="bold"
+            android:letterSpacing="-0.02"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <!-- A drawn dot, sized and coloured from the palette. The claim is
+             load-bearing: the build declares no INTERNET permission for
+             retrieval, so this states something the APK enforces. -->
+        <View
+            android:id="@+id/liveDot"
+            android:layout_width="7dp"
+            android:layout_height="7dp"
+            android:layout_marginEnd="@dimen/space_2"
+            android:background="@drawable/dot_live" />
 
         <TextView
             android:id="@+id/statusPillState"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_status_pill_offline"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="2dp"
-            android:textSize="10sp"
-            android:textStyle="bold"
-            android:textColor="@color/grade_pass"
-            android:text="@string/offline_banner" />
+            android:text="@string/offline_banner"
+            android:textColor="@color/verified"
+            android:textSize="@dimen/type_caption"
+            android:maxLines="1" />
 
         <TextView
             android:id="@+id/statusPillDocs"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:background="@drawable/bg_status_pill"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="2dp"
-            android:textSize="10sp"
-            android:textColor="#616161"
+            android:layout_marginStart="@dimen/space_3"
+            android:textColor="@color/text_tertiary"
+            android:textSize="@dimen/type_caption"
+            android:maxLines="1"
             android:visibility="gone" />
 
+        <!-- Retained so MainActivity keeps compiling; the corpus size is one
+             number in the header now, not three competing pills. -->
         <TextView
             android:id="@+id/statusPillChunks"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:background="@drawable/bg_status_pill"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="2dp"
-            android:textSize="10sp"
-            android:textColor="#616161"
+            android:textSize="@dimen/type_caption"
             android:visibility="gone" />
     </LinearLayout>
+
+    <View
+        android:id="@+id/headerRule"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/hairline"
+        android:background="@color/hairline"
+        app:layout_constraintTop_toBottomOf="@id/header"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/navHost"
@@ -80,7 +94,16 @@
         android:layout_height="0dp"
         app:defaultNavHost="true"
         app:navGraph="@navigation/nav_graph"
-        app:layout_constraintTop_toBottomOf="@id/offlineBanner"
+        app:layout_constraintTop_toBottomOf="@id/headerRule"
+        app:layout_constraintBottom_toTopOf="@id/navRule"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <View
+        android:id="@+id/navRule"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/hairline"
+        android:background="@color/hairline"
         app:layout_constraintBottom_toTopOf="@id/bottomNav"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -89,7 +112,13 @@
         android:id="@+id/bottomNav"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:background="@color/ink"
         app:menu="@menu/bottom_nav"
+        app:elevation="0dp"
+        app:labelVisibilityMode="labeled"
+        app:itemIconTint="@color/nav_item"
+        app:itemTextColor="@color/nav_item"
+        app:itemActiveIndicatorStyle="@style/NavIndicator"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  One figure on the student card: SGPA, Total, Backlogs.
+
+  These were built in Kotlin with raw pixel padding and float text sizes, so
+  the card was half redesigned and half not, and nothing about them answered
+  to the type scale. They are a layout now for the same reason every other
+  repeated element is: so changing the scale changes them too.
+
+  Value above label, not beside it — the number is what is being read and the
+  word only says which number it is.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingEnd="@dimen/space_6">
+
+    <TextView
+        android:id="@+id/value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/type_heading"
+        android:textStyle="bold"
+        android:letterSpacing="-0.01"
+        android:textColor="@color/text_primary" />
+
+    <TextView
+        android:id="@+id/label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_1"
+        android:textSize="@dimen/type_micro"
+        android:letterSpacing="0.06"
+        android:textColor="@color/text_tertiary" />
+</LinearLayout>

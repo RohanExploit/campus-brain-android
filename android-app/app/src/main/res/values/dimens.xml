@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  One spacing scale and one type scale, so every screen inherits the same
+  rhythm instead of each layout inventing its own margins. Steps are 4dp
+  multiples with a deliberate jump between grouping and separation: things
+  that belong together sit at 8-12dp, things that do not sit at 24dp or more.
+-->
+<resources>
+    <dimen name="space_1">4dp</dimen>
+    <dimen name="space_2">8dp</dimen>
+    <dimen name="space_3">12dp</dimen>
+    <dimen name="space_4">16dp</dimen>
+    <dimen name="space_5">20dp</dimen>
+    <dimen name="space_6">24dp</dimen>
+    <dimen name="space_8">32dp</dimen>
+    <dimen name="space_10">40dp</dimen>
+
+    <!-- Screen gutter. 20dp rather than 16dp: the answer is the hero and it
+         reads better with a wider margin than stock Material gives. -->
+    <dimen name="gutter">20dp</dimen>
+
+    <dimen name="radius_sm">10dp</dimen>
+    <dimen name="radius_md">16dp</dimen>
+    <dimen name="radius_lg">22dp</dimen>
+    <dimen name="hairline">1dp</dimen>
+
+    <!-- Type scale. Clear steps, no adjacent sizes that read as a mistake. -->
+    <dimen name="type_answer_hero">34sp</dimen>
+    <dimen name="type_title">22sp</dimen>
+    <dimen name="type_heading">17sp</dimen>
+    <dimen name="type_body">16sp</dimen>
+    <dimen name="type_body_sm">14sp</dimen>
+    <dimen name="type_caption">12sp</dimen>
+    <dimen name="type_micro">11sp</dimen>
+
+    <!-- Leading added to body copy. Deliberately outside the 4dp spacing
+         scale: it is a typographic value tuned to the 14-16sp body sizes, not
+         a layout gap, and naming it stops the next screen picking 4 or 6 at
+         random. The answer hero keeps its own slightly looser 6dp. -->
+    <dimen name="line_extra_body">5dp</dimen>
+
+    <!-- Result table. The credit and grade-point figures live in a fixed
+         column so the digits line up down the list; wrap_content lets every
+         row set its own width and the column visibly wobbles as you scroll. -->
+    <dimen name="col_numeric">56dp</dimen>
+    <dimen name="badge_min_width">52dp</dimen>
+
+    <!-- Linear progress track. 3dp reads as a bar at arm's length on a near
+         black ground without becoming a second accent; the answer and the
+         send action are the only things allowed to be loud. -->
+    <dimen name="progress_height">3dp</dimen>
+
+    <dimen name="touch_min">48dp</dimen>
+</resources>
