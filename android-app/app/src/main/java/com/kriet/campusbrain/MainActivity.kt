@@ -13,6 +13,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.kriet.campusbrain.data.BrainRepository
 import com.kriet.campusbrain.data.InitState
+import com.kriet.campusbrain.data.auth.Identity
 import com.kriet.campusbrain.databinding.ActivityMainBinding
 import com.kriet.campusbrain.ui.docs.ImportViewModel
 import kotlinx.coroutines.Dispatchers
@@ -44,7 +45,34 @@ class MainActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch {
+            // Identity first, and deliberately BEFORE the corpus: it is two
+            // local SQLite reads with no network in them, so it costs nothing,
+            // and the entitlement has to be readable while the 86MB embedder is
+            // still loading. Nothing below waits on it and nothing about
+            // answering a question consults it — see Identity's header comment.
+            withContext(Dispatchers.IO) { Identity.init(applicationContext) }
             withContext(Dispatchers.IO) { BrainRepository.init(applicationContext) }
+            // Two or three words in the tertiary slot, and only when the
+            // offline grace window is nearly out. Answers carry on regardless;
+            // an unrenewed licence is a thing for the college to fix, not a
+            // reason to stop a student getting an answer offline.
+            //
+            // Read once, here, from what was already on disk. The re-read
+            // below may change it, and that change appears on the NEXT launch
+            // rather than mutating the header under the student mid-session --
+            // a licence banner that materialises while someone is reading an
+            // answer is worse than one that is a day late.
+            Identity.shortBanner()?.let {
+                binding.statusPillChunks.text = it
+                binding.statusPillChunks.visibility = View.VISIBLE
+            }
+            // Detached, and never awaited by anything on screen. On a device
+            // with no config.json, no session, or a grant read in the last
+            // day it returns before opening a socket, so airplane mode pays
+            // nothing for it; when it does run and fails, it writes nothing
+            // and the existing grace window is left exactly where it was.
+            launch(Dispatchers.IO) { runCatching { Identity.refreshIfDue() } }
+
             when (val s = BrainRepository.state.value) {
                 is InitState.Failed -> {
                     binding.statusPillState.text = s.message.lineSequence().first()

@@ -68,13 +68,23 @@
             android:maxLines="1"
             android:visibility="gone" />
 
-        <!-- Retained so MainActivity keeps compiling; the corpus size is one
-             number in the header now, not three competing pills. -->
+        <!--
+          The entitlement nudge, and nothing else. It appears only when the
+          offline grace window is nearly out or already past, it is two or
+          three words long, and it never replaces the offline claim beside the
+          live dot — that line is the product's whole promise and the licence
+          state is a footnote to it. Elided rather than wrapped, because the
+          header is one line by design.
+        -->
         <TextView
             android:id="@+id/statusPillChunks"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_3"
+            android:textColor="@color/text_tertiary"
             android:textSize="@dimen/type_caption"
+            android:maxLines="1"
+            android:ellipsize="end"
             android:visibility="gone" />
     </LinearLayout>
 
