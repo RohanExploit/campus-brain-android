@@ -24,10 +24,67 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            android:launchMode="singleTask">
+            <!--
+              singleTask, and it is load-bearing rather than tidy-up.
+
+              With the default launch mode, sharing a file into an app that is
+              already running builds a SECOND MainActivity on top of the first
+              and onNewIntent never fires — so the share target would appear to
+              work from cold start and silently do nothing warm, which is the
+              exact path a demo takes. singleTask brings the existing task
+              forward and delivers the Intent to the instance that is already
+              holding the open corpus.
+            -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+              "Share to Campus Brain" from Files, Drive, or any app holding a
+              document. This is the path the pitch deck promises.
+
+              The MIME list is wider than the set of formats that actually
+              parse. application/pdf is here deliberately: excluded, Campus
+              Brain simply does not appear in the sheet for a PDF and the
+              student learns nothing. Included, they get the refusal that tells
+              them to save it as .docx. A dead end with an explanation beats an
+              absence.
+
+              Note that ACTION_SEND text/plain also matches a plain text
+              snippet share, which carries EXTRA_TEXT and no stream.
+              MainActivity returns quietly in that case.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+                <data android:mimeType="text/markdown" />
+                <data android:mimeType="text/x-markdown" />
+                <data android:mimeType="text/csv" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+
+            <!--
+              "Open with Campus Brain" from a file manager. Same formats, but
+              the Uri arrives as the Intent's data rather than an extra.
+              content:// only — a file:// Uri from another app throws
+              FileUriExposedException on the sender's side, so matching it would
+              only advertise a path that cannot work.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="text/plain" />
+                <data android:mimeType="text/markdown" />
+                <data android:mimeType="text/x-markdown" />
+                <data android:mimeType="text/csv" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                <data android:mimeType="application/pdf" />
             </intent-filter>
         </activity>
     </application>
