@@ -235,6 +235,31 @@ class DocsFragment : Fragment() {
                 c.importTitle.text = getString(R.string.import_failed_title)
                 c.importBody.text = r.reason
             }
+            // The branch the fourth IngestResult forced open, which is the
+            // point of having added it to a sealed type rather than folding a
+            // licence refusal into Failed: this outcome needs a different
+            // headline, a different sentence and a different next step, and a
+            // compile error is what made sure it got them.
+            //
+            // It is also the one outcome that is not a fault. Nothing broke
+            // and the student did nothing wrong, so the copy says what the
+            // allowance is, says plainly that everything already added is
+            // untouched and still searchable, and offers the licence screen
+            // rather than a retry that would fail the same way.
+            is IngestResult.LicenseRequired -> {
+                c.importIcon.setImageResource(R.drawable.ic_alert)
+                c.importTitle.text = getString(R.string.import_capped_title)
+                c.importBody.text = when (r.limit) {
+                    IngestResult.LicenseRequired.Limit.DOCUMENTS ->
+                        resources.getQuantityString(
+                            R.plurals.import_capped_docs_fmt, r.cap, r.cap
+                        )
+                    IngestResult.LicenseRequired.Limit.KILOBYTES ->
+                        getString(R.string.import_capped_kb_fmt, r.used, r.cap)
+                }
+                c.importNote.setText(R.string.import_capped_note)
+                c.importNote.visibility = View.VISIBLE
+            }
         }
         c.root.visibility = View.VISIBLE
     }

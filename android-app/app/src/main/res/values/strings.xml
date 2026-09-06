@@ -270,4 +270,148 @@
     <string name="welcome_next">Next</string>
     <string name="welcome_start">Start asking</string>
     <string name="welcome_step_description">Step %1$d of %2$d</string>
+
+    <!--
+      ============================ Licensing ============================
+
+      Two copy rules for everything below, and the first one governs the
+      second.
+
+      1. It may never read as a gate on answering, because it is not one.
+         Every answer this app gives comes from documents already on the
+         phone, at every tier, with no key and in airplane mode. A student on
+         the free tier loses nothing from the Ask tab, the Documents tab, the
+         four routes or the self test. So no string here says "upgrade to
+         unlock", none of them describes the free tier as a trial, and the one
+         limit that does exist is stated as a number rather than as a
+         deprivation.
+
+      2. No institution is named anywhere in this file. The college's name
+         arrives inside the signed licence key and is rendered from that field.
+         An app that writes a customer's name into its own resources has one
+         customer; this one is sold to whoever holds a key. Every placeholder
+         below is deliberately generic.
+    -->
+
+    <!-- The import allowance, reached. Not an error: nothing broke and the
+         student did nothing wrong, so the headline states the fact and the
+         body states the number. The plural is on the CAP, because "1 document"
+         and "25 documents" are the same sentence and "%d document(s)" is the
+         mark of a screen that did not care which it was saying. -->
+    <string name="import_capped_title">This device\'s import allowance is used up</string>
+    <plurals name="import_capped_docs_fmt">
+        <item quantity="one">This licence covers %1$d imported document at a time. Remove the one already added and this file can take its place.</item>
+        <item quantity="other">This licence covers %1$d imported documents. Remove one and this file can take its place.</item>
+    </plurals>
+    <string name="import_capped_kb_fmt">Imported documents come to %1$d KB and this licence covers %2$d KB. Removing a large one makes room.</string>
+    <!-- The reassurance, and it is load-bearing. The single worst thing this
+         feature could do is make an institution believe a lapsed licence has
+         locked up documents they put in. It has not, it cannot, and the app
+         says so at the exact moment the doubt would arise. -->
+    <string name="import_capped_note">Everything already added is still here, still listed and still searched. A licence only ever affects adding something new.</string>
+
+    <!-- The licence screen. Reached by long-pressing the header status pill:
+         a third gesture on a surface that already carries two, and separate
+         from both, because one gesture with two destinations is how a demo
+         lands on the wrong screen with an audience watching. -->
+    <string name="license_title">Licence</string>
+    <string name="license_intro">Answering is not licensed and never will be. Every question is answered from the documents already on this phone, offline, at every tier. A licence raises how many of your own documents you can import and turns on the usage screen.</string>
+
+    <string name="license_tier_label">Tier</string>
+    <string name="license_tier_free">Free</string>
+    <string name="license_tier_institutional">Institutional</string>
+    <string name="license_tier_owner">Owner</string>
+
+    <!-- The free tier described as what it is. "Import your own syllabus right
+         now" is a thing a prospective buyer can do in the room; that is what
+         the one document is for, and calling it a trial would misdescribe a
+         product whose ask experience is not time-limited at all. -->
+    <string name="license_free_body">No key on this device. Everything the app does with the college\'s own corpus is available and stays available. You can also import one document of your own — a syllabus, a timetable — and ask questions about it straight away.</string>
+    <string name="license_institution_label">Licensed to</string>
+    <string name="license_expires_fmt">Renews or expires on %1$s</string>
+    <string name="license_expires_never">No expiry date</string>
+    <string name="license_expired_fmt">Expired on %1$s. Imports are back to the free allowance; nothing already imported has changed.</string>
+
+    <string name="license_usage_docs">Documents imported</string>
+    <string name="license_usage_kb">Kilobytes imported</string>
+    <string name="license_usage_fmt">%1$d of %2$d</string>
+
+    <string name="license_key_label">Licence key</string>
+    <string name="license_key_hint">CBI-XXXX-XXXX-…</string>
+    <!-- Says where a key comes from and, just as importantly, that entering
+         one is not required for anything on the Ask tab. -->
+    <string name="license_key_help">Paste the key from your licence email. Dashes, spaces and capitals do not matter. Nothing is sent anywhere — the key is checked on this phone.</string>
+    <string name="license_key_apply">Apply key</string>
+    <string name="license_key_remove">Remove licence</string>
+
+    <string name="license_applied_fmt">Licence applied for %1$s.</string>
+    <!-- One line per rejection reason. Each one names what to do next, and
+         none of them prints the key back to the screen. -->
+    <string name="license_refused_malformed">That does not look like a licence key. It begins with CBI- and is a run of letters and digits in groups of four.</string>
+    <string name="license_refused_truncated">That key is incomplete — some of it did not make it through the copy. Paste the whole line from the email.</string>
+    <string name="license_refused_signature">That key was not issued for this app. Check you copied the whole line, then ask for it to be reissued.</string>
+    <string name="license_refused_schema">That key was issued for a newer version of this app. Update the app, then enter it again.</string>
+    <string name="license_refused_field">That key is not readable. Ask for it to be reissued.</string>
+    <string name="license_refused_expired">That key has expired. Ask for a renewal — nothing on this phone changed, and every document already imported is untouched.</string>
+    <string name="license_refused_device">That key was issued for a different device.</string>
+    <!-- Verified, but the disk would not take it. Distinct copy, because the
+         key is fine and telling the admin to re-check it would waste an hour. -->
+    <string name="license_refused_storage">That key is valid, but this device\'s storage would not accept it. Restart the app and try once more.</string>
+    <!-- The rule that protects a working install from a bad paste. -->
+    <string name="license_unchanged_note">The licence already on this device is unchanged.</string>
+
+    <!-- Behind a long-press on the tier label, following the header\'s own
+         long-press precedent. A support affordance: an owner key is issued
+         against this string, and nobody else ever needs to see it. -->
+    <string name="license_install_id_fmt">Install id: %1$s</string>
+    <string name="license_install_id_missing">This device has no install id — the licence store could not be opened.</string>
+
+    <string name="license_analytics_action">Usage on this device</string>
+
+    <!--
+      ======================== Usage / analytics ========================
+
+      Institutional and owner tiers only, and a screen rather than a report:
+      everything on it was measured on this phone and none of it has ever left
+      it.
+
+      The copy rule specific to this screen is the one the answer path already
+      lives by in AnswerCheck and PremiseCheck — never present an assumption as
+      a measurement. Counts are measured. Minutes-per-question is typed in by
+      whoever is reading the screen. The saving is the product of the two and
+      is labelled as an estimate every single time it appears, including in the
+      export.
+    -->
+    <string name="analytics_title">Usage on this device</string>
+    <string name="analytics_intro">Counted on this phone and stored on it. Nothing here has been uploaded, and there is no code in the app that could upload it.</string>
+
+    <string name="analytics_stat_questions">Questions</string>
+    <string name="analytics_stat_abstained">Abstained</string>
+    <string name="analytics_stat_abstain_rate">Abstention rate</string>
+    <string name="analytics_routes_heading">How questions were answered</string>
+    <!-- An abstention is a feature, so the screen says so rather than
+         letting a number that looks like a failure rate stand alone. -->
+    <string name="analytics_abstain_note">An abstention is the app declining to answer rather than guessing. It is the behaviour that makes the rest of the figures worth anything.</string>
+
+    <string name="analytics_unused_heading">Documents never used</string>
+    <string name="analytics_unused_empty">Every document in the corpus has been cited at least once.</string>
+    <string name="analytics_unused_fmt">%1$d of %2$d documents have never been cited in an answer.</string>
+
+    <string name="analytics_estimate_heading">Estimated staff time saved</string>
+    <!-- The assumption, above the figure it produces, and editable. Putting it
+         above is the whole design: a reader meets the input before the output
+         and can dispute it before believing it. -->
+    <string name="analytics_assumption_label">Minutes a person would have spent handling one question</string>
+    <string name="analytics_assumption_hint">min</string>
+    <string name="analytics_estimate_fmt">%1$s hours</string>
+    <!-- Never omitted, never abbreviated, and repeated verbatim in the export.
+         A bare hours figure on a slide is a claim the buyer cannot check. -->
+    <string name="analytics_estimate_caveat">Estimated, based on the assumption above. The question counts are measured on this device; the minutes are not measured and are the figure you entered.</string>
+
+    <string name="analytics_text_opt_in">Keep a local sample of question text</string>
+    <string name="analytics_text_opt_in_help">Off by default. When on, recent questions are kept on this phone so you can read what students actually ask. Turning it off deletes what was kept. Question text is never transmitted at any setting.</string>
+
+    <string name="analytics_export">Export</string>
+    <string name="analytics_export_subject">Campus Brain — device usage</string>
+    <string name="analytics_export_chooser">Export usage</string>
 </resources>

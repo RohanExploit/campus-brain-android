@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Usage on this device. Institutional and owner tiers only.
+
+  The order of this screen is an argument about what is trustworthy, and it
+  runs strictly from measured to assumed:
+
+    1. counts, measured on this phone;
+    2. the histogram, which is those counts drawn;
+    3. abstentions, which is a ratio of two measured counts;
+    4. documents never cited, which is a measured set subtracted from the
+       catalogue;
+    5. the assumption, entered by whoever is reading;
+    6. the estimate, which is 1 multiplied by 5, and is labelled as such.
+
+  Nothing that was assumed is allowed to appear above something that was
+  measured, and the estimate never appears without its caveat attached — the
+  same rule AnswerCheck and PremiseCheck apply to an answer, applied to the one
+  number on this screen with the strongest pull towards being invented.
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ink"
+    android:scrollbars="none"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/gutter"
+        android:paddingEnd="@dimen/gutter"
+        android:paddingTop="@dimen/space_5"
+        android:paddingBottom="@dimen/space_8">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/analytics_title"
+            android:textSize="@dimen/type_heading"
+            android:textStyle="bold"
+            android:letterSpacing="-0.01"
+            android:textColor="@color/text_primary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_3"
+            android:text="@string/analytics_intro"
+            android:textSize="@dimen/type_body_sm"
+            android:textColor="@color/text_secondary"
+            android:lineSpacingExtra="@dimen/line_extra_body"
+            android:justificationMode="none"
+            android:hyphenationFrequency="none" />
+
+        <!-- 1. The measured counts. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="@dimen/space_6">
+
+            <include android:id="@+id/statQuestions" layout="@layout/view_stat_tile" />
+            <include android:id="@+id/statAbstained" layout="@layout/view_stat_tile" />
+            <include android:id="@+id/statRate" layout="@layout/view_stat_tile" />
+        </LinearLayout>
+
+        <!-- 2. The histogram. Rows are inflated per route so a fifth route
+             appears here the day the router grows one, rather than the day
+             someone remembers to add a row to this file. -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_6"
+            android:text="@string/analytics_routes_heading"
+            android:textSize="@dimen/type_micro"
+            android:letterSpacing="0.06"
+            android:textColor="@color/text_tertiary" />
+
+        <LinearLayout
+            android:id="@+id/routeHistogram"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="@dimen/space_3" />
+
+        <!-- 3. -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:text="@string/analytics_abstain_note"
+            android:textSize="@dimen/type_caption"
+            android:textColor="@color/text_tertiary"
+            android:lineSpacingExtra="@dimen/line_extra_body"
+            android:justificationMode="none"
+            android:hyphenationFrequency="none" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/hairline"
+            android:layout_marginTop="@dimen/space_6"
+            android:background="@color/hairline" />
+
+        <!-- 4. -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_6"
+            android:text="@string/analytics_unused_heading"
+            android:textSize="@dimen/type_micro"
+            android:letterSpacing="0.06"
+            android:textColor="@color/text_tertiary" />
+
+        <TextView
+            android:id="@+id/unusedSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_2"
+            android:textSize="@dimen/type_body_sm"
+            android:textColor="@color/text_secondary"
+            android:lineSpacingExtra="@dimen/line_extra_body"
+            android:justificationMode="none"
+            android:hyphenationFrequency="none" />
+
+        <TextView
+            android:id="@+id/unusedList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_2"
+            android:textSize="@dimen/type_caption"
+            android:textColor="@color/text_tertiary"
+            android:lineSpacingExtra="@dimen/line_extra_body"
+            android:visibility="gone" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/hairline"
+            android:layout_marginTop="@dimen/space_6"
+            android:background="@color/hairline" />
+
+        <!-- 5. The assumption, above the estimate it produces. -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_6"
+            android:text="@string/analytics_assumption_label"
+            android:textSize="@dimen/type_body_sm"
+            android:textColor="@color/text_primary"
+            android:lineSpacingExtra="@dimen/line_extra_body" />
+
+        <LinearLayout
+            android:id="@+id/minutesRows"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="@dimen/space_3" />
+
+        <!-- 6. -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_5"
+            android:text="@string/analytics_estimate_heading"
+            android:textSize="@dimen/type_micro"
+            android:letterSpacing="0.06"
+            android:textColor="@color/text_tertiary" />
+
+        <TextView
+            android:id="@+id/estimateValue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_1"
+            android:textSize="@dimen/type_title"
+            android:textStyle="bold"
+            android:letterSpacing="-0.01"
+            android:textColor="@color/text_primary" />
+
+        <!-- Never conditionally hidden, and never abbreviated. It is part of
+             the figure, not a footnote about it. -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_2"
+            android:text="@string/analytics_estimate_caveat"
+            android:textSize="@dimen/type_caption"
+            android:textColor="@color/text_tertiary"
+            android:lineSpacingExtra="@dimen/line_extra_body"
+            android:justificationMode="none"
+            android:hyphenationFrequency="none" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/hairline"
+            android:layout_marginTop="@dimen/space_6"
+            android:background="@color/hairline" />
+
+        <!-- The opt-in, at the bottom and off. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="@dimen/space_6"
+            android:minHeight="@dimen/touch_min">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/analytics_text_opt_in"
+                android:textSize="@dimen/type_body_sm"
+                android:textColor="@color/text_primary" />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/keepTextSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_2"
+            android:text="@string/analytics_text_opt_in_help"
+            android:textSize="@dimen/type_caption"
+            android:textColor="@color/text_tertiary"
+            android:lineSpacingExtra="@dimen/line_extra_body"
+            android:justificationMode="none"
+            android:hyphenationFrequency="none" />
+
+        <!-- The share sheet, and only the share sheet. There is no upload
+             button on this screen and no code behind one: an export is the
+             admin handing their own figures to somewhere they chose. -->
+        <TextView
+            android:id="@+id/exportAction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_6"
+            android:minHeight="@dimen/touch_min"
+            android:gravity="center"
+            android:background="@drawable/bg_primary_action"
+            android:text="@string/analytics_export"
+            android:textSize="@dimen/type_body_sm"
+            android:textStyle="bold"
+            android:textColor="@color/primary_action_text"
+            android:focusable="true"
+            android:clickable="true" />
+    </LinearLayout>
+</ScrollView>

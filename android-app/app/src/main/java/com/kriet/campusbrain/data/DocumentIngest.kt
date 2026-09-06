@@ -25,6 +25,100 @@ sealed interface IngestResult {
 
     /** Anything else. Nothing was written; see [reason]. */
     data class Failed(val reason: String) : IngestResult
+
+    /**
+     * The import allowance for this tier is used up. Nothing was read, nothing
+     * was written, and **nothing already imported was touched.**
+     *
+     * That last clause is the contract, not a description of the current
+     * implementation. An expired licence, a lowered cap, a tier that went back
+     * to FREE: none of them may hide, lock, or delete a document the
+     * institution already added. `DocsFragment`'s list, [DocumentIngest.added]
+     * and [DocumentIngest.remove] behave identically at every tier and in every
+     * licence state. This case blocks a NEW import and does nothing else --
+     * in the same spirit as [UserCorpusDb]'s own rule that a broken user
+     * database must never take the college's documents down with it. A licence
+     * that ran out must never take the college's documents down either.
+     *
+     * Adding a fourth case to this sealed interface is a deliberate compile
+     * break at every exhaustive `when (result)`: a call site that silently
+     * ignored a licence refusal would show the student nothing at all when
+     * their import quietly did not happen.
+     */
+    data class LicenseRequired(
+        val used: Int,
+        val cap: Int,
+        val tier: com.kriet.campusbrain.data.auth.Tier,
+        /**
+         * Which of the key's two caps bound. [used] and [cap] are documents
+         * for [Limit.DOCUMENTS] and kilobytes for [Limit.KILOBYTES], because
+         * one screen saying "1 of 1" and meaning documents while another says
+         * "4096 of 4096" and means KB is the sort of thing a support call is
+         * made of. Defaulted so the common case reads as three fields.
+         */
+        val limit: Limit = Limit.DOCUMENTS,
+    ) : IngestResult {
+        enum class Limit { DOCUMENTS, KILOBYTES }
+    }
+}
+
+/**
+ * The two cap comparisons, as pure arithmetic over four numbers.
+ *
+ * Split out of [DocumentIngest.ingest] rather than written inline, because
+ * `ingest` needs a `Context` and a `ContentResolver` and is therefore only
+ * runnable on a device -- and the boundary condition here (`used >= cap`, not
+ * `>`) is precisely the sort of off-by-one that must be covered by a test that
+ * cannot be skipped. Everything below is JVM-testable with no SQLite native
+ * and no Robolectric.
+ *
+ * Both functions return null for "allowed", so the call site reads as a guard
+ * rather than as a boolean whose polarity has to be remembered.
+ */
+object ImportAllowance {
+
+    /**
+     * `used >= cap`, not `>`.
+     *
+     * A cap of one means one document may exist, so the second import is the
+     * one refused: at `used == 1` the allowance is spent. Written as `>=`
+     * against the count BEFORE this import rather than `>` against the count
+     * after it, because the count after it does not exist yet and inventing it
+     * is how a cap of one ends up admitting two.
+     */
+    fun documentCap(
+        usedDocs: Int,
+        caps: com.kriet.campusbrain.data.auth.Licensing.Caps,
+    ): IngestResult.LicenseRequired? =
+        if (usedDocs >= caps.maxDocs) {
+            IngestResult.LicenseRequired(usedDocs, caps.maxDocs, caps.tier)
+        } else null
+
+    /**
+     * The total-KB cap, which unlike the document cap has to account for the
+     * incoming file: a 40MB allowance with 39MB used still admits a 500KB
+     * timetable, and refusing on `used >= cap` alone would refuse it.
+     *
+     * Kilobytes are rounded UP on the way in and DOWN on the way out. That is
+     * asymmetric on purpose: rounding the incoming file up means a 1-byte file
+     * costs 1KB rather than 0, so a cap cannot be defeated by a thousand tiny
+     * files; rounding the stored total down means an institution is never
+     * charged for a kilobyte the app cannot point at.
+     */
+    fun byteCap(
+        usedBytes: Long,
+        incomingBytes: Long,
+        caps: com.kriet.campusbrain.data.auth.Licensing.Caps,
+    ): IngestResult.LicenseRequired? {
+        val usedKb = (usedBytes / 1024L).toInt()
+        val incomingKb = ((incomingBytes + 1023L) / 1024L).toInt()
+        return if (usedKb + incomingKb > caps.maxTotalKb) {
+            IngestResult.LicenseRequired(
+                usedKb, caps.maxTotalKb, caps.tier,
+                IngestResult.LicenseRequired.Limit.KILOBYTES,
+            )
+        } else null
+    }
 }
 
 /**
@@ -60,6 +154,21 @@ class DocumentIngest internal constructor(
     private val reservedDocIds: Set<String>,
     /** Called after a successful write so the vector cache can be re-warmed. */
     private val onIndexChanged: () -> Unit,
+    /**
+     * What this device is licensed to import, read fresh on every attempt.
+     *
+     * A lambda rather than a value, so a key entered on the licence screen
+     * takes effect on the very next import with nothing to invalidate; and a
+     * parameter rather than a direct call to
+     * [com.kriet.campusbrain.data.auth.Licensing], so the gate is testable on
+     * the JVM without a SQLite native or an Android `Context`.
+     *
+     * Note the direction of the dependency. Ingestion asks the licence layer a
+     * question; the licence layer knows nothing about ingestion, and neither
+     * of them appears anywhere on the path from a question to an answer.
+     */
+    private val caps: () -> com.kriet.campusbrain.data.auth.Licensing.Caps =
+        { com.kriet.campusbrain.data.auth.Licensing.caps() },
 ) {
 
     /**
@@ -97,6 +206,24 @@ class DocumentIngest internal constructor(
             "There is nowhere on this device to store an added document."
         )
 
+        // The licence check, here and not lower down.
+        //
+        // Two reasons, and they point the same way. It matches this function's
+        // existing cheap-to-expensive ordering -- the null-store guard above
+        // costs nothing, this costs one COUNT(*), and everything below opens
+        // the file -- so a refusal is instant rather than arriving after a
+        // student has watched a progress bar. And it means **no bytes of the
+        // student's file are read before the app knows whether it is allowed
+        // to keep them**, which is a stronger statement than "we deleted it
+        // afterwards".
+        //
+        // Nothing here consults the network, and nothing here can fail into
+        // "allowed": a broken store counts 0 documents and a broken licence
+        // resolves to the free allowance, so the worst case is a free import,
+        // never a locked-out one.
+        val allowance = caps()
+        ImportAllowance.documentCap(store.importedCount(), allowance)?.let { return it }
+
         return withContext(Dispatchers.IO) {
             try {
                 report(0, 0)
@@ -110,6 +237,19 @@ class DocumentIngest internal constructor(
                     "That file is ${bytes.size / (1024 * 1024)}MB. " +
                         "The limit is ${MAX_BYTES / (1024 * 1024)}MB so indexing stays quick."
                 )
+
+                // The second cap, and the only one that cannot be checked
+                // before the file is opened: its size is not knowable without
+                // reading it. Still before extraction, chunking and every one
+                // of the fifty embeddings, and still before a single row is
+                // written -- so a refusal here costs a read and nothing else.
+                //
+                // The device-independent file-size limit above is checked
+                // FIRST on purpose: "that file is 9MB" is a sentence the
+                // student can act on, and it should not be replaced by a
+                // licence wall they cannot.
+                ImportAllowance.byteCap(store.importedBytes(), bytes.size.toLong(), allowance)
+                    ?.let { return@withContext it }
 
                 val text = when (val e = extract(bytes, mime, name)) {
                     is Extracted.Text -> e.value
@@ -153,6 +293,7 @@ class DocumentIngest internal constructor(
                         sourceUri = uri.toString(),
                         addedAtUtc = Instant.now().toString(),
                         chunks = chunks,
+                        sizeBytes = bytes.size.toLong(),
                     )
                 )
                 onIndexChanged()
@@ -174,6 +315,21 @@ class DocumentIngest internal constructor(
             }
         }
     }
+
+    /**
+     * How much of the import allowance is spent: documents, and bytes.
+     *
+     * Exposed here rather than by handing the licence screen a [UserCorpusDb],
+     * because this class is already the one thing that owns the store and the
+     * only thing that enforces the cap. Two readers of the same numbers cannot
+     * then disagree about what "used" means.
+     *
+     * Zeroes when there is no store. Same direction as everywhere else in this
+     * file: a corpus that cannot be counted must not be able to lock anybody
+     * out.
+     */
+    fun usage(): Pair<Int, Long> =
+        (user?.importedCount() ?: 0) to (user?.importedBytes() ?: 0L)
 
     /** Deletes an added document and everything indexed from it. */
     fun remove(docId: String): Boolean {

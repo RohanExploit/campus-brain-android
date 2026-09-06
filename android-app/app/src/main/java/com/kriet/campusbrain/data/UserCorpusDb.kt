@@ -48,6 +48,17 @@ class UserCorpusDb private constructor(
         val sourceUri: String?,
         val addedAtUtc: String,
         val chunks: List<PendingChunk>,
+        /**
+         * The source file's size, for the licence layer's total-KB cap.
+         *
+         * The file's bytes, not the extracted text's: an institution buys an
+         * allowance against the documents it hands the app, and a .docx that
+         * is 400KB of zip and 30KB of prose is a 400KB document to the person
+         * who chose it. Nullable and defaulted so nothing that predates the
+         * cap has to know about it, and so a row written before this column
+         * existed reads back as "unknown" rather than as zero.
+         */
+        val sizeBytes: Long? = null,
     )
 
     /**
@@ -105,8 +116,8 @@ class UserCorpusDb private constructor(
             }
             conn.prepare(
                 "INSERT OR REPLACE INTO documents" +
-                    "(doc_id, title, category, chunk_count, preview, source_uri, added_at_utc) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?)"
+                    "(doc_id, title, category, chunk_count, preview, source_uri, added_at_utc, " +
+                    " size_bytes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
             ).use { st ->
                 st.bindText(1, doc.docId)
                 st.bindText(2, doc.title)
@@ -116,6 +127,7 @@ class UserCorpusDb private constructor(
                 if (preview == null) st.bindNull(5) else st.bindText(5, preview)
                 if (doc.sourceUri == null) st.bindNull(6) else st.bindText(6, doc.sourceUri)
                 st.bindText(7, doc.addedAtUtc)
+                if (doc.sizeBytes == null) st.bindNull(8) else st.bindLong(8, doc.sizeBytes)
                 st.step()
             }
             conn.execSQL("COMMIT")
@@ -216,6 +228,35 @@ class UserCorpusDb private constructor(
         get() = conn.query("SELECT COUNT(*) FROM chunks") { it.getLong(0) }.first().toInt()
 
     /**
+     * How many documents the user has imported, for the licence cap.
+     *
+     * A count of what is here NOW, computed on demand rather than kept as a
+     * running total. Removing a document therefore frees an allowance slot,
+     * which is the behaviour anyone would expect and the only one that does
+     * not need a counter to stay in step with a table.
+     *
+     * Returns 0 rather than throwing on a broken database. That direction is
+     * chosen, not accidental: a corpus that cannot be counted must not be able
+     * to lock a user out of importing, because "the disk is unreadable" is not
+     * a statement about anybody's licence.
+     */
+    fun importedCount(): Int = runCatching {
+        conn.query("SELECT COUNT(*) FROM documents") { it.getLong(0) }.first().toInt()
+    }.getOrDefault(0)
+
+    /**
+     * Total bytes of the imported source files, for the licence's KB cap.
+     *
+     * `COALESCE(size_bytes, 0)`: rows written before the column existed
+     * contribute nothing. That under-counts an old install rather than
+     * over-counting it, which is the right way round -- the alternative is
+     * charging an institution for documents the app never measured.
+     */
+    fun importedBytes(): Long = runCatching {
+        conn.query("SELECT COALESCE(SUM(size_bytes), 0) FROM documents") { it.getLong(0) }.first()
+    }.getOrDefault(0L)
+
+    /**
      * Ids are allocated from [ID_BASE] upward so a user chunk id can never
      * collide with a bundled one (the shipped bundle's highest is 493). The
      * two databases are fused into one ranked list by [HybridSearch] using the
@@ -229,6 +270,9 @@ class UserCorpusDb private constructor(
 
     companion object {
         const val FILE_NAME = "user_corpus.db"
+
+        /** 1 was the original schema; 2 added `documents.size_bytes`. */
+        const val SCHEMA_VERSION = 2
 
         /** The category shown on the Docs tab for anything the user added. */
         const val ADDED_CATEGORY = "Added by you"
@@ -314,9 +358,53 @@ class UserCorpusDb private constructor(
                 "CREATE TABLE IF NOT EXISTS documents (" +
                     "doc_id TEXT PRIMARY KEY, title TEXT NOT NULL, category TEXT NOT NULL, " +
                     "chunk_count INTEGER NOT NULL, preview TEXT, source_uri TEXT, " +
-                    "added_at_utc TEXT NOT NULL)"
+                    "added_at_utc TEXT NOT NULL, size_bytes INTEGER)"
             )
-            conn.execSQL("PRAGMA user_version = 1")
+            migrate(conn)
+        }
+
+        /**
+         * The `PRAGMA user_version` ladder.
+         *
+         * This used to be one unconditional `PRAGMA user_version = 1`, which
+         * was honest while there was nothing to migrate and would have been a
+         * lie the moment there was: a file created by an older build has a
+         * `documents` table with no `size_bytes` column, and `CREATE TABLE IF
+         * NOT EXISTS` above will not add one to a table that already exists.
+         *
+         * The column is added rather than the table rebuilt. `ALTER TABLE ADD
+         * COLUMN` is the one schema change SQLite does in place and without
+         * touching a row, so an institution with two hundred imported
+         * documents pays nothing for it and cannot lose them to a failed copy.
+         * It is nullable for the same reason -- there is no honest value to
+         * backfill, and `NULL` says "never measured" where `0` would say
+         * "measured, and empty".
+         *
+         * Note the interaction with `data/auth/EntitlementStore` and
+         * `data/auth/LicenseStore`: both create their own tables on their own
+         * connections with `CREATE TABLE IF NOT EXISTS` and neither touches
+         * `user_version`. This function owns it, because this class owns the
+         * corpus schema.
+         */
+        private fun migrate(conn: SQLiteConnection) {
+            val version = runCatching {
+                conn.query("PRAGMA user_version") { it.getLong(0) }.first().toInt()
+            }.getOrDefault(0)
+            if (version >= SCHEMA_VERSION) return
+
+            // Asked of the table rather than inferred from the version number,
+            // because the version was written unconditionally by every build
+            // before this one: a file could be stamped 1 and already have the
+            // column (created fresh by this build's CREATE TABLE above), or be
+            // stamped 1 and not have it (created by an older build). Only the
+            // table knows.
+            val hasSize = runCatching {
+                conn.query("PRAGMA table_info(documents)") { it.getText(1) }
+            }.getOrDefault(emptyList()).any { it == "size_bytes" }
+            if (!hasSize) {
+                conn.execSQL("ALTER TABLE documents ADD COLUMN size_bytes INTEGER")
+            }
+            conn.execSQL("PRAGMA user_version = $SCHEMA_VERSION")
         }
     }
 }

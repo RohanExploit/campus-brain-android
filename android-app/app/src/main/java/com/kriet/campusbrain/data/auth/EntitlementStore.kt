@@ -63,11 +63,12 @@ class EntitlementStore(private val conn: SQLiteConnection) {
      * Creates the two tables if they are absent. Idempotent, and safe to call
      * on a connection that already holds the corpus schema.
      *
-     * Note what this does NOT do: touch `PRAGMA user_version`. UserCorpusDb
-     * sets it to 1 unconditionally on every open, so bumping it here would be
-     * undone on the next launch and would read as a migration hook that does
-     * not work. `CREATE TABLE IF NOT EXISTS` is the whole migration story for
-     * two singleton rows.
+     * Note what this does NOT do: touch `PRAGMA user_version`. That number
+     * belongs to [com.kriet.campusbrain.data.UserCorpusDb], which owns the
+     * corpus schema and runs the migration ladder for it; bumping it from here
+     * would either be undone by that ladder or make it skip a step it needed.
+     * `CREATE TABLE IF NOT EXISTS` is the whole migration story for two
+     * singleton rows.
      */
     fun ensureSchema(): Boolean = runCatching {
         // The CHECK(id = 1) is the singleton: there is one device, one

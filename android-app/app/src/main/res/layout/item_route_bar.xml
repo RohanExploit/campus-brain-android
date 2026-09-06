@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  One route's bar in the histogram.
+
+  Label, bar, count, on one line. The bar is a bare View whose width is set as
+  a layout weight and whose colour is one of route_tabular/fact/local/global —
+  the same four colours the answer card already uses for the same four routes,
+  so a bar on this screen and a badge on an answer mean the same thing without
+  a legend. A new palette here would have invented a second vocabulary for
+  something the app already names.
+
+  The count is outside the bar rather than inside it, because a route with zero
+  questions has no bar to put a number in and the zero is the finding.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/space_8">
+
+    <TextView
+        android:id="@+id/routeLabel"
+        android:layout_width="72dp"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/type_micro"
+        android:letterSpacing="0.06"
+        android:textColor="@color/text_secondary" />
+
+    <!-- The track. Fixed weight, so every row's bar starts and ends in the
+         same place and the lengths are comparable down the column. -->
+    <FrameLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="@dimen/space_2"
+        android:layout_marginEnd="@dimen/space_3">
+
+        <View
+            android:id="@+id/routeBar"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/space_2" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/routeCount"
+        android:layout_width="@dimen/col_numeric"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:textSize="@dimen/type_body_sm"
+        android:textColor="@color/text_primary" />
+</LinearLayout>

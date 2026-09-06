@@ -16,6 +16,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.kriet.campusbrain.data.BrainRepository
 import com.kriet.campusbrain.data.InitState
 import com.kriet.campusbrain.data.auth.Identity
+import com.kriet.campusbrain.data.auth.Licensing
 import com.kriet.campusbrain.databinding.ActivityMainBinding
 import com.kriet.campusbrain.ui.auth.IdentityPill
 import com.kriet.campusbrain.ui.docs.ImportViewModel
@@ -62,6 +63,21 @@ class MainActivity : AppCompatActivity() {
             navController.navigate(R.id.enrolFragment)
         }
 
+        // The third gesture, and the third destination. Long-press the pill
+        // for the licence screen; the title's long-press still goes to the
+        // self test, and the pill's tap still goes to enrolment. Each gesture
+        // has exactly one destination, for the reason given above.
+        //
+        // Like the tap, this navigates unconditionally. It does not read the
+        // tier to decide whether to go: free, institutional and owner all
+        // reach the same screen, and that screen is where the difference is
+        // described. Branching here would mean the tier deciding whether a
+        // gesture works, which is one step from the tier deciding whether
+        // something else works.
+        binding.statusPill.setOnLongClickListener {
+            navController.navigate(R.id.licenseFragment); true
+        }
+
         lifecycleScope.launch {
             // Identity first, and deliberately BEFORE the corpus: it is two
             // local SQLite reads with no network in them, so it costs nothing,
@@ -69,6 +85,12 @@ class MainActivity : AppCompatActivity() {
             // still loading. Nothing below waits on it and nothing about
             // answering a question consults it — see Identity's header comment.
             withContext(Dispatchers.IO) { Identity.init(applicationContext) }
+            // The commercial layer, on the same terms and for the same
+            // reasons: two local SQLite reads, no network on any path, and
+            // nothing below waits on it. It governs one thing — whether a NEW
+            // document may be imported — and appears nowhere on the way to an
+            // answer. See Licensing's header.
+            withContext(Dispatchers.IO) { Licensing.init(applicationContext) }
             withContext(Dispatchers.IO) { BrainRepository.init(applicationContext) }
             // Detached, and never awaited by anything on screen. On a device
             // with no config.json, no session, or a grant read in the last
@@ -190,6 +212,25 @@ class MainActivity : AppCompatActivity() {
             if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return@launch
             navController.navigate(R.id.welcomeFragment)
         }
+    }
+
+    /**
+     * The one lifecycle boundary the usage counters are written down at.
+     *
+     * Not per query, deliberately. `user_corpus.db` runs on a rollback journal
+     * where a writer holds an EXCLUSIVE lock, a document import holds one for
+     * up to fifty embeddings, and the search path reads the same file. A write
+     * on the answer path would put a third writer into that contention for a
+     * route histogram that needs no per-event durability. See QueryLog's
+     * header for the whole argument.
+     *
+     * On a background thread and never awaited: if the process dies before it
+     * lands, a session's counts are lost and nothing in the app behaves
+     * differently for it.
+     */
+    override fun onStop() {
+        super.onStop()
+        lifecycleScope.launch(Dispatchers.IO) { runCatching { Licensing.flushAnalytics() } }
     }
 
     /**

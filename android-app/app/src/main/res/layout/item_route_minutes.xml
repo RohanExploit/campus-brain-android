@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  One route's assumption: "a person handling this by hand would have taken N
+  minutes."
+
+  An editable field and not a constant, and it sits ABOVE the saving it
+  produces rather than in a footnote under it. That ordering is the whole
+  honesty argument for the estimate: the reader meets the input before the
+  output and can dispute it before believing it. A screen that shows "312 hours
+  saved" and explains the arithmetic afterwards has already made the claim.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/touch_min">
+
+    <TextView
+        android:id="@+id/minutesLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textSize="@dimen/type_body_sm"
+        android:textColor="@color/text_secondary" />
+
+    <EditText
+        android:id="@+id/minutesValue"
+        android:layout_width="72dp"
+        android:layout_height="wrap_content"
+        android:minHeight="@dimen/touch_min"
+        android:background="@drawable/bg_input"
+        android:gravity="center"
+        android:hint="@string/analytics_assumption_hint"
+        android:textColorHint="@color/text_tertiary"
+        android:textColor="@color/text_primary"
+        android:textSize="@dimen/type_body_sm"
+        android:inputType="number"
+        android:maxLength="3"
+        android:maxLines="1"
+        android:importantForAutofill="no" />
+</LinearLayout>

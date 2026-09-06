@@ -43,6 +43,33 @@
         android:label="@string/enrol_title" />
 
     <!--
+      Registered exactly as selfTestFragment and enrolFragment are: a
+      destination with no tab pointing at it, reached by a gesture from the
+      header. Long-press on the status pill, where a tap already goes to
+      enrolment.
+
+      Deliberately NOT a bottom-nav item, and the reason is stronger here than
+      it was for enrolment. The four tabs are what a student does with the app.
+      A licence tab would put a price next to the thing this product gives away
+      — every answer, every route, offline, at every tier — and would make the
+      free experience look like a sample of a paid one. It is not one.
+    -->
+    <fragment android:id="@+id/licenseFragment"
+        android:name="com.kriet.campusbrain.ui.license.LicenseFragment"
+        android:label="@string/license_title">
+        <action android:id="@+id/toAdminAnalytics"
+            app:destination="@id/adminAnalyticsFragment" />
+    </fragment>
+
+    <!--
+      Reachable only from the licence screen, whose link is hidden below the
+      institutional tier. One way in, so there is one place that decides.
+    -->
+    <fragment android:id="@+id/adminAnalyticsFragment"
+        android:name="com.kriet.campusbrain.ui.admin.AdminAnalyticsFragment"
+        android:label="@string/analytics_title" />
+
+    <!--
       Shown once, on the first launch, and popped by either exit. Also not a
       tab: there is nothing to come back to.
     -->

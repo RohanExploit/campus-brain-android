@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The licence screen. Reached by long-pressing the header status pill.
+
+  Read the order of the screen before the widgets, because the order IS the
+  argument. The intro comes first and says answering is not licensed. The
+  current tier and what it covers come second. The key field comes last.
+
+  A licensing screen that leads with a key field is a paywall; one that leads
+  with "this is what you already have, permanently" is a receipt. The second is
+  the only honest description of what this app sells, because the ask
+  experience is not what is being sold — the import allowance and the usage
+  screen are.
+
+  Same shape as fragment_enrol.xml on purpose: one scroll, a heading, an intro,
+  a labelled field with a help line under it, and an outcome that replaces
+  nothing and appears in place. No card, no logo, no progress bar.
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ink"
+    android:scrollbars="none"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/gutter"
+        android:paddingEnd="@dimen/gutter"
+        android:paddingTop="@dimen/space_5"
+        android:paddingBottom="@dimen/space_8">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/license_title"
+            android:textSize="@dimen/type_heading"
+            android:textStyle="bold"
+            android:letterSpacing="-0.01"
+            android:textColor="@color/text_primary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_3"
+            android:text="@string/license_intro"
+            android:textSize="@dimen/type_body_sm"
+            android:textColor="@color/text_secondary"
+            android:lineSpacingExtra="@dimen/line_extra_body"
+            android:justificationMode="none"
+            android:hyphenationFrequency="none" />
+
+        <!-- What this device has now. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="@dimen/space_6"
+            android:background="@drawable/bg_surface_card"
+            android:paddingStart="@dimen/space_5"
+            android:paddingEnd="@dimen/space_5"
+            android:paddingTop="@dimen/space_4"
+            android:paddingBottom="@dimen/space_4">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/license_tier_label"
+                android:textSize="@dimen/type_micro"
+                android:letterSpacing="0.06"
+                android:textColor="@color/text_tertiary" />
+
+            <!--
+              The install id hides behind a long-press on THIS view, following
+              MainActivity's own `binding.header.setOnLongClickListener`
+              precedent for the self test: a support affordance belongs on a
+              gesture nobody discovers by accident, not on a visible row that
+              makes every student wonder what a device id is for.
+            -->
+            <TextView
+                android:id="@+id/licenseTier"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_1"
+                android:textSize="@dimen/type_heading"
+                android:textStyle="bold"
+                android:letterSpacing="-0.01"
+                android:textColor="@color/text_primary"
+                android:focusable="true"
+                android:longClickable="true" />
+
+            <TextView
+                android:id="@+id/licenseBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_3"
+                android:textSize="@dimen/type_body_sm"
+                android:textColor="@color/text_secondary"
+                android:lineSpacingExtra="@dimen/line_extra_body"
+                android:justificationMode="none"
+                android:hyphenationFrequency="none" />
+
+            <!-- The allowance, as two of the same tiles the result card uses,
+                 so a number on this screen is drawn by the same component as a
+                 number anywhere else in the app. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="@dimen/space_4">
+
+                <include
+                    android:id="@+id/licenseDocsTile"
+                    layout="@layout/view_stat_tile" />
+
+                <include
+                    android:id="@+id/licenseKbTile"
+                    layout="@layout/view_stat_tile" />
+            </LinearLayout>
+
+            <!-- The install id, revealed by the long-press above. Selectable,
+                 because the only thing anyone does with it is copy it into an
+                 email asking for an owner key. -->
+            <TextView
+                android:id="@+id/licenseInstallId"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_3"
+                android:textSize="@dimen/type_micro"
+                android:textColor="@color/text_tertiary"
+                android:textIsSelectable="true"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- Institutional and owner only. Not a locked row with a padlock on
+             it: a control a student cannot use is better absent than present
+             and refusing, and this app does not advertise at people. -->
+        <TextView
+            android:id="@+id/licenseAnalytics"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:minHeight="@dimen/touch_min"
+            android:gravity="center_vertical"
+            android:text="@string/license_analytics_action"
+            android:textSize="@dimen/type_body_sm"
+            android:textColor="@color/accent"
+            android:background="?attr/selectableItemBackground"
+            android:visibility="gone" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_6"
+            android:text="@string/license_key_label"
+            android:textSize="@dimen/type_caption"
+            android:textColor="@color/text_secondary" />
+
+        <!-- textCapCharacters because the alphabet is upper-case A-Z and 2-7,
+             so the keyboard may as well show what will be read;
+             textNoSuggestions because an IME autocorrecting a key into a word
+             is a support call nobody can diagnose. -->
+        <EditText
+            android:id="@+id/licenseKey"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_2"
+            android:minHeight="@dimen/touch_min"
+            android:background="@drawable/bg_input"
+            android:paddingStart="@dimen/space_4"
+            android:paddingEnd="@dimen/space_4"
+            android:paddingTop="@dimen/space_3"
+            android:paddingBottom="@dimen/space_3"
+            android:hint="@string/license_key_hint"
+            android:textColorHint="@color/text_tertiary"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/type_body_sm"
+            android:inputType="textCapCharacters|textNoSuggestions|textMultiLine"
+            android:maxLines="3"
+            android:importantForAutofill="no" />
+
+        <TextView
+            android:id="@+id/licenseKeyHelp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_2"
+            android:text="@string/license_key_help"
+            android:textSize="@dimen/type_caption"
+            android:textColor="@color/text_secondary"
+            android:lineSpacingExtra="@dimen/line_extra_body"
+            android:justificationMode="none"
+            android:hyphenationFrequency="none" />
+
+        <TextView
+            android:id="@+id/licenseApply"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_6"
+            android:minHeight="@dimen/touch_min"
+            android:gravity="center"
+            android:background="@drawable/bg_primary_action"
+            android:text="@string/license_key_apply"
+            android:textSize="@dimen/type_body_sm"
+            android:textStyle="bold"
+            android:textColor="@color/primary_action_text"
+            android:enabled="false"
+            android:focusable="true"
+            android:clickable="true" />
+
+        <TextView
+            android:id="@+id/licenseRemove"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_3"
+            android:minHeight="@dimen/touch_min"
+            android:gravity="center"
+            android:text="@string/license_key_remove"
+            android:textSize="@dimen/type_caption"
+            android:textColor="@color/text_tertiary"
+            android:background="?attr/selectableItemBackground"
+            android:visibility="gone" />
+    </LinearLayout>
+</ScrollView>

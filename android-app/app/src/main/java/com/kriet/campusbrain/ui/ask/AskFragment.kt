@@ -16,6 +16,7 @@ import com.kriet.campusbrain.R
 import com.kriet.campusbrain.data.AnswerResult
 import com.kriet.campusbrain.data.BrainRepository
 import com.kriet.campusbrain.data.InitState
+import com.kriet.campusbrain.data.auth.Licensing
 import com.kriet.campusbrain.databinding.FragmentAskBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -126,7 +127,38 @@ class AskFragment : Fragment() {
                     getString(R.string.error_answer_title),
                     getString(R.string.error_answer_body),
                 )
-                else -> adapter.addAnswer(result)
+                else -> {
+                    adapter.addAnswer(result)
+                    // The instrumentation point, and it is HERE rather than in
+                    // QueryRouter.answer() -- which is the real chokepoint --
+                    // for two reasons.
+                    //
+                    // The structural one: this is a counter increment on an
+                    // in-memory object, written down only at onStop. Putting
+                    // it at the chokepoint would put it inside the answer path,
+                    // and the obvious implementation there is a row per query
+                    // in user_corpus.db, which is a third writer on a file an
+                    // import already holds an EXCLUSIVE lock on for fifty
+                    // embeddings at a time. See QueryLog's header.
+                    //
+                    // The narrow one: retrieval/ belongs to someone else, and
+                    // an analytics feature is not a reason to reach into it.
+                    //
+                    // Note what is recorded: a route, a boolean, and the doc
+                    // ids the answer cited. Not the question. QueryLog.record
+                    // has no parameter that could carry one.
+                    Licensing.queryLog.record(
+                        route = result.route,
+                        abstained = result.abstained,
+                        citedDocIds = result.sources.map { it.docId },
+                    )
+                    // The opt-in door, and inert unless an admin turned the
+                    // local sample on. Called unconditionally on purpose: the
+                    // check belongs in one place, inside QueryLog, rather than
+                    // being repeated at every call site where it can be got
+                    // wrong once and be wrong forever.
+                    Licensing.queryLog.recordText(query)
+                }
             }
             scrollToEnd()
         }
