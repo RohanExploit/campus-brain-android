@@ -148,7 +148,7 @@ object EnrolCopy {
      * is treated as the success it is, and the grant is read exactly as it
      * would have been on a first enrolment. It reaches this function as
      * [Identity.EnrolResult.Enrolled]. So the success copy has to be true of
-     * both histories at once, which is why it says "Enrolled with KRIET" and
+     * both histories at once, which is why it says "Enrolled with <name>" and
      * not "Welcome" (wrong for a reinstall) or "Recovered" (wrong for a first
      * run).
      */

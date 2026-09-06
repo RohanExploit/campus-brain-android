@@ -32,7 +32,7 @@ class EnrolCopyTest {
 
     private fun grant(
         tenantId: String = "kriet",
-        displayName: String? = "KRIET",
+        displayName: String? = "Northfield",
         graceDays: Int = 45,
         licence: String = "active",
         verifiedAtMs: Long = t0,
@@ -122,9 +122,9 @@ class EnrolCopyTest {
     }
 
     @Test fun `the success headline names the institution`() {
-        assertEquals("KRIET", EnrolCopy.of(enrolled(), t0).institution)
+        assertEquals("Northfield", EnrolCopy.of(enrolled(), t0).institution)
         // The tenant row has never been read, so there is no display name yet.
-        // The id the server keys on is a worse name than "KRIET" and a much
+        // The id the server keys on is a worse name than "Northfield" and a much
         // better one than an empty headline.
         assertEquals(
             "kriet",
@@ -170,9 +170,9 @@ class EnrolCopyTest {
     // --- what the form will send --------------------------------------------
 
     @Test fun `a blank email is the supported case and not a problem`() {
-        assertNull(EnrolForm.problem("", "hunter2", "KRIET-2026"))
-        assertNull(EnrolForm.problem("   ", "hunter2", "KRIET-2026"))
-        assertTrue(EnrolForm.submittable("", "hunter2", "KRIET-2026"))
+        assertNull(EnrolForm.problem("", "hunter2", "NORTHFIELD-2026"))
+        assertNull(EnrolForm.problem("   ", "hunter2", "NORTHFIELD-2026"))
+        assertTrue(EnrolForm.submittable("", "hunter2", "NORTHFIELD-2026"))
     }
 
     @Test fun `an address with a typo is caught before a round trip`() {
@@ -215,7 +215,7 @@ class EnrolCopyTest {
         )
         // Whatever shape the registrar chose. This client does not own the
         // format and must not refuse a code the server would have accepted.
-        listOf("KRIET-2026", "abc123", "A B C", "2026/CS/0042", "x").forEach {
+        listOf("NORTHFIELD-2026", "abc123", "A B C", "2026/CS/0042", "x").forEach {
             assertNull("the app must be willing to send \"$it\"",
                 EnrolForm.problem("", "hunter2", it))
         }
@@ -268,19 +268,19 @@ class EnrolCopyTest {
     }
 
     @Test fun `a healthy grant names the institution and its state`() {
-        assertEquals("KRIET · enrolled", IdentityPill.text(grant(), "enrolled", t0))
+        assertEquals("Northfield · enrolled", IdentityPill.text(grant(), "enrolled", t0))
     }
 
     @Test fun `the pill borrows the short banner for every unhealthy state`() {
         // Three days left inside a five-day window.
         val expiring = grant(graceDays = 5, verifiedAtMs = t0 - 2 * Entitlements.MS_PER_DAY)
-        assertEquals("KRIET · renew in 3d", IdentityPill.text(expiring, "enrolled", t0))
+        assertEquals("Northfield · renew in 3d", IdentityPill.text(expiring, "enrolled", t0))
 
         val stale = grant(graceDays = 1, verifiedAtMs = t0 - 9 * Entitlements.MS_PER_DAY)
-        assertEquals("KRIET · unconfirmed", IdentityPill.text(stale, "enrolled", t0))
+        assertEquals("Northfield · unconfirmed", IdentityPill.text(stale, "enrolled", t0))
 
         val lapsed = grant(licence = "suspended")
-        assertEquals("KRIET · licence", IdentityPill.text(lapsed, "enrolled", t0))
+        assertEquals("Northfield · licence", IdentityPill.text(lapsed, "enrolled", t0))
     }
 
     @Test fun `the pill falls back to the tenant id when there is no name yet`() {
@@ -314,6 +314,6 @@ class EnrolCopyTest {
     @Test fun `a name that fits is left exactly as the institution wrote it`() {
         val exact = "a".repeat(IdentityPill.MAX_NAME_CHARS)
         assertEquals(exact, IdentityPill.shortenName(exact))
-        assertEquals("KRIET", IdentityPill.shortenName("KRIET"))
+        assertEquals("Northfield", IdentityPill.shortenName("Northfield"))
     }
 }

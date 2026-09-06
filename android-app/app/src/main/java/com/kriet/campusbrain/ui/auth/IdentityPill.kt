@@ -50,7 +50,8 @@ object IdentityPill {
         else name.take(MAX_NAME_CHARS - 1).trimEnd() + ELLIPSIS
 
     /**
-     * `"KRIET · enrolled"`, or null when there is nothing to say.
+     * `"<institution> · enrolled"`, or null when there is nothing to say.
+     * The name is never written here -- it comes from the grant.
      *
      * [activeLabel] is passed in rather than written here so the one word this
      * function contributes still lives in `strings.xml`. The other three

@@ -121,7 +121,8 @@
               forever: no nag, no placeholder, no empty box inviting a tap.
 
               Once there is a grant it carries the institution's name and its
-              state — "KRIET · enrolled", "KRIET · renew in 3d". It never
+              state — "Institute · enrolled", "Institute · renew in 3d",
+              where the name is whatever the grant carries. It never
               replaces the offline claim beside the live dot; that line is the
               product's whole promise and the licence is a footnote to it.
               Elided rather than wrapped, because the header is one line by
