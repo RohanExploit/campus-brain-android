@@ -67,7 +67,18 @@ class CloudAnswer(
      * always fall back to the existing abstention text without special
      * cases. Never throws into the caller.
      */
-    suspend fun answer(query: String, context: String? = null): String? = runCatching {
+    /**
+     * [text] is what the student sees. [grounded] is true only when the model
+     * reported that the retrieved excerpts supplied the main facts, which is
+     * what the caller's provenance label must key on.
+     */
+    data class Answer(val text: String, val grounded: Boolean)
+
+    /** Kept for callers that do not care about provenance. */
+    suspend fun answer(query: String, context: String? = null): String? =
+        answerWithProvenance(query, context)?.text
+
+    suspend fun answerWithProvenance(query: String, context: String? = null): Answer? = runCatching {
         val config = loadConfig() ?: return null
         withContext(Dispatchers.IO) {
             rateLimitGate.withLock {
@@ -84,7 +95,18 @@ class CloudAnswer(
                         "\n\nQuestion: " + query +
                         "\n\nAnswer from the excerpts above wherever they cover it. " +
                         "Only add general Indian higher-education knowledge for parts " +
-                        "the excerpts do not cover."
+                        "the excerpts do not cover." +
+                        // Retrieval returns the top chunks whether or not they are
+                        // relevant, so "we supplied context" does not mean "the
+                        // answer came from it" -- a revaluation question pulled an
+                        // unrelated research paper and was correctly answered from
+                        // general knowledge. Only the model knows which it did, so
+                        // it is asked, and the caller labels the answer accordingly.
+                        "\n\nFinally, on its own last line, write exactly " +
+                        "\"" + GROUNDED_MARKER + " YES\" if the excerpts supplied the " +
+                        "main facts of your answer, or \"" + GROUNDED_MARKER + " NO\" if " +
+                        "they did not cover the question and you answered from general " +
+                        "knowledge."
                 // Tier order is cloud, then laptop, then this phone. The last
                 // tier is GATED ON HAVING CONTEXT, and that gate is the whole
                 // safety argument for shipping a small model at all.
@@ -98,11 +120,16 @@ class CloudAnswer(
                 // a student would act on it. So when there is no context,
                 // this tier is not consulted and the app abstains instead --
                 // abstaining is recoverable, a wrong rupee figure is not.
-                val grounded = !context.isNullOrBlank()
-                val draft = call(config, draftQuery)
+                val hasContext = !context.isNullOrBlank()
+                val rawDraft = call(config, draftQuery)
                     ?: callOllama(config, draftQuery, SYSTEM_PROMPT)
-                    ?: if (grounded) callDevice(config, draftQuery, DEVICE_GROUNDED_PROMPT) else null
+                    ?: if (hasContext) callDevice(config, draftQuery, DEVICE_GROUNDED_PROMPT) else null
                 lastCallAtMs = System.currentTimeMillis()
+                // Read the marker off the draft and strip it before anything
+                // else sees it. The verifier pass rewrites freely and would
+                // drop it, so provenance has to be captured here.
+                val grounded = hasContext && markerSaysGrounded(rawDraft)
+                val draft = rawDraft?.let(::stripMarker)
                 if (draft == null) null else {
                     // Second pass: the model checks its own draft before a
                     // student sees it. This is a measured need, not ceremony.
@@ -124,7 +151,7 @@ class CloudAnswer(
                     lastCallAtMs = System.currentTimeMillis()
                     // Keep the draft if verification fails for any reason: a
                     // slightly loose answer beats no answer at all.
-                    verified ?: draft
+                    Answer(stripMarker(verified ?: draft), grounded)
                 }
             }
         }
@@ -262,6 +289,29 @@ class CloudAnswer(
         private const val CONFIG_FILE_NAME = "config.json"
         // 5s, not 10. A stalled cloud call must fall through to the laptop
         // model fast enough that a demo does not visibly hang.
+        /** Sentinel the draft pass appends so the caller can label provenance. */
+        const val GROUNDED_MARKER = "GROUNDED:"
+
+        /** True only for an explicit "GROUNDED: YES". A missing or malformed
+         * marker is treated as not grounded, so the weaker claim is the one
+         * made when the model did not answer the question. */
+        fun markerSaysGrounded(text: String?): Boolean =
+            text != null && Regex(
+                """^\s*${Regex.escape(GROUNDED_MARKER)}\s*YES\b""",
+                setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE)
+            ).containsMatchIn(text)
+
+        /** Removes the marker line wherever it landed. Students never see it. */
+        fun stripMarker(text: String): String = text
+            .replace(
+                Regex(
+                    """^\s*${Regex.escape(GROUNDED_MARKER)}\s*(YES|NO)\b.*$""",
+                    setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE)
+                ),
+                ""
+            )
+            .trim()
+
         private const val TIMEOUT_MS = 5_000
         private const val OLLAMA_TIMEOUT_MS = 30_000
         private const val DEVICE_TIMEOUT_MS = 20_000

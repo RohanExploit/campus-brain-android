@@ -30,6 +30,15 @@ object RouteRules {
         AGG_KW.firstOrNull { q.contains(it) }?.let {
             return Route.TABULAR to "rule: aggregate keyword \"$it\""
         }
+        // "What is the highest SGPA" reached none of the above -- there is no
+        // "student" token for STUDENT_RECORD and "highest" was absent from
+        // AGG_KW -- so it fell through to FACT and abstained on a value one
+        // MAX() away. Superlatives cannot join AGG_KW unguarded, because
+        // "minimum attendance percentage" is a genuine FACT question; pair
+        // them with a score word instead.
+        if (SUPERLATIVE_SCORE.containsMatchIn(q)) {
+            return Route.TABULAR to "rule: superlative over a score column"
+        }
         if (FACT_ATTR.containsMatchIn(q)) return Route.FACT to "rule: document-attribute phrasing"
         return null
     }
@@ -48,6 +57,19 @@ object RouteRules {
     val STUDENT_RECORD = Regex(
         "\\bstudent\\b.*\\b(record|marks|score|result|grade|sgpa|cgpa|roll|pass(?:ed)?)\\b" +
             "|\\b(record|marks|score|result|grade|sgpa|cgpa|pass(?:ed)?)\\b.*\\bstudent\\b",
+        RegexOption.IGNORE_CASE
+    )
+
+    /**
+     * A superlative next to a score column. Deliberately NOT folded into
+     * [AGG_KW]: a bare "minimum"/"highest" there would capture "minimum
+     * attendance percentage", which belongs to FACT.
+     */
+    val SUPERLATIVE_SCORE = Regex(
+        """\b(highest|lowest|maximum|minimum|max|min|best|worst|greatest)\b""" +
+            """[^.?!]{0,24}\b(sgpa|cgpa|gpa|marks?|score|grade|result)\b""" +
+            """|\b(sgpa|cgpa|gpa|marks?|score)\b[^.?!]{0,24}""" +
+            """\b(highest|lowest|maximum|minimum|max|min|best|worst|greatest)\b""",
         RegexOption.IGNORE_CASE
     )
 
