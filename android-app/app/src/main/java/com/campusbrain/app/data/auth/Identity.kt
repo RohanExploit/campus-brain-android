@@ -101,12 +101,82 @@ object Identity {
 
     sealed interface EnrolResult {
         data class Enrolled(val entitlement: Entitlement) : EnrolResult
-        data class Rejected(val message: String) : EnrolResult
+
+        /**
+         * The server answered and said no, at a step this names.
+         *
+         * [stage] exists because "rejected" alone is not something a student
+         * can act on. [enrol] runs several sequential calls and a refusal at
+         * one of them means something entirely different from a refusal at
+         * another -- a password that does not match is a different next move
+         * from a code that has been used up -- and a screen that names both
+         * is naming one thing it already knows to be innocent.
+         *
+         * It carries no message. The server's own prose was the obvious thing
+         * to put here and it is exactly the wrong thing: [SupabaseHttp.errorMessage]
+         * falls back to the first 120 characters of the response body, which
+         * on campus wifi is a captive portal's HTML, and none of it is copy
+         * anyone wrote for a student to read. Leaving the field out is a
+         * stronger guarantee that it will never reach a screen than a comment
+         * asking that it not be.
+         */
+        data class Rejected(val stage: Stage) : EnrolResult
+
         /** Offline, or the server never answered. Any prior grant is intact. */
         data object Unavailable : EnrolResult
+
         /** No `config.json` on the device, so there is no project to talk to.
          * A supported state: the app still answers from the bundled corpus. */
         data object NotConfigured : EnrolResult
+
+        /**
+         * What was refused -- not which HTTP call refused it.
+         *
+         * Naming the step would not survive contact with the server:
+         * `redeem_enrolment_code` refuses a bad code and refuses a request
+         * with no session behind it, both from inside the same call, and
+         * those need different words. So each value names the thing the
+         * student would have to change, and the copy for it has to be true
+         * on every path that reaches it.
+         */
+        enum class Stage {
+            /**
+             * Sign-up was refused and the sign-in fallback was refused too.
+             *
+             * Almost always an account that already exists at this address
+             * with a different password. Not only that, and the copy must not
+             * promise it is: a sign-up refused on its own merits -- a project
+             * that raised the password minimum in its dashboard, a rate limit
+             * -- is followed by a sign-in that fails because there is no such
+             * account, and lands here as well. What is true on both paths is
+             * that this email and this password were turned down together,
+             * and that the enrolment code was never sent.
+             */
+            CREDENTIALS,
+
+            /**
+             * The account is signed in and the server looked at the code and
+             * said no: unknown, spent, or expired.
+             *
+             * Reached only from [ControlPlane.RedeemOutcome.Invalid], which
+             * is now raised only when the server genuinely decided. A 2xx
+             * that does not parse is [ControlPlane.RedeemOutcome.Unavailable]
+             * instead -- see the note there -- so this stage never blames a
+             * code for a portal.
+             */
+            CODE,
+
+            /**
+             * SQLSTATE 28000: the redeem function found no authenticated user.
+             *
+             * Its own stage rather than folded into [CODE], because the code
+             * was not looked at and is not spent, and rather than folded into
+             * [EnrolResult.Unavailable], because the institution answered --
+             * saying it could not be reached would be a plain lie about a
+             * server that replied.
+             */
+            SESSION,
+        }
     }
 
     /**
@@ -128,21 +198,27 @@ object Identity {
         when (a.signUp(email, password)) {
             is SupabaseAuth.Outcome.Ok -> Unit
             SupabaseAuth.Outcome.Unavailable -> return EnrolResult.Unavailable
-            is SupabaseAuth.Outcome.Rejected -> when (val existing = a.signIn(email, password)) {
+            is SupabaseAuth.Outcome.Rejected -> when (a.signIn(email, password)) {
                 is SupabaseAuth.Outcome.Ok -> Unit
                 SupabaseAuth.Outcome.Unavailable -> return EnrolResult.Unavailable
-                is SupabaseAuth.Outcome.Rejected -> return EnrolResult.Rejected(existing.message)
+                // Both credential calls were refused, so the code below is
+                // never sent. That is worth saying on the card: a student who
+                // mistyped their password has not spent a single-use code.
+                is SupabaseAuth.Outcome.Rejected ->
+                    return EnrolResult.Rejected(EnrolResult.Stage.CREDENTIALS)
             }
         }
 
-        when (val redeemed = p.redeem(code)) {
+        when (p.redeem(code)) {
             is ControlPlane.RedeemOutcome.Enrolled -> Unit
             // Already enrolled is a success with a different history: the
             // membership row this device needs already exists, and the grant
             // is read below exactly as it would have been.
             ControlPlane.RedeemOutcome.AlreadyEnrolled -> Unit
-            is ControlPlane.RedeemOutcome.Invalid ->
-                return EnrolResult.Rejected(redeemed.message)
+            ControlPlane.RedeemOutcome.Invalid ->
+                return EnrolResult.Rejected(EnrolResult.Stage.CODE)
+            ControlPlane.RedeemOutcome.NotSignedIn ->
+                return EnrolResult.Rejected(EnrolResult.Stage.SESSION)
             ControlPlane.RedeemOutcome.Unavailable -> return EnrolResult.Unavailable
         }
 

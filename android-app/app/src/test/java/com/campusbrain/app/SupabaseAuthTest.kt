@@ -184,7 +184,7 @@ class SupabaseAuthTest {
         assertTrue(SupabaseAuth.looksLikeEmail(a))
         assertTrue(a.endsWith("@student.campusbrain.invalid"))
         assertFalse("two students on one multi-use code must not collide", a == b)
-        assertTrue(SupabaseAuth.looksLikeEmail("student@kriet.ac.in"))
+        assertTrue(SupabaseAuth.looksLikeEmail("student@northfield.ac.in"))
         assertFalse(SupabaseAuth.looksLikeEmail("no-at-sign"))
         assertFalse(SupabaseAuth.looksLikeEmail("two@@at.in"))
         assertFalse(SupabaseAuth.looksLikeEmail("no@domain"))

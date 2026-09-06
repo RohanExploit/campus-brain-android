@@ -54,6 +54,36 @@ object AnswerCheck {
         ELIGIBILITY,
 
         /**
+         * "what happens if I miss it" -- the answer must state what follows,
+         * not that a procedure for it exists.
+         *
+         * Split out of [OTHER] because a consequence question is the one shape
+         * this file could not tell apart from its own paperwork. Measured: the
+         * second half of "what is the minimum attendance and what happens if I
+         * miss it" answered "A separate procedure notice for each scheme above
+         * states its own notice number, the exact steps to apply, and what
+         * happens after submission" -- a sentence about procedure notices
+         * existing, which is the nearest thing in the corpus to the WORDS of
+         * the question and the furthest thing from its answer.
+         */
+        CONSEQUENCE,
+
+        /**
+         * "can a student with a backlog apply" -- the answer must state a rule
+         * about who may, not narrate what an office does afterwards.
+         *
+         * The gap [ELIGIBILITY] left behind. That one is only claimed when the
+         * student supplies a number to judge; a permission question with no
+         * number fell through to [OTHER], no shape was enforced, and the
+         * highest topic overlap won. Measured: the winner was "After
+         * submission: The Scholarship SPOC verifies the CGPA and no-backlog
+         * declaration against examination records ..." -- the procedure that
+         * follows a successful application, offered to a student asking
+         * whether they may make one.
+         */
+        PERMISSION,
+
+        /**
          * Everything else. Topic overlap only, no shape enforced. Kept
          * deliberately large: every shape rule is a new way to refuse a
          * question the corpus could have answered, and the failure this file

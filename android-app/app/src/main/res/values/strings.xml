@@ -174,7 +174,9 @@
     <string name="enrol_problem_code">The enrolment code is the one thing this screen needs. Your department office can reissue it.</string>
 
     <!--
-      Terminal states. Four, matching Identity.EnrolResult exactly.
+      Terminal states. Six cards over four outcomes: the rejection fans out
+      into one card per Identity.EnrolResult.Stage, because "rejected" on its
+      own is not something a student can act on.
 
       "Already enrolled" is not among them and that is correct rather than an
       omission: a student who reinstalls redeems the same code, the server
@@ -193,19 +195,36 @@
     </plurals>
 
     <!--
-      One card for two causes, deliberately.
+      One card per refusal, because the two refusals have opposite next moves.
 
-      Identity.EnrolResult.Rejected is raised both by the sign-in fallback (an
-      account already exists at this address and the password differs) and by
-      the code redemption (unknown, used up, expired). The result type does not
-      say which, and the server's prose cannot be trusted to: SupabaseHttp
-      falls back to the first 120 characters of the body, which on campus wifi
-      may be a captive portal's HTML. So the outcome is named once, honestly,
-      with a next move for each cause — and the server's own words are not
-      printed, because they are not copy anyone wrote for a student to read.
+      This used to be a single card naming the code and the password together,
+      which meant that on every rejection the app named one thing it already
+      knew to be innocent. Identity.EnrolResult.Rejected now carries a Stage
+      decided in data/auth, where the outcome of each call is still known —
+      not guessed here from the server's prose, which SupabaseHttp fills with
+      the first 120 characters of the body when it cannot parse one, and which
+      on campus wifi is a captive portal's HTML. The server's own words are
+      never printed below: they are not copy anyone wrote for a student.
+
+      The load-bearing detail in each body is what did NOT happen. A student
+      whose password was refused has not spent a single-use code and must not
+      be sent to the department office for a new one; a student whose code was
+      refused has an account that works and needs to change one field.
+
+      Each body has to be true on every path that reaches its stage, which is
+      why CREDENTIALS hedges: it is usually an account that already exists with
+      a different password, but a sign-up refused on its own merits (a project
+      that raised the password minimum, a rate limit) is followed by a sign-in
+      that fails for want of an account and lands on the same card.
     -->
-    <string name="enrol_rejected_title">The code or the password was not accepted</string>
-    <string name="enrol_rejected_body">Your institution checked both and turned one of them down. Retype the enrolment code exactly as it was issued; if you have already enrolled another phone with this email, use the password you chose then. Nothing on this device changed, and answers carry on as normal.</string>
+    <string name="enrol_rejected_credentials_title">That email and password were not accepted</string>
+    <string name="enrol_rejected_credentials_body">Signing in with the two together was refused, which usually means an account already exists at this address with a different password. Use that password, or clear the email field and enrol without one — the app makes an address up, and your enrolment code is what proves you belong. The code was never sent, so it is still unused. Nothing on this device changed, and answers carry on as normal.</string>
+
+    <string name="enrol_rejected_code_title">That enrolment code was not accepted</string>
+    <string name="enrol_rejected_code_body">Your institution looked it up and turned it down: unknown, already used, or past its date. Signing in worked, so the code is the only field to change. Retype it exactly as it was issued — capitals and spacing do not matter — and if it is still refused, your department office can reissue one. Nothing on this device changed, and answers carry on as normal.</string>
+
+    <string name="enrol_rejected_session_title">The code check did not see your sign-in</string>
+    <string name="enrol_rejected_session_body">Signing in worked and then the check that redeems the code found no session behind it, so your code was never looked at and is still unused. Nothing you typed is wrong. Try again in a moment. Nothing on this device changed, and answers carry on as normal.</string>
 
     <string name="enrol_unavailable_title">Your institution could not be reached</string>
     <string name="enrol_unavailable_body">Enrolment is the one thing in this app that needs a connection, and it did not get one. Nothing was changed on this phone. Try again on wifi — in the meantime the app answers questions from its own documents, exactly as it does now.</string>
@@ -420,4 +439,24 @@
     <string name="analytics_export">Export</string>
     <string name="analytics_export_subject">Campus Brain — device usage</string>
     <string name="analytics_export_chooser">Export usage</string>
+
+    <!--
+      ========================== The crash log ==========================
+
+      Shown on the self test screen, and only on a phone that has actually
+      crashed. There is no SDK behind it and nothing is transmitted: the file
+      sits in the app's own storage until someone chooses to send it, and the
+      share sheet puts the text in front of them before they do.
+
+      Same copy rule as everywhere else — say what happened and what the next
+      move is — with one addition that this screen has to make: the reader is
+      about to send something, so the copy has to say what is in it and what
+      is not, in words they can check against the text below it.
+    -->
+    <string name="selftest_crash_share">Share this report</string>
+    <!-- "Delete", not "clear": the file goes, and a word that sounds like
+         tidying up would understate that. -->
+    <string name="selftest_crash_clear">Delete it</string>
+    <string name="selftest_crash_subject">Campus Brain — crash report</string>
+    <string name="selftest_crash_chooser">Share the crash report</string>
 </resources>

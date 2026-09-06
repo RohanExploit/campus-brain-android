@@ -17,10 +17,10 @@ import com.campusbrain.app.data.auth.SupabaseAuth
  * thing left in the fragment is `getString`.
  *
  * That matters more here than it looks. There are four outcomes, one of them
- * has two quite different causes, and one of them -- the reinstall -- is a
- * SUCCESS that a careless reading of the server's response turns into a
- * failure. Those are decisions, and decisions belong somewhere they can be
- * pinned down.
+ * fans out into three refusals that need three different next moves, and one
+ * of them -- the reinstall -- is a SUCCESS that a careless reading of the
+ * server's response turns into a failure. Those are decisions, and decisions
+ * belong somewhere they can be pinned down.
  */
 
 /**
@@ -138,8 +138,10 @@ object EnrolCopy {
     )
 
     /**
-     * Total over [Identity.EnrolResult], and note which case is missing:
-     * there is no "already enrolled" branch.
+     * Total over [Identity.EnrolResult] and, inside the rejection, total over
+     * [Identity.EnrolResult.Stage] -- six cards from four outcomes.
+     *
+     * Note which case is missing: there is no "already enrolled" branch.
      *
      * That is not an oversight, it is the contract. A student who reinstalls
      * signs up (rejected: the address exists), signs in, redeems the same code
@@ -165,25 +167,50 @@ object EnrolCopy {
                 offlineDays = offlineDaysOf(result.entitlement, nowMs),
             )
 
-            // One card for two causes, because the result type carries no way
-            // to tell them apart and the server's prose is not trustworthy
-            // enough to guess with: SupabaseHttp.errorMessage falls back to the
-            // first 120 characters of the body, which on campus wifi can be a
-            // captive portal's HTML, and ControlPlane maps SQLSTATE 28000 --
-            // a credentials fault -- into the same Invalid arm as a bad code.
-            // Matching on the message would produce a test that passes on
-            // strings this file invented and a screen that lies on the device.
-            //
-            // The honest fix is a `stage` discriminator on EnrolResult, in
-            // data/auth, which is read-only from here. Reported, not done.
-            is Identity.EnrolResult.Rejected -> Outcome(
-                iconRes = R.drawable.ic_alert,
-                titleRes = R.string.enrol_rejected_title,
-                bodyRes = R.string.enrol_rejected_body,
-                actionRes = R.string.enrol_action_retry,
-                succeeded = false,
-                returnsToForm = true,
-            )
+            // One card per stage, and the stage is decided in data/auth where
+            // the outcome of each call is still known -- not guessed here from
+            // the server's prose. This screen never reads a message off the
+            // wire: SupabaseHttp.errorMessage falls back to the first 120
+            // characters of the body, which on campus wifi is a captive
+            // portal's HTML, so matching on it would give a test that passes
+            // on strings this file invented and a screen that lies on the
+            // device. Identity.EnrolResult.Rejected no longer carries one.
+            is Identity.EnrolResult.Rejected -> when (result.stage) {
+                // The code was never sent. Naming that is the whole point of
+                // the split: a single-use code is not spent by a mistyped
+                // password, and the student should not go asking for another.
+                Identity.EnrolResult.Stage.CREDENTIALS -> Outcome(
+                    iconRes = R.drawable.ic_alert,
+                    titleRes = R.string.enrol_rejected_credentials_title,
+                    bodyRes = R.string.enrol_rejected_credentials_body,
+                    actionRes = R.string.enrol_action_retry,
+                    succeeded = false,
+                    returnsToForm = true,
+                )
+
+                // Signed in, and the server looked at the code and said no.
+                // The one branch where telling a student to check their code
+                // is the correct thing to say.
+                Identity.EnrolResult.Stage.CODE -> Outcome(
+                    iconRes = R.drawable.ic_alert,
+                    titleRes = R.string.enrol_rejected_code_title,
+                    bodyRes = R.string.enrol_rejected_code_body,
+                    actionRes = R.string.enrol_action_retry,
+                    succeeded = false,
+                    returnsToForm = true,
+                )
+
+                // Nothing the student typed is wrong, so the card must not ask
+                // them to change any of it. Retrying is genuinely the move.
+                Identity.EnrolResult.Stage.SESSION -> Outcome(
+                    iconRes = R.drawable.ic_alert,
+                    titleRes = R.string.enrol_rejected_session_title,
+                    bodyRes = R.string.enrol_rejected_session_body,
+                    actionRes = R.string.enrol_action_retry,
+                    succeeded = false,
+                    returnsToForm = true,
+                )
+            }
 
             Identity.EnrolResult.Unavailable -> Outcome(
                 iconRes = R.drawable.ic_alert,

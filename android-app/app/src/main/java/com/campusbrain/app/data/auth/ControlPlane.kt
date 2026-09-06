@@ -42,8 +42,23 @@ class ControlPlane(
          * rather than telling a correctly-enrolled student their code is bad.
          */
         data object AlreadyEnrolled : RedeemOutcome
-        /** The server looked and said no: unknown code, used up, or expired. */
-        data class Invalid(val message: String) : RedeemOutcome
+        /**
+         * The server looked at the code and said no: unknown, used up, or
+         * expired.
+         *
+         * Carries no message. Nothing renders one -- see the note on
+         * [Identity.EnrolResult.Rejected] -- and a field that exists only to
+         * be shown one day is how a captive portal's HTML ends up on a
+         * student's screen.
+         */
+        data object Invalid : RedeemOutcome
+        /**
+         * SQLSTATE 28000: the function ran with no authenticated user behind
+         * it. A credentials fault, not a verdict on the code -- the code was
+         * not looked at and is not spent. Its own arm rather than [Invalid]
+         * because the two need different words on screen.
+         */
+        data object NotSignedIn : RedeemOutcome
         /** No answer. Nothing was decided, so nothing local changes. */
         data object Unavailable : RedeemOutcome
     }
@@ -66,8 +81,15 @@ class ControlPlane(
             bearer = token,
         ) ?: return@withContext RedeemOutcome.Unavailable
         if (response.code in 200..299) {
+            // A 2xx whose body is not the row this function returns is
+            // UNAVAILABLE, not a bad code. The reasoning is
+            // SupabaseAuth.tokenCall's, arrived at on the same wifi: on campus
+            // a 200 with an unreadable body is almost always a portal's login
+            // page, and calling that "your code was refused" would tell a
+            // student with a perfectly good code to go and get another one --
+            // the same wrong sentence this stage split exists to remove.
             val row = parseRedeem(response.body)
-                ?: return@withContext RedeemOutcome.Invalid("unrecognised response")
+                ?: return@withContext RedeemOutcome.Unavailable
             return@withContext RedeemOutcome.Enrolled(row.first, row.second)
         }
         // SQLSTATE first, HTTP status second: the function raises 23505 for an
@@ -76,8 +98,13 @@ class ControlPlane(
         // indistinguishable.
         when (SupabaseHttp.sqlState(response.body)) {
             "23505" -> RedeemOutcome.AlreadyEnrolled
-            "28000" -> RedeemOutcome.Invalid("not signed in")
-            else -> RedeemOutcome.Invalid(SupabaseHttp.errorMessage(response.body))
+            "28000" -> RedeemOutcome.NotSignedIn
+            // A 4xx that is not recognisably PostgREST's did not come from the
+            // function, so it is not a verdict on the code either -- the same
+            // reading SupabaseAuth.classifyFailure takes of a 4xx with no
+            // error body.
+            null -> RedeemOutcome.Unavailable
+            else -> RedeemOutcome.Invalid
         }
     }
 

@@ -6,6 +6,12 @@
   It had no background at all, so it inherited whatever the window happened to
   be painting and the text arrived in the platform default rather than the
   ramp. It is on the app's own ground now.
+
+  The two actions below it belong to the crash log and appear only when there
+  is one — on the ordinary phone that has never crashed this screen looks
+  exactly as it always did. They are text actions rather than filled buttons,
+  matching the enrolment card's own action row: this is a diagnostic screen and
+  a large accent button on it would read as the thing to do here.
 -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -14,17 +20,58 @@
     android:scrollbars="none"
     android:fillViewport="true">
 
-    <TextView
-        android:id="@+id/status"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingStart="@dimen/gutter"
-        android:paddingEnd="@dimen/gutter"
-        android:paddingTop="@dimen/space_5"
-        android:paddingBottom="@dimen/space_6"
-        android:fontFamily="monospace"
-        android:textSize="@dimen/type_micro"
-        android:textColor="@color/text_secondary"
-        android:justificationMode="none"
-        android:textIsSelectable="true" />
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/gutter"
+            android:paddingEnd="@dimen/gutter"
+            android:paddingTop="@dimen/space_5"
+            android:paddingBottom="@dimen/space_6"
+            android:fontFamily="monospace"
+            android:textSize="@dimen/type_micro"
+            android:textColor="@color/text_secondary"
+            android:justificationMode="none"
+            android:textIsSelectable="true" />
+
+        <LinearLayout
+            android:id="@+id/crashActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            android:paddingStart="@dimen/gutter"
+            android:paddingEnd="@dimen/gutter"
+            android:paddingBottom="@dimen/space_6">
+
+            <TextView
+                android:id="@+id/crashShare"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/touch_min"
+                android:paddingEnd="@dimen/space_5"
+                android:gravity="center_vertical"
+                android:textSize="@dimen/type_caption"
+                android:textColor="@color/accent"
+                android:text="@string/selftest_crash_share"
+                android:background="?attr/selectableItemBackground" />
+
+            <TextView
+                android:id="@+id/crashClear"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/touch_min"
+                android:paddingEnd="@dimen/space_4"
+                android:gravity="center_vertical"
+                android:textSize="@dimen/type_caption"
+                android:textColor="@color/text_tertiary"
+                android:text="@string/selftest_crash_clear"
+                android:background="?attr/selectableItemBackground" />
+        </LinearLayout>
+    </LinearLayout>
 </ScrollView>

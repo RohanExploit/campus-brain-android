@@ -18,8 +18,10 @@ import org.junit.Test
  *
  * Three things are pinned here and they are the three that would be expensive
  * to get wrong on a student's phone: what the form will send, what each
- * outcome says, and -- the one that matters most -- that a device with no
- * grant produces no header text at all.
+ * outcome says -- including that each of the three refusals says something
+ * different, since telling 400 students "the code or the password" names one
+ * thing the app already knows to be innocent -- and, the one that matters
+ * most, that a device with no grant produces no header text at all.
  *
  * A string resource is an `int` on this classpath, so the copy mapping is
  * assertable without Robolectric and without a `Context`. That is the same
@@ -31,7 +33,7 @@ class EnrolCopyTest {
     private val t0 = 1_760_000_000_000L // an arbitrary but fixed wall clock
 
     private fun grant(
-        tenantId: String = "kriet",
+        tenantId: String = "northfield",
         displayName: String? = "Northfield",
         graceDays: Int = 45,
         licence: String = "active",
@@ -41,6 +43,14 @@ class EnrolCopyTest {
     )
 
     private fun enrolled(e: Entitlement = grant()) = Identity.EnrolResult.Enrolled(e)
+
+    private fun rejected(stage: Identity.EnrolResult.Stage) =
+        Identity.EnrolResult.Rejected(stage)
+
+    /** Every terminal result the screen can be handed, one per card. */
+    private fun everyResult(): List<Identity.EnrolResult> =
+        listOf(enrolled(), Identity.EnrolResult.Unavailable, Identity.EnrolResult.NotConfigured) +
+            Identity.EnrolResult.Stage.entries.map { rejected(it) }
 
     // --- the outcome mapping is total ---------------------------------------
 
@@ -67,13 +77,12 @@ class EnrolCopyTest {
             4, declared.size,
         )
 
-        val all = listOf(
-            enrolled(),
-            Identity.EnrolResult.Rejected("whatever the server said"),
-            Identity.EnrolResult.Unavailable,
-            Identity.EnrolResult.NotConfigured,
+        val all = everyResult()
+        assertEquals(
+            "one case per declared outcome, and one per rejection stage",
+            declared.size - 1 + Identity.EnrolResult.Stage.entries.size,
+            all.size,
         )
-        assertEquals("one case per declared outcome", declared.size, all.size)
         all.forEach {
             val o = EnrolCopy.of(it, t0)
             assertTrue("$it has no title", o.titleRes != 0)
@@ -83,16 +92,52 @@ class EnrolCopyTest {
         }
     }
 
+    /**
+     * Six cards from four outcomes, and no two of them the same words.
+     *
+     * This is the test the defect would have failed. Before the stage existed,
+     * every rejection produced the one card that named the code and the
+     * password together -- so the app told a student whose password was wrong
+     * to go and check a code it had never even sent.
+     */
     @Test fun `no two outcomes share a headline or a body`() {
-        val outcomes = listOf(
-            enrolled(),
-            Identity.EnrolResult.Rejected("no"),
-            Identity.EnrolResult.Unavailable,
-            Identity.EnrolResult.NotConfigured,
-        ).map { EnrolCopy.of(it, t0) }
+        val outcomes = everyResult().map { EnrolCopy.of(it, t0) }
+        assertEquals("six distinct titles", 6, outcomes.map { it.titleRes }.toSet().size)
+        assertEquals("six distinct bodies", 6, outcomes.map { it.bodyRes }.toSet().size)
+    }
 
-        assertEquals("four distinct titles", 4, outcomes.map { it.titleRes }.toSet().size)
-        assertEquals("four distinct bodies", 4, outcomes.map { it.bodyRes }.toSet().size)
+    /**
+     * Exhaustive over the stages, for the same reason the outcome test above
+     * is exhaustive over the arms: a fourth stage would break the build inside
+     * `EnrolCopy.of` and the cheapest way to make it compile again is to point
+     * it at an existing card. This is what stops that being cheap.
+     */
+    @Test fun `every rejection stage has its own card`() {
+        val cards = Identity.EnrolResult.Stage.entries.map { EnrolCopy.of(rejected(it), t0) }
+        assertEquals(
+            "a card per stage",
+            Identity.EnrolResult.Stage.entries.size,
+            cards.map { it.titleRes }.toSet().size,
+        )
+        cards.forEach {
+            assertTrue("a rejection is never a success", !it.succeeded)
+            assertTrue("a rejection always offers the form back", it.returnsToForm)
+            assertNull("a rejection has no institution to name", it.institution)
+        }
+    }
+
+    /**
+     * The screen cannot print the server's prose because there is no longer
+     * any prose to print. `Rejected` carries a stage and nothing else --
+     * SupabaseHttp.errorMessage falls back to the first 120 characters of the
+     * body, which on campus wifi is a captive portal's HTML, and a field that
+     * exists only to be shown one day is how that reaches a student.
+     */
+    @Test fun `a rejection carries a stage and no message`() {
+        val fields = Identity.EnrolResult.Rejected::class.java.declaredFields
+            .filterNot { it.isSynthetic }
+            .map { it.name }
+        assertEquals(listOf("stage"), fields)
     }
 
     /**
@@ -107,15 +152,17 @@ class EnrolCopyTest {
      */
     @Test fun `only enrolment succeeds and it succeeds for a reinstall too`() {
         assertTrue(EnrolCopy.of(enrolled(), t0).succeeded)
-        assertFalse(EnrolCopy.of(Identity.EnrolResult.Rejected("no"), t0).succeeded)
-        assertFalse(EnrolCopy.of(Identity.EnrolResult.Unavailable, t0).succeeded)
-        assertFalse(EnrolCopy.of(Identity.EnrolResult.NotConfigured, t0).succeeded)
+        assertEquals(
+            "a success and nothing else",
+            1,
+            everyResult().count { EnrolCopy.of(it, t0).succeeded },
+        )
     }
 
     /** Retrying is offered exactly where retrying could work. There is nothing
      * to retry against a build with no configuration. */
     @Test fun `only the recoverable outcomes offer the form back`() {
-        assertTrue(EnrolCopy.of(Identity.EnrolResult.Rejected("no"), t0).returnsToForm)
+        assertTrue(EnrolCopy.of(rejected(Identity.EnrolResult.Stage.CODE), t0).returnsToForm)
         assertTrue(EnrolCopy.of(Identity.EnrolResult.Unavailable, t0).returnsToForm)
         assertFalse(EnrolCopy.of(Identity.EnrolResult.NotConfigured, t0).returnsToForm)
         assertFalse(EnrolCopy.of(enrolled(), t0).returnsToForm)
@@ -127,23 +174,21 @@ class EnrolCopyTest {
         // The id the server keys on is a worse name than "Northfield" and a much
         // better one than an empty headline.
         assertEquals(
-            "kriet",
+            "northfield",
             EnrolCopy.of(enrolled(grant(displayName = null)), t0).institution,
         )
         assertEquals(
             "a blank display_name is not a name",
-            "kriet",
+            "northfield",
             EnrolCopy.of(enrolled(grant(displayName = "   ")), t0).institution,
         )
     }
 
     /** Nothing but a success has an institution to name. */
     @Test fun `failures carry no institution`() {
-        listOf(
-            Identity.EnrolResult.Rejected("no"),
-            Identity.EnrolResult.Unavailable,
-            Identity.EnrolResult.NotConfigured,
-        ).forEach { assertNull(EnrolCopy.of(it, t0).institution) }
+        everyResult()
+            .filterNot { it is Identity.EnrolResult.Enrolled }
+            .forEach { assertNull(EnrolCopy.of(it, t0).institution) }
     }
 
     @Test fun `the success body quotes the window that is actually left`() {
@@ -285,7 +330,7 @@ class EnrolCopyTest {
 
     @Test fun `the pill falls back to the tenant id when there is no name yet`() {
         assertEquals(
-            "kriet · enrolled",
+            "northfield · enrolled",
             IdentityPill.text(grant(displayName = null), "enrolled", t0),
         )
     }
@@ -298,14 +343,14 @@ class EnrolCopyTest {
      * control.
      */
     @Test fun `a long institution name is shortened rather than allowed to grow`() {
-        val long = "Kanpur Institute of Technology and Management"
+        val long = "Northfield Institute of Technology and Management"
         val text = IdentityPill.text(grant(displayName = long), "enrolled", t0)
         assertNotNull(text)
         assertTrue("still ends in the state word", text!!.endsWith(" · enrolled"))
         val name = text.removeSuffix(" · enrolled")
         // At most the cap, and possibly one shorter: the trailing space left
         // by cutting mid-phrase is trimmed before the ellipsis goes on, so
-        // "Kanpur Institute …" never reaches the screen.
+        // "Northfield Institute …" never reaches the screen.
         assertTrue("$name is longer than the cap", name.length <= IdentityPill.MAX_NAME_CHARS)
         assertTrue("elided names say so", name.endsWith("…"))
         assertFalse("no space before the ellipsis", name.endsWith(" …"))
