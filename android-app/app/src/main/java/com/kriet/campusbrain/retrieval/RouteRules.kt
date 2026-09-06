@@ -141,9 +141,20 @@ object RouteRules {
      * The bare words "student" and "roll" are ambiguous -- they appear in
      * ordinary document questions such as "student mentorship program" -- so
      * they only count when paired with record/lookup context.
+     *
+     * The first alternation takes the plural and the inflected verb; the second
+     * deliberately does not. That asymmetry is measured, not tidiness lost:
+     * "list students who scored 10 SGPA" routed FACT and abstained, while "how
+     * many students scored above 9.0 SGPA" -- the same true zero -- answered
+     * exactly, because the second carries an [AGG_KW] and the first carries
+     * only a listing verb. Widening the SECOND alternation to "students" too
+     * would claim "summary of the scholarship results for students", which is a
+     * document question and is pinned as one in RouteRulesTest. A record word
+     * AFTER the plural noun is a records question; a plural noun trailing one is
+     * usually just who the document is for.
      */
     val STUDENT_RECORD = Regex(
-        "\\bstudent\\b.*\\b(record|marks|score|result|grade|sgpa|cgpa|roll|pass(?:ed)?)\\b" +
+        "\\bstudents?\\b.*\\b(record|marks|scor(?:e|es|ed|ing)|result|grade|sgpa|cgpa|roll|pass(?:ed)?)\\b" +
             "|\\b(record|marks|score|result|grade|sgpa|cgpa|pass(?:ed)?)\\b.*\\bstudent\\b",
         RegexOption.IGNORE_CASE
     )

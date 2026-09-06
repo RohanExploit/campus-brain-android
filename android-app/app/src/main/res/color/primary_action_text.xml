@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Follows bg_primary_action's two real states.
+
+  Measured against the fill each one actually sits on, not against the page:
+  on_accent (#150E00) on accent (#FFB224) is 10.64:1, and text_secondary
+  (#98A2B3) on ink_input (#171B22) is 6.70:1. Both clear AA for normal text
+  with room to spare. text_tertiary would also have passed at 5.09:1, but a
+  disabled control that a student is being asked to notice they cannot press
+  yet does not belong on the bottom rung.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="false" android:color="@color/text_secondary" />
+    <item android:color="@color/on_accent" />
+</selector>

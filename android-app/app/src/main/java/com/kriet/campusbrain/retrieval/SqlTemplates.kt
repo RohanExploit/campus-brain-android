@@ -78,8 +78,22 @@ object SqlTemplates {
             Constraint.RATE, Constraint.FAIL_COUNT,
         ),
         "count_sgpa_at_least" to setOf(Constraint.SGPA_THRESHOLD),
+        "students_with_sgpa" to setOf(Constraint.SGPA_THRESHOLD, Constraint.SGPA_RANKING),
         "below_sgpa" to setOf(Constraint.SGPA_THRESHOLD),
         "supplementary_count" to setOf(Constraint.SUPPLEMENTARY),
+        // Both readings of "no backlogs" are reported, so both result
+        // constraints are evaluated rather than merely mentioned. FAIL_COUNT
+        // is claimed because zero IS the count the question asks for.
+        "no_backlogs" to setOf(
+            Constraint.RESULT_FAIL, Constraint.RESULT_PASS,
+            Constraint.FAIL_COUNT, Constraint.SUBJECT,
+        ),
+        // ATTENDANCE is claimed on purpose: "how many students were absent
+        // from the exam" trips C_ATTENDANCE on the word "absent", and a
+        // caveat reading "that figure does not account for attendance" under
+        // an answer that is entirely about exam attendance would undermine the
+        // one thing it does evaluate.
+        "exam_attendance" to setOf(Constraint.ATTENDANCE, Constraint.SUPPLEMENTARY),
         "student_count" to emptySet(),
         "average_sgpa" to setOf(
             Constraint.AVERAGE, Constraint.SGPA_RANKING,
@@ -281,6 +295,121 @@ object SqlTemplates {
         RegexOption.IGNORE_CASE
     )
 
+    // --- three questions the records answer and no template claimed ---------
+    //
+    // All three reached SqlTemplates on hardware, matched nothing, fell through
+    // TabularIntent to a name search that found nobody, and were handed to the
+    // TABULAR->FACT fallback -- which retrieved documents and, in the first
+    // case, narrated one with total confidence. None of them is a routing
+    // defect: each was already TABULAR by rule. What was missing was the query.
+
+    /**
+     * Who is on the roll with a clean sheet, in either of the two readings the
+     * records support.
+     *
+     * "How many students have no backlogs" is a fail question with the sign
+     * flipped, and every fail branch below reads the word "backlog" as a demand
+     * for failures -- so it matched nothing at all and abstained while offering
+     * placement documents as the closest material. Checked before those
+     * branches because it shares their vocabulary and loses every tie.
+     *
+     * Not folded into `students_matching` with `minFailedSubjects = 0`: zero
+     * failed subjects is a NOT EXISTS, not a `>= 0`, which every row satisfies.
+     */
+    private val NO_BACKLOG = Regex(
+        """\b(?:no|zero|nil|without(?:\s+any)?|not\s+a\s+single)\s+(?:\w+\s+){0,1}""" +
+            """(?:backlogs?|arrears?|ff|fails?|failures?|failed\s+subjects?)\b""" +
+            """|\bbacklog[\s-]?free\b""" +
+            """|\b(?:cleared|passed)\s+(?:all|every)\s+(?:\w+\s+){0,1}(?:subjects?|papers?|courses?)\b""",
+        RegexOption.IGNORE_CASE
+    )
+
+    /**
+     * Who did not sit the examination.
+     *
+     * "Which students did not appear for the exam" is the worst answer this app
+     * has produced: it matched no template, fell to document retrieval, found
+     * "register", "appearing" and "sit for" in the placement policy, and read
+     * out the registration rule for placement drives as though it were the
+     * answer. The records settle the question exactly -- `seat_cancelled` and
+     * `is_supply` are 0 on all 369 rows -- and nothing was asking them.
+     *
+     * [ABOUT_STUDENTS] is the condition that keeps this off policy questions.
+     * "How many days can I be absent" carries the same absence vocabulary and
+     * is answered by the attendance policy, not by the results table; it names
+     * no cohort, so it is not this question. The route itself is the other
+     * guard: [match] runs only under TABULAR, and TABULAR is reachable only
+     * from [RouteRules] -- [RoutePrototypes] holds vectors for FACT, LOCAL and
+     * GLOBAL and cannot return it -- so "what happens if a student does not
+     * appear for the exam" never gets this far.
+     */
+    private val NOT_APPEARED = Regex(
+        """(?:\bnot\b|\bnever\b|n['’]t\b)[^.?!]{0,16}""" +
+            """\b(?:appear\w*|attend\w*|sit|sat|writ\w*|turn\s+up|show\s+up)\b""" +
+            """[^.?!]{0,24}\b(?:exams?|examination\w*|papers?|tests?)\b""",
+        RegexOption.IGNORE_CASE
+    )
+    private val ABSENT = Regex(
+        """\babsent\w*\b|\bseat[\s-]?cancel\w*\b""" +
+            """|\bmissed\s+(?:the\s+)?(?:exams?|examination\w*|papers?|tests?)\b""",
+        RegexOption.IGNORE_CASE
+    )
+
+    /** A question about the cohort rather than about the person asking. */
+    private val ABOUT_STUDENTS = Regex(
+        """\bstudents?\b|\banyone\b|\banybody\b|\bnobody\b""", RegexOption.IGNORE_CASE
+    )
+
+    /** A ranking over subjects, which none of the three branches answers. */
+    private val SUBJECT_SCOPED = Regex("""\bwhich\s+subjects?\b""", RegexOption.IGNORE_CASE)
+
+    fun missedExam(query: String): Boolean {
+        val q = query.lowercase()
+        return (NOT_APPEARED.containsMatchIn(q) || ABSENT.containsMatchIn(q)) &&
+            ABOUT_STUDENTS.containsMatchIn(q)
+    }
+
+    /**
+     * An SGPA named as a value, not as a bound.
+     *
+     * "List students who scored 10 SGPA" abstained while "how many students
+     * scored above 9.0 SGPA" answered the same true zero exactly, because every
+     * SGPA branch in this file wants a comparator and this question has none.
+     * [SGPA_COMPARATOR] is therefore the veto, not the trigger: with a
+     * comparator present the question belongs to one of the threshold branches
+     * above and this one must not touch it.
+     *
+     * Capped at the 0-10 scale so a roll number written next to the word "sgpa"
+     * cannot be read as a grade point.
+     */
+    private val SGPA_VALUE = Regex(
+        """(?:s?gpa|cgpa)\s*(?:of|is|:)?\s*(\d+(?:\.\d+)?)\b""" +
+            """|\b(\d+(?:\.\d+)?)\s*(?:s?gpa|cgpa)\b""",
+        RegexOption.IGNORE_CASE
+    )
+    private val SGPA_COMPARATOR = Regex(
+        """\babove\b|\bbelow\b|\bunder\b|\bover\b|\bat\s*least\b|\batleast\b""" +
+            """|\bmore\b|\bless\b|\bgreater\b|\blower\b|\bhigher\b|\bminimum\b|\bmaximum\b""" +
+            """|\bhighest\b|\blowest\b|\btop\b|\bbottom\b|\bworst\b|\bbest\b|\brank\w*\b""" +
+            """|\baverage\b|\bmean\b|\bbetween\b|\bexcept\b|>|<""",
+        RegexOption.IGNORE_CASE
+    )
+    /** Asking for the students, or for how many of them there are. */
+    private val LIST_OR_COUNT_CUE = Regex(
+        """\blist\b|\bshow\b|\bname\b|\bnames\b|\bfind\b|\bdisplay\b|\bgive\b|\bany\b""" +
+            """|\bwhich\b|\bwho\b|\bwhose\b|\bhow\s+many\b|\bcount\b|\bnumber\s+of\b""",
+        RegexOption.IGNORE_CASE
+    )
+
+    /** The SGPA a question names as a value, if it names one on this scale. */
+    fun namedSgpaValue(query: String): Double? {
+        val q = query.lowercase()
+        if (SGPA_COMPARATOR.containsMatchIn(q)) return null
+        if (!LIST_OR_COUNT_CUE.containsMatchIn(q)) return null
+        val v = firstNumber(SGPA_VALUE.find(q)) ?: return null
+        return if (v in 0.0..10.0) v else null
+    }
+
     /**
      * Everything in [Constraint] the question actually carries. Order is the
      * declaration order of the enum, so the caveat sentence reads the same way
@@ -372,6 +501,12 @@ object SqlTemplates {
                 }
             }
         }
+
+        // Before every fail branch, because it is worded out of their
+        // vocabulary and would lose each tie. See [NO_BACKLOG].
+        if (NO_BACKLOG.containsMatchIn(q) && ABOUT_STUDENTS.containsMatchIn(q) &&
+            !SUBJECT_SCOPED.containsMatchIn(q) && !namedSubjects
+        ) return Match("no_backlogs") { it.studentsWithoutBacklogs() }
 
         if (!subjectAsksFirst && (q.contains("fail") || q.contains("backlog")) &&
             (q.contains("most") || q.contains("highest number") || q.contains("maximum"))
@@ -467,6 +602,22 @@ object SqlTemplates {
             val t = SGPA_THRESHOLD.find(q)?.groupValues?.get(1)?.toDoubleOrNull() ?: 9.0
             return Match("count_sgpa_at_least") { it.countSgpaAtLeast(t) }
         }
+
+        // A value, not a bound. Sits beside count_sgpa_at_least because they
+        // are the same question with and without a comparator, and after it so
+        // an explicit threshold is never re-read as an exact match.
+        namedSgpaValue(q)?.let { v ->
+            if (!namedSubjects && !q.contains("subject") && !C_FAIL.containsMatchIn(q)) {
+                return Match("students_with_sgpa") { it.studentsWithSgpa(v) }
+            }
+        }
+
+        // Before supplementary_count and student_count, both of which would
+        // otherwise claim it: "how many students were absent" narrows the
+        // roster by something student_count does not model, and answering
+        // "there are 369 students" is the confident non-answer this branch
+        // exists to replace.
+        if (missedExam(q)) return Match("exam_attendance") { it.examAttendance() }
 
         if (q.contains("supplement") &&
             (q.contains("how many") || q.contains("number of") || q.contains("count"))

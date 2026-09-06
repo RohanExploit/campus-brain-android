@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Enrolment. Reached by tapping the status pill, never by being sent here.
+
+  Read the top of the screen before the form: the intro says answering works
+  with or without this, and it says it above the fields rather than in small
+  print under them. That ordering is the whole design. A sign-in screen that
+  leads with fields is asking for credentials; one that leads with "this is
+  optional and nothing stops working" is offering a confirmation, and the
+  second is the only honest description of what this does.
+
+  One scroll, three fields, one action. No card, no logo, no progress bar: the
+  form IS the screen, and the outcome card below replaces it rather than
+  appearing under it, so a student never has to scroll to find out what
+  happened.
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ink"
+    android:scrollbars="none"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/gutter"
+        android:paddingEnd="@dimen/gutter"
+        android:paddingTop="@dimen/space_5"
+        android:paddingBottom="@dimen/space_8">
+
+        <TextView
+            android:id="@+id/enrolTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/enrol_title"
+            android:textSize="@dimen/type_heading"
+            android:textStyle="bold"
+            android:letterSpacing="-0.01"
+            android:textColor="@color/text_primary" />
+
+        <TextView
+            android:id="@+id/enrolIntro"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_3"
+            android:text="@string/enrol_intro"
+            android:textSize="@dimen/type_body_sm"
+            android:textColor="@color/text_secondary"
+            android:lineSpacingExtra="@dimen/line_extra_body"
+            android:justificationMode="none"
+            android:hyphenationFrequency="none" />
+
+        <!--
+          The form. GONE while the outcome card is up: the two never share the
+          screen, because a "try again" that is one scroll away from the field
+          it refers to is a worse instruction than one that puts the field back.
+        -->
+        <LinearLayout
+            android:id="@+id/enrolForm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="@dimen/space_6">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/enrol_email_label"
+                android:textSize="@dimen/type_caption"
+                android:textColor="@color/text_secondary" />
+
+            <EditText
+                android:id="@+id/enrolEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_2"
+                android:minHeight="@dimen/touch_min"
+                android:background="@drawable/bg_input"
+                android:paddingStart="@dimen/space_4"
+                android:paddingEnd="@dimen/space_4"
+                android:paddingTop="@dimen/space_3"
+                android:paddingBottom="@dimen/space_3"
+                android:hint="@string/enrol_email_hint"
+                android:textColorHint="@color/text_tertiary"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/type_body_sm"
+                android:inputType="textEmailAddress"
+                android:imeOptions="actionNext"
+                android:maxLines="1"
+                android:importantForAutofill="no" />
+
+            <!-- Doubles as the correction line for this field. Same colour and
+                 same position either way, so a mistyped address changes the
+                 words under the field rather than growing a red row that
+                 shifts everything below it under the student's thumb. -->
+            <TextView
+                android:id="@+id/enrolEmailHelp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_2"
+                android:text="@string/enrol_email_help"
+                android:textSize="@dimen/type_caption"
+                android:textColor="@color/text_secondary"
+                android:lineSpacingExtra="@dimen/line_extra_body"
+                android:justificationMode="none"
+                android:hyphenationFrequency="none" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_5"
+                android:text="@string/enrol_password_label"
+                android:textSize="@dimen/type_caption"
+                android:textColor="@color/text_secondary" />
+
+            <EditText
+                android:id="@+id/enrolPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_2"
+                android:minHeight="@dimen/touch_min"
+                android:background="@drawable/bg_input"
+                android:paddingStart="@dimen/space_4"
+                android:paddingEnd="@dimen/space_4"
+                android:paddingTop="@dimen/space_3"
+                android:paddingBottom="@dimen/space_3"
+                android:hint="@string/enrol_password_hint"
+                android:textColorHint="@color/text_tertiary"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/type_body_sm"
+                android:inputType="textPassword"
+                android:imeOptions="actionNext"
+                android:maxLines="1"
+                android:importantForAutofill="no" />
+
+            <TextView
+                android:id="@+id/enrolPasswordHelp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_2"
+                android:text="@string/enrol_password_help"
+                android:textSize="@dimen/type_caption"
+                android:textColor="@color/text_secondary"
+                android:lineSpacingExtra="@dimen/line_extra_body"
+                android:justificationMode="none"
+                android:hyphenationFrequency="none" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_5"
+                android:text="@string/enrol_code_label"
+                android:textSize="@dimen/type_caption"
+                android:textColor="@color/text_secondary" />
+
+            <!-- textCapCharacters because the server matches a sha256 of the
+                 uppercased form, so the keyboard may as well show the student
+                 what will be sent. textNoSuggestions keeps the IME from
+                 autocorrecting a code into a word. -->
+            <EditText
+                android:id="@+id/enrolCode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_2"
+                android:minHeight="@dimen/touch_min"
+                android:background="@drawable/bg_input"
+                android:paddingStart="@dimen/space_4"
+                android:paddingEnd="@dimen/space_4"
+                android:paddingTop="@dimen/space_3"
+                android:paddingBottom="@dimen/space_3"
+                android:hint="@string/enrol_code_hint"
+                android:textColorHint="@color/text_tertiary"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/type_body_sm"
+                android:inputType="textCapCharacters|textNoSuggestions"
+                android:imeOptions="actionDone"
+                android:maxLines="1"
+                android:importantForAutofill="no" />
+
+            <TextView
+                android:id="@+id/enrolCodeHelp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_2"
+                android:text="@string/enrol_code_help"
+                android:textSize="@dimen/type_caption"
+                android:textColor="@color/text_secondary"
+                android:lineSpacingExtra="@dimen/line_extra_body"
+                android:justificationMode="none"
+                android:hyphenationFrequency="none" />
+
+            <TextView
+                android:id="@+id/enrolSubmit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_6"
+                android:minHeight="@dimen/touch_min"
+                android:gravity="center"
+                android:background="@drawable/bg_primary_action"
+                android:text="@string/enrol_submit"
+                android:textSize="@dimen/type_body_sm"
+                android:textStyle="bold"
+                android:textColor="@color/primary_action_text"
+                android:enabled="false"
+                android:focusable="true"
+                android:clickable="true" />
+        </LinearLayout>
+
+        <!--
+          The outcome. Mirrors view_import_result's shape — icon, headline,
+          sentence, one action on the app's ordinary raised surface — but does
+          not include it: that layout's ids and its "Ask about it" / "Dismiss"
+          actions belong to the import flow, and sharing the file would couple
+          two screens that have no reason to change together.
+
+          No red slab on any branch, for the reason given there: the headline
+          carries the outcome, and a damaged-looking surface would say the app
+          is broken when in fact a code was mistyped or the wifi is behind a
+          portal.
+        -->
+        <LinearLayout
+            android:id="@+id/enrolResult"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="@dimen/space_6"
+            android:background="@drawable/bg_surface_card"
+            android:paddingStart="@dimen/space_5"
+            android:paddingEnd="@dimen/space_5"
+            android:paddingTop="@dimen/space_4"
+            android:paddingBottom="@dimen/space_3"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:id="@+id/enrolResultIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_check"
+                    android:importantForAccessibility="no" />
+
+                <TextView
+                    android:id="@+id/enrolResultTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="@dimen/space_3"
+                    android:textSize="@dimen/type_body"
+                    android:textStyle="bold"
+                    android:letterSpacing="-0.01"
+                    android:textColor="@color/text_primary"
+                    android:justificationMode="none" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/enrolResultBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_3"
+                android:textSize="@dimen/type_body_sm"
+                android:textColor="@color/text_secondary"
+                android:lineSpacingExtra="@dimen/line_extra_body"
+                android:justificationMode="none"
+                android:hyphenationFrequency="none" />
+
+            <TextView
+                android:id="@+id/enrolResultAction"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/touch_min"
+                android:paddingEnd="@dimen/space_4"
+                android:gravity="center_vertical"
+                android:textSize="@dimen/type_caption"
+                android:textColor="@color/accent"
+                android:background="?attr/selectableItemBackground" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>
