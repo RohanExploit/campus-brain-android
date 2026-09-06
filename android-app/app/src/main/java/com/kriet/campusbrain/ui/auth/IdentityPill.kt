@@ -24,7 +24,34 @@ object IdentityPill {
     private const val SEPARATOR = " · "
 
     /**
-     * `"KRIET · enrolled"`, or null when there is nothing to say.
+     * How much of an institution's name the header will carry.
+     *
+     * The elision is done here rather than left to `ellipsize="end"` on the
+     * view, and that is not belt and braces. The header is a horizontal
+     * LinearLayout whose title takes `layout_weight="1"`; a wrap_content pill
+     * that grows past the available width squeezes the TITLE to nothing and
+     * then overflows the gutter, so the view never reaches the width at which
+     * it would ellipsize. Capping the only unbounded part of the string --
+     * `display_name`, which the institution chooses and this app does not
+     * control -- is what keeps the row one line. The commit that had to stop
+     * the header status line clipping mid-word is the precedent.
+     *
+     * 18 characters fits "Institute of Tech…" and leaves the state word
+     * intact, which is the half of the pill that changes.
+     */
+    const val MAX_NAME_CHARS = 18
+
+    /** Ellipsis character, not three dots: it is one glyph and it is what the
+     * rest of the app's copy uses. */
+    private const val ELLIPSIS = "…"
+
+    fun shortenName(name: String): String =
+        if (name.length <= MAX_NAME_CHARS) name
+        else name.take(MAX_NAME_CHARS - 1).trimEnd() + ELLIPSIS
+
+    /**
+     * `"<institution> · enrolled"`, or null when there is nothing to say.
+     * The name is never written here -- it comes from the grant.
      *
      * [activeLabel] is passed in rather than written here so the one word this
      * function contributes still lives in `strings.xml`. The other three
@@ -47,7 +74,7 @@ object IdentityPill {
         nowMs: Long = System.currentTimeMillis(),
     ): String? {
         val e = entitlement ?: return null
-        val name = e.displayName?.takeIf { it.isNotBlank() } ?: e.tenantId
+        val name = shortenName((e.displayName?.takeIf { it.isNotBlank() } ?: e.tenantId).trim())
         val state = Entitlements.shortBanner(e, nowMs) ?: activeLabel
         return name + SEPARATOR + state
     }

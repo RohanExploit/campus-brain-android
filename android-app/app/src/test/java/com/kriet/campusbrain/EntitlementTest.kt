@@ -33,7 +33,7 @@ class EntitlementTest {
         licence: String = "active",
         verifiedAtMs: Long = t0,
     ): Entitlement = requireNotNull(
-        Entitlements.of("tenant_1", "student", licence, graceDays, verifiedAtMs, "KRIET")
+        Entitlements.of("tenant_1", "student", licence, graceDays, verifiedAtMs, "Northfield")
     )
 
     // --- the invariant that is the entire product -------------------------

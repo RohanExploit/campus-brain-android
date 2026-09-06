@@ -351,7 +351,11 @@ object SqlTemplates {
     )
     private val ABSENT = Regex(
         """\babsent\w*\b|\bseat[\s-]?cancel\w*\b""" +
-            """|\bmissed\s+(?:the\s+)?(?:exams?|examination\w*|papers?|tests?)\b""",
+            // The exam noun is required here and not after "absent", because
+            // "miss" without it is the commonest verb in the corpus's own
+            // policy questions -- "what happens if I miss it" is half of a
+            // battery probe and is answered by the attendance policy.
+            """|\bmiss(?:ed|es|ing)?\s+(?:the\s+|an?\s+)?(?:exams?|examination\w*|papers?|tests?)\b""",
         RegexOption.IGNORE_CASE
     )
 

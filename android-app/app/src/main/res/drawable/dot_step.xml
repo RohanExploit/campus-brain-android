@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Which of the four panes is showing. A drawn dot, matching dot_live's
+     shape, in the type ramp rather than the accent: it is an index, not a
+     thing to look at. The current pane is the one at full opacity — alpha is
+     acceptable here where it is not on text, because nothing has to be read
+     off it and the accessible version of the same fact is the step's
+     contentDescription. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <solid android:color="@color/text_secondary" />
+    <size android:width="6dp" android:height="6dp" />
+</shape>

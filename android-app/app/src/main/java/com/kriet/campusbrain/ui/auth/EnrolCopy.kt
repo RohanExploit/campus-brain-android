@@ -39,6 +39,13 @@ object EnrolForm {
      * the alternative is finding out after a sign-up round trip, and the
      * failure it produces ("Password should be at least 6 characters") is
      * the server's prose rather than this app's.
+     *
+     * Known seam: a project that raised the minimum in its dashboard would
+     * make this floor too low, and a seven-character requirement would let a
+     * six-character password through to a `Rejected`. That degrades gracefully
+     * rather than lying -- the rejection card names the password as one of the
+     * two things that can have been turned down -- and the honest fix is for
+     * the registrar to leave the default alone, not for the client to guess.
      */
     const val MIN_PASSWORD_LENGTH = 6
 
@@ -141,7 +148,7 @@ object EnrolCopy {
      * is treated as the success it is, and the grant is read exactly as it
      * would have been on a first enrolment. It reaches this function as
      * [Identity.EnrolResult.Enrolled]. So the success copy has to be true of
-     * both histories at once, which is why it says "Enrolled with KRIET" and
+     * both histories at once, which is why it says "Enrolled with <name>" and
      * not "Welcome" (wrong for a reinstall) or "Recovered" (wrong for a first
      * run).
      */

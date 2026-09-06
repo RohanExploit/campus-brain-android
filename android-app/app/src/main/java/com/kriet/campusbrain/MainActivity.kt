@@ -7,15 +7,19 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.IntentCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.kriet.campusbrain.data.BrainRepository
 import com.kriet.campusbrain.data.InitState
 import com.kriet.campusbrain.data.auth.Identity
 import com.kriet.campusbrain.databinding.ActivityMainBinding
+import com.kriet.campusbrain.ui.auth.IdentityPill
 import com.kriet.campusbrain.ui.docs.ImportViewModel
+import com.kriet.campusbrain.ui.welcome.FirstRunGate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -44,6 +48,20 @@ class MainActivity : AppCompatActivity() {
             navController.navigate(R.id.selfTestFragment); true
         }
 
+        // The second affordance, and the only way to enrolment. A separate
+        // gesture on a separate view rather than a second meaning for the
+        // long-press above: one gesture with two destinations is how a demo
+        // arrives on the wrong screen with an audience watching.
+        //
+        // Note what this listener does NOT read. It navigates unconditionally
+        // — enrolled, lapsed or never enrolled all reach the same screen,
+        // because a tap that sometimes does nothing is worse than no tap at
+        // all, and because deciding here would mean consulting the entitlement
+        // in a fourth place.
+        binding.statusPill.setOnClickListener {
+            navController.navigate(R.id.enrolFragment)
+        }
+
         lifecycleScope.launch {
             // Identity first, and deliberately BEFORE the corpus: it is two
             // local SQLite reads with no network in them, so it costs nothing,
@@ -52,20 +70,6 @@ class MainActivity : AppCompatActivity() {
             // answering a question consults it — see Identity's header comment.
             withContext(Dispatchers.IO) { Identity.init(applicationContext) }
             withContext(Dispatchers.IO) { BrainRepository.init(applicationContext) }
-            // Two or three words in the tertiary slot, and only when the
-            // offline grace window is nearly out. Answers carry on regardless;
-            // an unrenewed licence is a thing for the college to fix, not a
-            // reason to stop a student getting an answer offline.
-            //
-            // Read once, here, from what was already on disk. The re-read
-            // below may change it, and that change appears on the NEXT launch
-            // rather than mutating the header under the student mid-session --
-            // a licence banner that materialises while someone is reading an
-            // answer is worse than one that is a day late.
-            Identity.shortBanner()?.let {
-                binding.statusPillChunks.text = it
-                binding.statusPillChunks.visibility = View.VISIBLE
-            }
             // Detached, and never awaited by anything on screen. On a device
             // with no config.json, no session, or a grant read in the last
             // day it returns before opening a socket, so airplane mode pays
@@ -110,11 +114,82 @@ class MainActivity : AppCompatActivity() {
             binding.header.visibility = View.VISIBLE
         }
 
+        // The licence slot, followed rather than sampled.
+        //
+        // It used to be read once from disk, with a comment saying a banner
+        // that materialises mid-answer is worse than one a day late. That
+        // reasoning was about a WARNING appearing unbidden, and it still
+        // holds — but it now also has to cover the case it was written before:
+        // a student who taps the pill, enrols, and comes back to a header that
+        // has not noticed. Confirming an action the student just took is the
+        // opposite of an interruption, and it is the only way this screen ever
+        // shows a grant on the run it was created in.
+        //
+        // The cost is real and accepted: the once-a-day refreshIfDue above can
+        // change the STATE word under a student mid-session. It is one word in
+        // the tertiary slot beside a name they put there themselves, it never
+        // becomes a dialog, and nothing about answering changes with it.
+        //
+        // This is the third and last thing MainActivity does with Identity —
+        // init, refresh, display — and none of the three is consulted by
+        // anything on the way to an answer.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                Identity.entitlement.collect { grant ->
+                    val text = IdentityPill.text(
+                        grant, getString(R.string.entitlement_active_short)
+                    )
+                    // Null means an un-enrolled device, and an un-enrolled
+                    // device gets the header it has always had: the view stays
+                    // GONE, which is the state the layout ships in.
+                    binding.statusPillChunks.text = text.orEmpty()
+                    binding.statusPillChunks.visibility =
+                        if (text == null) View.GONE else View.VISIBLE
+                }
+            }
+        }
+
         // Only on a genuinely new launch. After process death the saved state
         // comes back with the original Intent still attached, and the transient
         // read grant on its Uri is long gone — re-running it would produce a
         // baffling failure card for a file the student shared yesterday.
-        if (savedInstanceState == null) handleSharedDocument(intent)
+        if (savedInstanceState == null) {
+            val hadSharedDocument = handleSharedDocument(intent)
+            if (!hadSharedDocument) maybeWelcome(navController)
+        }
+    }
+
+    /**
+     * The four claims, on the first launch only.
+     *
+     * Three things this is careful not to be. It is not a gate: the welcome
+     * pops back to a fully working Ask tab, the bottom bar stays live
+     * underneath it, and the corpus is already loaded behind it. It is not a
+     * funnel: it ends on the Ask tab and never on the enrolment screen, so
+     * nothing a new student is told here is made conditional on an account.
+     * And it is not shown to a phone that has already seen it, including a
+     * phone whose store cannot be read — see [FirstRun.shouldShow], where
+     * "cannot tell" resolves to "do not show" precisely so a broken store
+     * cannot produce an onboarding screen that will not stay shut.
+     *
+     * Skipped entirely when the launch came from a share, because that student
+     * asked for something specific and four panes of introduction is not it.
+     */
+    private fun maybeWelcome(navController: androidx.navigation.NavController) {
+        lifecycleScope.launch {
+            val show = withContext(Dispatchers.IO) {
+                FirstRunGate.shouldShow(applicationContext)
+            }
+            if (!show) return@launch
+            // Marked as seen when it is SHOWN, not when it is dismissed: the
+            // bottom bar is live underneath, so a student can leave by a route
+            // that is neither Skip nor Start, and a flag written only on the
+            // two deliberate exits would bring this back on the next launch.
+            withContext(Dispatchers.IO) { FirstRunGate.markSeen(applicationContext) }
+            // The activity can have been torn down while that ran.
+            if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return@launch
+            navController.navigate(R.id.welcomeFragment)
+        }
     }
 
     /**
@@ -139,9 +214,14 @@ class MainActivity : AppCompatActivity() {
      * nothing is persisted and takePersistableUriPermission is never called —
      * the bytes are read once, now, and the corpus keeps the text, not the
      * file.
+     *
+     * Returns true when this launch was a share, which is the one case the
+     * first-run welcome stands down for: someone who shared a timetable asked
+     * for something specific, and four panes of introduction in front of it
+     * would be the app talking over them.
      */
-    private fun handleSharedDocument(intent: Intent?) {
-        intent ?: return
+    private fun handleSharedDocument(intent: Intent?): Boolean {
+        intent ?: return false
         val uri: Uri? = when (intent.action) {
             // A plain-text share from a browser or notes app also arrives as
             // ACTION_SEND text/plain, but with EXTRA_TEXT and no stream. There
@@ -152,7 +232,7 @@ class MainActivity : AppCompatActivity() {
             Intent.ACTION_VIEW -> intent.data
             else -> null
         }
-        if (uri == null) return
+        if (uri == null) return false
 
         // Consume it. A rotation re-delivers the same Intent through onCreate,
         // and DocumentIngest's uniqueDocId would cheerfully index the file a
@@ -163,11 +243,14 @@ class MainActivity : AppCompatActivity() {
 
         if (!imports.start(uri)) {
             Toast.makeText(this, R.string.import_busy, Toast.LENGTH_LONG).show()
-            return
+            // Still true: the launch WAS a share, it just could not be served
+            // yet, and a welcome screen on top of that Toast helps nobody.
+            return true
         }
         // The progress and the outcome live on the Documents tab, so go there.
         // Posted because the bottom bar has only just been wired to the
         // NavController and the graph may not have restored yet.
         binding.bottomNav.post { binding.bottomNav.selectedItemId = R.id.docsFragment }
+        return true
     }
 }

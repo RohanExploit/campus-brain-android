@@ -234,4 +234,40 @@
          one gesture, one destination. -->
     <string name="enrol_pill_tooltip">Enrolment</string>
     <string name="enrol_pill_description">Licence and enrolment</string>
+
+    <!--
+      The welcome, shown once.
+
+      Four claims, and the copy rule for all of them is that each states
+      something the student can go and check within a minute of dismissing
+      this screen. That is why none of them is a feature list: "searches your
+      college documents" is a boast, "every answer shows the document it came
+      from, and you can tap it" is a test the app either passes or fails on
+      the very first question.
+
+      What is deliberately absent: any mention of enrolment, licences or
+      accounts. This screen ends on a working Ask tab and nothing else. An
+      onboarding flow that hands a new student to a sign-in form would make
+      every promise on these four panes conditional, and none of them is.
+    -->
+    <string name="welcome_cited_title">Every answer shows its source</string>
+    <string name="welcome_cited_body">Ask a question and the answer arrives with the college document it was read from, listed underneath. Tap it and you land on the exact passage. Nothing is offered that you cannot go and check.</string>
+
+    <string name="welcome_offline_title">It works with no network</string>
+    <string name="welcome_offline_body">The documents, the search index and the language model are all on this phone already. Turn on airplane mode and ask the same question — you get the same answer. There is no server here to be slow or to be down.</string>
+
+    <string name="welcome_private_title">Your records never leave the phone</string>
+    <string name="welcome_private_body">Questions, marks and attendance are read on the device and are never uploaded. This is structural rather than a promise: nothing on the path from your question to its answer opens a connection at all.</string>
+
+    <string name="welcome_yours_title">Add your own documents</string>
+    <string name="welcome_yours_body">Share a timetable, a notice or a syllabus to Campus Brain from any app and it is searched alongside the college\'s own. It stays on this phone too, and you can remove it whenever you like.</string>
+
+    <!-- Plain, and offered from the first pane rather than appearing at the
+         end. A skip that only shows up once you have read everything is not a
+         skip. No "no thanks, I'll figure it out" — copy that makes leaving
+         feel like a mistake is the thing this app should least resemble. -->
+    <string name="welcome_skip">Skip</string>
+    <string name="welcome_next">Next</string>
+    <string name="welcome_start">Start asking</string>
+    <string name="welcome_step_description">Step %1$d of %2$d</string>
 </resources>

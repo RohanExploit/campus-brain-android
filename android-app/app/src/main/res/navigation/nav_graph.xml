@@ -27,4 +27,26 @@
     <fragment android:id="@+id/selfTestFragment"
         android:name="com.kriet.campusbrain.ui.selftest.SelfTestFragment"
         android:label="Self test" />
+
+    <!--
+      Registered the same way the self test is: a destination with no action
+      into it and no tab pointing at it, reached by a gesture from the header.
+
+      Deliberately NOT a bottom-nav item. The four tabs are the things a
+      student does with the app; enrolment is something they do once, to the
+      app. A fifth tab would also make it look like a place answers come from,
+      which is the one impression this feature must not give — nothing on the
+      answering path consults it.
+    -->
+    <fragment android:id="@+id/enrolFragment"
+        android:name="com.kriet.campusbrain.ui.auth.EnrolFragment"
+        android:label="@string/enrol_title" />
+
+    <!--
+      Shown once, on the first launch, and popped by either exit. Also not a
+      tab: there is nothing to come back to.
+    -->
+    <fragment android:id="@+id/welcomeFragment"
+        android:name="com.kriet.campusbrain.ui.welcome.WelcomeFragment"
+        android:label="@string/app_name" />
 </navigation>
