@@ -59,6 +59,24 @@ class IngestDeviceTest {
         assertTrue("corpus not ready: $state", state is InitState.Ready)
         val repo = (state as InitState.Ready).repo
 
+        // Start from an empty user corpus, every run.
+        //
+        // user_corpus.db survives between runs by design -- it is the store
+        // that outlives an app update -- and the free tier caps imports at one
+        // document. So the second run on an uncleared device would be refused
+        // with LicenseRequired before reading a byte, and the log would look
+        // exactly like an ingestion regression. The failure would be in the
+        // test's own leftovers, and it would be read as a fault in the code
+        // under test.
+        //
+        // Removing rather than raising the cap: the point of this test is the
+        // SQLite write and the FTS5 companion insert, and it should exercise
+        // those on the allowance a real free user actually has.
+        repo.ingest.added().forEach {
+            Log.i("INGEST", "clearing leftover: ${it.title}")
+            repo.ingest.remove(it.docId)
+        }
+
         Log.i("INGEST", "===== BEGIN INGEST DEVICE TEST =====")
         Log.i("INGEST", "embedderReady=${repo.ingest.embedderReady}")
 
