@@ -39,9 +39,97 @@ object RouteRules {
         if (SUPERLATIVE_SCORE.containsMatchIn(q)) {
             return Route.TABULAR to "rule: superlative over a score column"
         }
+        // "Which subject do students struggle with most" reached no rule above
+        // -- no score word for SUPERLATIVE_SCORE, no "fail" for AGG_KW -- and
+        // the prototype stage sent it to GLOBAL, where it retrieved the
+        // attendance condonation notice and read out the 65-74% band. Nothing
+        // in 58 documents states which subject is hardest, and nothing ever
+        // will: it is an argmax over per-subject grades in student_subjects,
+        // which is TABULAR by definition. Routing it anywhere else is asking a
+        // question of the wrong half of the corpus.
+        if (SUBJECT_DIFFICULTY.containsMatchIn(q)) {
+            return Route.TABULAR to "rule: subject ranked by difficulty"
+        }
+        // "How is the college doing overall this semester" is the same argument
+        // one level up: it asks how the cohort did, and the cohort's results
+        // are rows, not prose. The corpus has no state-of-the-college passage
+        // to retrieve, so the vector route could only ever return the nearest
+        // circular -- which is what it did.
+        if (isCohortOverview(q)) return Route.TABULAR to "rule: cohort overview"
         if (FACT_ATTR.containsMatchIn(q)) return Route.FACT to "rule: document-attribute phrasing"
         return null
     }
+
+    private val DIFFICULTY =
+        """hard|harder|hardest|tough|tougher|toughest|difficult|difficulty""" +
+            """|struggle|struggles|struggling|weak|weakest|worst|poorly|badly"""
+
+    /**
+     * A subject framed as hard rather than as a topic.
+     *
+     * Paired with the noun on purpose, the same guard [SUPERLATIVE_SCORE]
+     * needs: a bare "difficult" would claim "is the admission process
+     * difficult", and a bare "subject" would claim "what subjects are in the
+     * syllabus". Deliberately NOT including "most" or "lowest" -- "which
+     * subject has the most failures" and "the lowest pass rate" are already
+     * TABULAR through [AGG_KW], with templates that read the framing, and
+     * duplicating them here would only add a second way to get it wrong.
+     */
+    val SUBJECT_DIFFICULTY = Regex(
+        """\bsubjects?\b[^.?!]{0,40}\b(?:$DIFFICULTY)\b""" +
+            """|\b(?:$DIFFICULTY)\b[^.?!]{0,40}\bsubjects?\b""",
+        RegexOption.IGNORE_CASE
+    )
+
+    /**
+     * "How is the college doing overall this semester" and nothing that merely
+     * resembles it.
+     *
+     * Three conditions, all required, because each one alone over-claims. The
+     * cue on its own takes "a summary of the syllabus"; the scope on its own
+     * takes every second question in the corpus; and cue plus scope still takes
+     * "what is the overall attendance of students", which is an attendance
+     * question with a document answer and no business reaching a results table.
+     * The exclusion list is the same device [SqlTemplates.QUALIFIERS] uses to
+     * stop the bare roster count answering questions that narrow it.
+     *
+     * Reached only AFTER [AGG_KW], so a question that names the figure it wants
+     * keeps the template that computes exactly that figure: "what is the
+     * overall pass percentage" is pass_percentage, not a summary.
+     */
+    fun isCohortOverview(query: String): Boolean {
+        val q = query.lowercase()
+        return OVERVIEW_CUE.containsMatchIn(q) &&
+            OVERVIEW_SCOPE.containsMatchIn(q) &&
+            !OVERVIEW_EXCLUDED.containsMatchIn(q)
+    }
+
+    private val OVERVIEW_CUE = Regex(
+        """\boverall\b|\boverview\b|\bsummary\b|\bsummaris\w*\b|\bsummariz\w*\b""" +
+            """|\bhow\s+(?:is|are|has|have|did|was|were)\b[^.?!]{0,40}""" +
+            """\b(?:doing|going|performing|performed|perform|fared|faring|done)\b""",
+        RegexOption.IGNORE_CASE
+    )
+
+    /** Who the summary would be about. A cohort, or its results -- not a topic. */
+    private val OVERVIEW_SCOPE = Regex(
+        """\bcollege\b|\binstitute\b|\bcampus\b|\bbatch\b|\bcohort\b""" +
+            """|\bstudents?\b|\bresults?\b|\bsemester\b""",
+        RegexOption.IGNORE_CASE
+    )
+
+    /**
+     * Words that make the question about one thing rather than about the
+     * cohort. "An overview of the semester registration process" and "the
+     * overall attendance of students" both satisfy cue and scope, and neither
+     * is answered by a pass rate.
+     */
+    private val OVERVIEW_EXCLUDED = Regex(
+        """\battendance\b|\bscholarship\w*\b|\bfees?\b|\bhostel\b|\bplacement\w*\b""" +
+            """|\blibrar\w*\b|\bsyllabus\b|\btimetable\b|\bregistration\b|\bcertificate\b""" +
+            """|\bholiday\w*\b|\bevent\w*\b|\bnotice\b|\bcircular\b|\bpolicy\b|\bprocedure\b""",
+        RegexOption.IGNORE_CASE
+    )
 
     val STUDENT_PHRASES = listOf("score of", "result for", "search for")
 

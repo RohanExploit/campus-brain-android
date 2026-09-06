@@ -43,6 +43,21 @@ object AnswerComposer {
          * the next round of tuning is guesswork.
          */
         val reason: String = "",
+        /**
+         * True when the abstention is not "the corpus was thin here" but "the
+         * corpus does not cover this subject at all" -- see
+         * [AnswerCheck.unsupportedSubject].
+         *
+         * Carried out of this file because the caller has a decision to make
+         * with it. An ordinary abstention is handed to the cloud fallback, and
+         * that is right: the corpus missed a question a general model may know.
+         * This one must not be. There is no grounding to send, the question is
+         * about this college's own records, and a general-knowledge model has
+         * no way to know what is in them -- so the fallback would answer
+         * "students caught cheating" from nothing at all, which is the exact
+         * confident-and-wrong failure the abstention was protecting against.
+         */
+        val offTopic: Boolean = false,
     ) {
         /** Flat rendering, for logs and for callers that want one string. */
         val text: String
@@ -52,7 +67,18 @@ object AnswerComposer {
             }
     }
 
-    fun compose(query: String, chunks: List<RetrievedChunk>, prefix: String? = null): Composed {
+    /**
+     * [vocabulary] lets the off-topic check ask whether a word exists in the
+     * corpus at all; see [AnswerCheck.unsupportedSubject]. Optional, and null
+     * means that check is skipped entirely -- the app always supplies one, and
+     * a caller that cannot gets exactly the behaviour it had before.
+     */
+    fun compose(
+        query: String,
+        chunks: List<RetrievedChunk>,
+        prefix: String? = null,
+        vocabulary: AnswerCheck.CorpusVocabulary? = null,
+    ): Composed {
         if (chunks.isEmpty()) {
             return Composed(ABSTENTION, emptyList(), abstained = true, reason = "nothing retrieved")
         }
@@ -69,7 +95,7 @@ object AnswerComposer {
         // failure was an answering sentence sitting in chunk two while chunk
         // one -- a document's signature block -- happened to rank first, and
         // the app abstained on a question it was holding the answer to.
-        val finding = AnswerCheck.bestAnswer(question, chunks)
+        val finding = AnswerCheck.bestAnswer(question, chunks, vocabulary)
 
         if (applied == null && finding == null) {
             // Abstaining is NOT the same as answering nothing. Inventing an
@@ -79,6 +105,27 @@ object AnswerComposer {
             // nearest material is offered instead, explicitly labelled as not
             // being an answer. The user still gets somewhere to go; the system
             // still does not assert what it cannot support.
+            //
+            // Two different abstentions, said differently on purpose. "The
+            // closest material is X" invites the student to go and read X, and
+            // that is the right offer when the corpus was merely thin. When the
+            // corpus has no such subject at all, pointing at the three
+            // nearest-ranked documents is a false lead -- they are the top of a
+            // ranking that had nothing to rank. Naming the words that are
+            // missing tells the student what the corpus actually lacks, which
+            // is the only useful thing this app knows about the question.
+            val missing = AnswerCheck.unsupportedSubject(question, chunks, vocabulary)
+            if (missing.isNotEmpty()) {
+                return Composed(
+                    ABSTENTION + "\n\nNothing in the records mentions " +
+                        missing.joinToString(" or ") + ", so there is no material here to " +
+                        "answer that from.",
+                    emptyList(),
+                    abstained = true,
+                    reason = "off topic: ${missing.joinToString(", ")} in none of ${chunks.size} chunks",
+                    offTopic = true,
+                )
+            }
             val nearest = chunks.take(3)
                 .map { it.section?.substringAfterLast(" > ") ?: it.docId }
                 .distinct()

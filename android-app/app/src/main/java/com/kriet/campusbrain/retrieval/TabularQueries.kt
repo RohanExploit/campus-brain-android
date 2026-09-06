@@ -339,6 +339,56 @@ class TabularQueries(private val db: BrainDb) {
     private data class SubjectRate(val code: String, val passed: Long, val took: Long, val rate: Double)
 
     /**
+     * How the cohort did, in four figures.
+     *
+     * This exists because "how is the college doing overall this semester" was
+     * answered "I don't have enough information to answer that" while the
+     * records held 334 passes out of 369. The GLOBAL route was doing what it is
+     * built to do -- retrieve widely across documents -- and there is no
+     * document to retrieve: no circular in this bundle summarises the semester.
+     * The summary is a query, not a passage.
+     *
+     * Assembled from the existing templates rather than from new SQL, so the
+     * numbers here cannot drift away from the numbers the same app gives when
+     * the questions are asked one at a time. That is the whole point of the
+     * deterministic badge: "the pass rate is 90.5%" and "overall, 90.5%" must
+     * be the same 90.5%, computed once.
+     *
+     * The weakest subject is included because it is the only part of "how are
+     * we doing" the headline rate hides -- and it is the RATE, not the count.
+     * BTCOC502 has the most failures (16) and a 94.7% pass rate; BTAIHM503B has
+     * 6 and 90.9%. Reporting the count here would name the wrong subject as the
+     * cohort's weak spot.
+     */
+    fun semesterOverview(): TemplateResult {
+        val pass = passPercentage()
+        val avg = averageSgpa()
+        val worst = db.conn.query(
+            "SELECT subject_code, COUNT(*) FILTER (WHERE grade NOT IN ($failList)) AS passed, " +
+                "COUNT(*) AS took, " +
+                "100.0 * COUNT(*) FILTER (WHERE grade NOT IN ($failList)) / COUNT(*) AS rate " +
+                "FROM student_subjects WHERE grade IS NOT NULL AND grade NOT IN ($auditList) " +
+                "GROUP BY subject_code ORDER BY rate ASC, subject_code LIMIT 1"
+        ) { SubjectRate(it.getText(0), it.getLong(1), it.getLong(2), it.getDouble(3)) }
+            .firstOrNull()
+
+        val body = StringBuilder()
+        body.append(pass.answer)
+        body.append(' ').append(avg.answer)
+        worst?.let {
+            body.append(" The weakest subject by pass rate is ").append(it.code)
+                .append(" at ").append("%.1f".format(it.rate)).append("% (")
+                .append(it.took - it.passed).append(" of ").append(it.took)
+                .append(" failed it).")
+        }
+        return TemplateResult(
+            body.toString(),
+            pass.debugSql + " ; " + avg.debugSql + " ; subjectPassRates(worstFirst=true, limit=1)",
+            "semester_overview",
+        )
+    }
+
+    /**
      * One counter with optional predicates, rather than a new template per
      * combination of them. Every constraint the caller passes is applied --
      * which is the entire point: the failure this replaces was a template

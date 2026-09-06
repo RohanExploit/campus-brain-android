@@ -114,6 +114,14 @@ object AnswerCheck {
         // announce that the scheme is available.
         "available", "offered", "offers", "offer", "exist", "exists",
         "options", "kinds", "types", "sort", "sorts",
+        // The imperative that asks for the answer's FORM. "List students who
+        // were caught cheating" narrated a deadline tracker, and one of the two
+        // terms that cleared the floor was "list" -- matched against "The
+        // consolidated list below tracks every deadline...". A verb that says
+        // how to present the answer says nothing about what the answer is
+        // about, which is exactly the argument the block above makes for
+        // "available".
+        "list", "lists", "show", "shows", "display", "find", "name", "names",
     )
 
     /**
@@ -195,6 +203,89 @@ object AnswerCheck {
             .filter { s -> s.length in 25..400 && s.count { it == '|' } < 3 }
 
     /**
+     * The words that make this question THIS question, rather than any other
+     * question about college.
+     *
+     * "list students who were caught cheating" and "how many students failed"
+     * share "students" and nothing else; the first is about cheating and the
+     * second about failing, and it is the second word of each pair that decides
+     * which passages could possibly answer it. [TopicGate.isDomainVocabulary]
+     * owns the judgement of which is which.
+     */
+    fun subjectTerms(terms: List<String>): List<String> =
+        terms.filter { !TopicGate.isDomainVocabulary(searchKey(it)) }
+
+    /**
+     * Whether a word occurs anywhere in the corpus, as opposed to anywhere in
+     * what retrieval happened to return. Supplied by the caller because this
+     * file has no database and is kept that way; null means the question
+     * cannot be asked, and every rule below then resolves toward answering.
+     * See `CorpusWords`.
+     */
+    fun interface CorpusVocabulary {
+        fun occursInCorpus(term: String): Boolean
+    }
+
+    /**
+     * The question's own subject words, when the corpus has never heard of them
+     * and retrieval found none of them either. Empty means the normal sentence
+     * search should decide.
+     *
+     * This is the missing precondition behind two measured failures. The floor
+     * in [bestAnswer] is "two content words", and it counts every word as equal
+     * evidence, so a sentence scores two on "list" and "students" -- words that
+     * are in a third of the corpus and in most questions -- while contributing
+     * nothing about cheating. Measured against the shipped bundle: "list
+     * students who were caught cheating" retrieved the deadline tracker and
+     * read out "The consolidated list below tracks every deadline a student
+     * needs to act on...", labelled as an answer. The corpus has no
+     * disciplinary field at all; "cheating" occurs in 0 of 493 chunks and
+     * "caught" in 1.
+     *
+     * Checked over whole CHUNKS, not over the candidate sentence, and that is
+     * load-bearing. "What happens to my scholarship if I am debarred for
+     * attendance" is answerable, and "debarred" lives in a pipe row that
+     * [sentencesOf] deliberately drops -- a per-sentence version of this rule
+     * would refuse it. What is being asked here is whether retrieval found the
+     * topic, not whether one sentence restates it.
+     *
+     * Two subject words are required before it may refuse. One word absent from
+     * the corpus is usually a phrasing accident -- "can I WRITE the exam with
+     * 60% attendance" has exactly one, and "write" is genuinely in 0 of 493
+     * chunks because the policy says "appear for" -- and refusing on that alone
+     * would re-create the over-abstention this file was written to remove.
+     *
+     * [vocabulary] is the third condition and the one that keeps the rule
+     * honest. Missing from ten retrieved chunks is weak evidence: "how long
+     * does a bonafide certificate take" retrieves the right notice, which says
+     * neither "long" nor "take", and an absence-from-retrieval rule alone would
+     * abstain on it. Missing from the whole corpus is strong evidence, and the
+     * two words that made this question fail are exactly that -- "cheating" 0
+     * of 493, against "long" 13 and "take" 11. A null vocabulary means the
+     * question could not be asked, and then this refuses nothing.
+     */
+    fun unsupportedSubject(
+        q: Question,
+        chunks: List<RetrievedChunk>,
+        vocabulary: CorpusVocabulary? = null,
+    ): List<String> {
+        if (vocabulary == null) return emptyList()
+        val subject = subjectTerms(q.terms)
+        if (subject.size < 2) return emptyList()
+        val anywhere = chunks.any { c ->
+            val lower = c.content.lowercase()
+            subject.any { mentions(lower, it) }
+        }
+        if (anywhere) return emptyList()
+        val unknown = subject.filter { !vocabulary.occursInCorpus(searchKey(it)) }
+        // Every subject word is ordinary corpus vocabulary that this particular
+        // retrieval pass happened to miss. That is a retrieval problem, and
+        // refusing to answer is not the fix for it.
+        if (unknown.isEmpty()) return emptyList()
+        return unknown
+    }
+
+    /**
      * The best sentence in [chunks] that both talks about the question and has
      * the shape the question demands, or null if there is none.
      *
@@ -204,8 +295,16 @@ object AnswerCheck {
      * ranking first was enough to make the app abstain on a question the
      * second chunk answered outright.
      */
-    fun bestAnswer(q: Question, chunks: List<RetrievedChunk>): Finding? {
+    fun bestAnswer(
+        q: Question,
+        chunks: List<RetrievedChunk>,
+        vocabulary: CorpusVocabulary? = null,
+    ): Finding? {
         if (q.terms.isEmpty()) return null
+        // Nothing retrieved is about what was asked, and the corpus has never
+        // heard of what was asked, so no sentence in it can be the answer
+        // however many generic words it happens to share.
+        if (unsupportedSubject(q, chunks, vocabulary).isNotEmpty()) return null
         // The old bar, unchanged: one term is enough for a one-term question,
         // two otherwise. Widening the search space is already a large loosening
         // and this is not the place to add a second one.

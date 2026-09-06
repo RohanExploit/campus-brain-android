@@ -33,6 +33,17 @@ class QueryRouter(
     private val cloud: CloudAnswer? = null,
 ) {
 
+    /**
+     * The corpus's own vocabulary, for the off-topic check in
+     * [com.kriet.campusbrain.answer.AnswerCheck.unsupportedSubject].
+     *
+     * Lazy because it is a scan per distinct word and a router that only ever
+     * answers TABULAR questions never needs one, and held here rather than
+     * inside AnswerComposer because that object is deliberately stateless and
+     * database-free.
+     */
+    private val vocabulary by lazy { CorpusWords(db) }
+
     fun answer(rawQuery: String): AnswerResult {
         // Blank input must be rejected BEFORE routing. Left to fall through it
         // matches no rule, lands on TABULAR's roster branch, and prints every
@@ -181,7 +192,7 @@ class QueryRouter(
         trace += "context" to "${packed.sumOf { it.content.length }} / ${HybridSearch.CONTEXT_BUDGET_CHARS} chars"
         trace += "generation" to "extractive"
 
-        val composed = AnswerComposer.compose(query, packed)
+        val composed = AnswerComposer.compose(query, packed, vocabulary = vocabulary)
         trace += "answer_check" to composed.reason
         return withCloudFallback(
             query, route, composed,
@@ -243,6 +254,29 @@ class QueryRouter(
             return AnswerResult(route, lead, passages, sources, trace, abstained = true)
         }
 
+        // Suppressed for the third reason, and the narrowest one: the question
+        // names a campus subject, and the college's records hold nothing on it
+        // -- see AnswerComposer.Composed.offTopic. There is no grounding to
+        // send, and what would come back is a general model's idea of which
+        // students at THIS college were caught cheating, which is a claim about
+        // the records dressed as an answer.
+        //
+        // [TopicGate.namesCampusSubject], not [TopicGate.isEducational], and
+        // the difference is the whole scope of this suppression. isEducational
+        // answers true for anything ambiguous, by design, so using it here
+        // would close the cloud path on every general question the corpus does
+        // not cover -- which is the path's entire purpose. What is being
+        // refused is narrower: "students caught cheating" would be read as a
+        // statement about this cohort, and "what is a good laptop" would not.
+        //
+        // Sources are dropped too. The citation list is built from whatever
+        // retrieval ranked highest, and under a reply that says nothing here is
+        // relevant, naming three documents contradicts the sentence above them.
+        if (composed.offTopic && TopicGate.namesCampusSubject(query)) {
+            trace += "cloud_fallback" to "suppressed (corpus holds nothing on this subject)"
+            return AnswerResult(route, composed.lead, passages, emptyList(), trace, abstained = true)
+        }
+
         // RAG, not a chatbot: whatever the retrieval pass DID find (even the
         // weak match that made AnswerComposer abstain) goes to the model as
         // grounding context before it is allowed to reach for general
@@ -301,7 +335,7 @@ class QueryRouter(
             val packed = hybrid.pack(res.chunks)
             trace += "fused" to "${packed.size} chunks"
             trace += "generation" to "extractive"
-            val composed = AnswerComposer.compose(query, packed)
+            val composed = AnswerComposer.compose(query, packed, vocabulary = vocabulary)
             trace += "answer_check" to composed.reason
             return withCloudFallback(
                 query, Route.LOCAL, composed,
@@ -322,7 +356,7 @@ class QueryRouter(
         )
         trace += "local_mode" to "hybrid (${edges.size} edges + ${packed.size} chunks)"
         trace += "generation" to "extractive"
-        val composed = AnswerComposer.compose(query, packed, prefix = edgeText)
+        val composed = AnswerComposer.compose(query, packed, prefix = edgeText, vocabulary = vocabulary)
         trace += "answer_check" to composed.reason
         return withCloudFallback(
             query, Route.LOCAL, composed,

@@ -85,6 +85,14 @@ object SqlTemplates {
             Constraint.AVERAGE, Constraint.SGPA_RANKING,
             Constraint.RESULT_FAIL, Constraint.RESULT_PASS,
         ),
+        // The summary reports the pass/fail split, the rate and the average, so
+        // a question that asks for the overview AND names one of them is fully
+        // answered rather than partially. It does not filter, which is why no
+        // threshold or cohort constraint appears here.
+        "semester_overview" to setOf(
+            Constraint.RESULT_PASS, Constraint.RESULT_FAIL, Constraint.RATE,
+            Constraint.AVERAGE, Constraint.SUBJECT,
+        ),
         "students_matching" to setOf(
             Constraint.SGPA_THRESHOLD, Constraint.RESULT_FAIL, Constraint.RESULT_PASS,
             Constraint.FAIL_COUNT, Constraint.SUBJECT,
@@ -416,6 +424,19 @@ object SqlTemplates {
             return Match("subject_pass_rates") { it.subjectPassRates(worstFirst) }
         }
 
+        // The same ranking, asked without a rate word in the question. "Which
+        // subject do students struggle with most" carries no "pass", no "fail"
+        // and no "rate", so every branch above declines it, and it used to fall
+        // through the whole file to GLOBAL retrieval and narrate an attendance
+        // notice. Difficulty is a pass rate whether or not the student says so.
+        //
+        // Checked AFTER the branch above so an explicit framing keeps its own
+        // sort: "which subject has the highest pass rate" must not be answered
+        // worst-first merely because "worst" is in the difficulty vocabulary.
+        if (!namedSubjects && RouteRules.SUBJECT_DIFFICULTY.containsMatchIn(q)) {
+            return Match("subject_pass_rates") { it.subjectPassRates(worstFirst = true) }
+        }
+
         if (q.contains("pass") && pct) return Match("pass_percentage") { it.passPercentage() }
         if ((q.contains("fail") || q.contains("failure")) && pct && !namedSubjects) {
             return Match("fail_percentage") { it.failPercentage() }
@@ -473,6 +494,17 @@ object SqlTemplates {
             // nobody asked.
             QUALIFIERS.none { q.contains(it) }
         ) return Match("student_count") { it.studentCount() }
+
+        // Last, and last on purpose. "How is the college doing overall this
+        // semester" is a real question with a real answer -- 334 of 369 passed,
+        // 90.5% -- and the app said "I don't have enough information to answer
+        // that", because GLOBAL retrieval went looking for a state-of-the-
+        // college passage the corpus does not contain. But every narrower
+        // question above is a better answer to itself than a summary is, so
+        // this may only claim what nothing else would.
+        if (RouteRules.isCohortOverview(q)) {
+            return Match("semester_overview") { it.semesterOverview() }
+        }
 
         return null
     }

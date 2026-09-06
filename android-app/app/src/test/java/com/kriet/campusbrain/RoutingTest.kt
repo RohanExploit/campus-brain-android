@@ -5,6 +5,7 @@ import com.kriet.campusbrain.retrieval.RouteRules
 import com.kriet.campusbrain.retrieval.SqlTemplates
 import com.kriet.campusbrain.retrieval.TabularIntent
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -87,6 +88,64 @@ class RouteRulesTest {
             "Who won the 2019 cricket world cup",
         ).forEach { assertNull(it, route(it)) }
     }
+
+    // --- a subject ranked by difficulty is a table, not a document --------
+
+    @Test fun `which subject students struggle with routes to TABULAR`() {
+        // Observed: routed GLOBAL, retrieved the attendance condonation notice,
+        // and answered "A student with subject-wise attendance between 65% and
+        // 74% may apply for condonation." No document in the bundle says which
+        // subject is hardest; student_subjects does.
+        assertEquals(Route.TABULAR, route("which subject do students struggle with most"))
+        assertEquals(Route.TABULAR, route("what is the hardest subject"))
+        assertEquals(Route.TABULAR, route("which subjects are students weakest in"))
+        assertEquals(Route.TABULAR, route("which subject do students do worst in"))
+    }
+
+    @Test fun `difficulty needs the noun beside it`() {
+        // The guard SUPERLATIVE_SCORE already needed and for the same reason: a
+        // bare difficulty word belongs to plenty of document questions, and a
+        // bare "subject" to more.
+        assertNull(route("what subjects are in the syllabus"))
+        assertNull(route("is the admission process difficult"))
+        assertNull(route("where do I find the syllabus"))
+    }
+
+    // --- how the cohort did is a query, not a passage ---------------------
+
+    @Test fun `an overview of the cohort routes to TABULAR`() {
+        // Observed: "I don't have enough information to answer that", while the
+        // records held 334 passes of 369.
+        assertEquals(Route.TABULAR, route("how is the college doing overall this semester"))
+        assertEquals(Route.TABULAR, route("how did the students perform this semester"))
+        assertEquals(Route.TABULAR, route("give me a summary of the results"))
+    }
+
+    @Test fun `an overview cue without a cohort scope fires nothing`() {
+        // "how is the library doing" is not this question and no table answers
+        // it. The scope word is what stops the rule swallowing the corpus.
+        assertNull(route("how is the library doing these days"))
+        assertNull(route("overall, is the canteen any good"))
+    }
+
+    @Test fun `an overview of one topic is not an overview of the cohort`() {
+        // Cue and scope both present, and the answer is still a document. This
+        // is the case that made the exclusion list necessary: a pass rate is
+        // not an answer to either of these.
+        assertNull(route("what is the overall attendance of students"))
+        assertNull(route("give me an overview of the semester registration process"))
+        assertNull(route("summary of the scholarship results for students"))
+    }
+
+    @Test fun `an explicit aggregate still beats the overview rule`() {
+        // Order is load-bearing: AGG_KW is checked first, so a question that
+        // names the figure it wants keeps the template that computes exactly
+        // that figure rather than being answered with a summary.
+        assertEquals(Route.TABULAR to "rule: aggregate keyword \"pass percentage\"",
+            RouteRules.classify("what is the overall pass percentage"))
+        assertEquals(Route.TABULAR to "rule: aggregate keyword \"pass rate\"",
+            RouteRules.classify("is the pass rate good or bad"))
+    }
 }
 
 class SqlTemplatesTest {
@@ -128,6 +187,45 @@ class SqlTemplatesTest {
     @Test fun `a plain document question matches no template`() {
         assertNull(name("What is the minimum attendance percentage?"))
         assertNull(name("when is the fee deadline"))
+    }
+
+    @Test fun `difficulty framing reaches the pass-rate ranking`() {
+        // Observed answer: the attendance condonation band. Difficulty is a
+        // pass rate whether or not the student says the words "pass rate".
+        assertEquals("subject_pass_rates", name("which subject do students struggle with most"))
+        assertEquals("subject_pass_rates", name("what is the hardest subject"))
+        assertEquals("subject_pass_rates", name("which subject do students do worst in"))
+    }
+
+    @Test fun `difficulty framing does not steal the count or the explicit rate`() {
+        // The three subject-scoped rankings answer three different questions
+        // and this bundle gives them different answers: BTCOC502 has the most
+        // failures (16) at a 94.7% rate, BTAIHM503B the worst rate (90.9%).
+        assertEquals("subject_failure_counts", name("which subject has the most failures"))
+        assertEquals("subject_pass_rates", name("which subject has the lowest pass rate"))
+        assertEquals("subject_pass_rates", name("which subject has the highest pass rate"))
+    }
+
+    @Test fun `the difficulty branch attaches no caveat`() {
+        // The guard must see the question as fully evaluated. A real ranking
+        // carrying "that figure does not account for the rest of your question"
+        // reads as a hedge on a number that is exactly right.
+        val r = SqlTemplates.resolve("which subject do students struggle with most")
+        assertTrue("unexpected: $r", r is SqlTemplates.Resolution.Answered)
+    }
+
+    @Test fun `a cohort overview matches the summary template, and only last`() {
+        assertEquals("semester_overview", name("how is the college doing overall this semester"))
+        // Every narrower question is a better answer to itself than a summary
+        // is, so the summary may only claim what nothing else would.
+        assertEquals("pass_percentage", name("what is the overall pass percentage"))
+        assertEquals("average_sgpa", name("what is the overall average sgpa of students"))
+        assertNull(name("what is the overall attendance of students"))
+    }
+
+    @Test fun `the overview attaches no caveat`() {
+        val r = SqlTemplates.resolve("how is the college doing overall this semester")
+        assertTrue("unexpected: $r", r is SqlTemplates.Resolution.Answered)
     }
 }
 
@@ -236,23 +334,51 @@ class AnswerComposerTest {
         assertEquals("I don't have enough information to answer that.", c.lead)
     }
 
-    @Test fun `an unrelated question abstains but still offers the nearest material`() {
+    private val libraryChunk = com.kriet.campusbrain.data.RetrievedChunk(
+        1, "library.md", "Library Services",
+        "The library holds 42,000 volumes and subscribes to twelve journals.",
+        1.0
+    )
+
+    @Test fun `a question the corpus half-covers abstains and offers the nearest material`() {
         // Retrieval always returns something -- BM25 ranks even a bad match --
         // so "no results" is not what protects against a wrong answer. The
         // term-overlap floor is. What is offered instead must be framed as not
         // being an answer, never asserted as one.
-        val chunk = com.kriet.campusbrain.data.RetrievedChunk(
-            1, "library.md", "Library Services",
-            "The library holds 42,000 volumes and subscribes to twelve journals.",
-            1.0
-        )
+        //
+        // "fee" and "library" are both corpus vocabulary, so this is the thin
+        // branch: the topic was found, no sentence answered. Pointing at the
+        // document is a real lead here, which is why the two abstentions are
+        // worded differently.
         val c = com.kriet.campusbrain.answer.AnswerComposer.compose(
-            "who won the 2019 cricket world cup", listOf(chunk))
+            "what is the fee for the library", listOf(libraryChunk))
         assertTrue("must not assert an answer it cannot support", c.abstained)
+        assertFalse("the topic WAS retrieved; this is not the off-topic branch", c.offTopic)
         assertTrue(c.lead.startsWith("I don't have enough information"))
         assertTrue("should point at the nearest material", c.lead.contains("Library Services"))
         assertTrue("must say plainly that it is not an answer",
             c.lead.contains("none of it addresses the question directly"))
+    }
+
+    @Test fun `a question on a subject the corpus does not carry names what is missing`() {
+        // The other branch. Nothing retrieved mentions cricket, so the three
+        // nearest-ranked documents are the top of a ranking that had nothing to
+        // rank, and offering them as "the closest material" is a false lead.
+        //
+        // Measured against the shipped bundle: "won" and "cup" occur in 0 of
+        // 493 chunks, "cricket" in 1, "world" in 7, "2019" in 2.
+        val corpus = com.kriet.campusbrain.answer.AnswerCheck.CorpusVocabulary {
+            it !in setOf("won", "cup")
+        }
+        val c = com.kriet.campusbrain.answer.AnswerComposer.compose(
+            "who won the 2019 cricket world cup", listOf(libraryChunk), vocabulary = corpus)
+        assertTrue(c.abstained)
+        assertTrue("retrieval found none of the question's own words", c.offTopic)
+        assertTrue(c.lead.startsWith("I don't have enough information"))
+        assertTrue("must name what is missing, got: ${c.lead}",
+            c.lead.contains("Nothing in the records mentions"))
+        assertFalse("must not offer an unrelated document as a lead",
+            c.lead.contains("Library Services"))
     }
 
     @Test fun `lead is not repeated inside the passages list`() {

@@ -320,4 +320,162 @@ class AnswerCheckTest {
         assertTrue(out.abstained)
         assertEquals("nothing retrieved", out.reason)
     }
+
+    // --- defect: narrating an unrelated document instead of abstaining ----
+
+    /**
+     * chunks.id = 167 -- the deadline tracker's opening paragraph, verbatim.
+     *
+     * This is the passage the app read out when asked to list students caught
+     * cheating. It clears the two-term floor on "list" and "students", both of
+     * which are in a third of the corpus and in most questions, and says
+     * nothing whatever about cheating.
+     */
+    private val deadlineTracker = chunk(
+        167, "28_deadline_tracker.md", "Subject: Upcoming Deadlines - Academic Year 2026-27",
+        "The consolidated list below tracks every deadline a student needs to act on during " +
+            "the academic year 2026-27, with the number of days remaining as of the date of " +
+            "this circular (15 June 2026) and the notice that first announced each deadline. " +
+            "Students should re-check the notice board close to each date, since a subsequent " +
+            "circular can revise it."
+    )
+
+    /**
+     * Word presence over the shipped bundle, measured rather than invented:
+     *
+     *   sqlite3 brain.db "SELECT COUNT(*) FROM chunks WHERE instr(lower(content),'cheating')>0"
+     *
+     * gives 0. The rest, all of 493: caught 1, cheating 0, expelled 0,
+     * plagiarism 0, wifi 0, password 2, cricket 1, team 1, captain 0, write 0,
+     * long 13, take 11, minimum 18, sit 123, happens 4, debarred 4.
+     *
+     * Only the zeroes have to be listed; everything else answers true, which is
+     * what the corpus would say for any ordinary word.
+     *
+     * NOTE: the key handed to this lambda is `searchKey(term)`, not the word as
+     * typed -- a five-letter-or-longer plural arrives with its "s" already
+     * dropped. Every entry below happens to survive searchKey unchanged; a
+     * plural added later will not.
+     */
+    private val corpusWords = AnswerCheck.CorpusVocabulary { term ->
+        term !in setOf("cheating", "expelled", "plagiarism", "wifi", "captain", "write")
+    }
+
+    @Test fun `a question the corpus has no field for abstains instead of narrating`() {
+        // Observed: "The consolidated list below tracks every deadline a
+        // student needs to act on..." with ABSTAINED=false. The students table
+        // holds roll_no, name, sgpa, estimated_sgpa, total_marks, result,
+        // is_supply and seat_cancelled -- no disciplinary field of any kind.
+        // Measured over the shipped bundle: "cheating" is in 0 of 493 chunks
+        // and "caught" in 1.
+        val out = AnswerComposer.compose(
+            "list students who were caught cheating",
+            listOf(deadlineTracker, bonafideNotice, csvColumnDocs),
+            vocabulary = corpusWords,
+        )
+        assertTrue("narrated an unrelated document: ${out.lead}", out.abstained)
+        assertTrue("must be the off-topic abstention, not the thin one", out.offTopic)
+        assertTrue("must name what is missing, got: ${out.lead}", out.lead.contains("cheating"))
+        assertFalse("must not quote the document it did not answer from",
+            out.lead.contains("consolidated list"))
+    }
+
+    @Test fun `the fix is the subject test, not the word cheating`() {
+        // Nothing above keys on the question. Any subject the corpus does not
+        // carry has to behave the same way, or the fix is a special case
+        // wearing a general name.
+        listOf(
+            "which students were expelled for plagiarism",
+            "what is the wifi password",
+            "who is the cricket team captain",
+        ).forEach { q ->
+            val out = AnswerComposer.compose(
+                q, listOf(deadlineTracker, bonafideNotice), vocabulary = corpusWords)
+            assertTrue(q, out.abstained)
+            assertTrue(q, out.offTopic)
+        }
+    }
+
+    @Test fun `the answer's form is not its subject`() {
+        // "List" says how to present the answer, not what it is about, which is
+        // the same argument the stoplist already makes for "available". It was
+        // one of the two words that cleared the floor on the deadline tracker.
+        assertEquals(listOf("students", "caught", "cheating"),
+            AnswerCheck.contentTerms("list students who were caught cheating"))
+        assertEquals(listOf("toppers"), AnswerCheck.contentTerms("show me the toppers"))
+    }
+
+    @Test fun `generic campus words alone are not evidence of a topic`() {
+        val q = AnswerCheck.parse("list students who were caught cheating")
+        assertEquals(listOf("caught", "cheating"), AnswerCheck.subjectTerms(q.terms))
+        // "students" carries no information about which question was asked.
+        assertTrue(AnswerCheck.subjectTerms(listOf("students", "subject", "exam")).isEmpty())
+    }
+
+    @Test fun `one absent word is a phrasing accident, not a missing subject`() {
+        // "Can I write the exam with 60% attendance" is answerable and the
+        // corpus never says "write" -- it says "appear for". Refusing on a
+        // single absent word would re-create the over-abstention this whole
+        // file exists to remove, so the gate needs two.
+        val q = AnswerCheck.parse("can I write the exam with 60% attendance")
+        assertEquals(listOf("write"), AnswerCheck.subjectTerms(q.terms))
+        assertTrue(
+            AnswerCheck.unsupportedSubject(q, listOf(attendancePolicyRule), corpusWords).isEmpty()
+        )
+
+        val out = AnswerComposer.compose(
+            "can I write the exam with 60% attendance",
+            listOf(condonation, attendancePolicyRule, attendancePolicyTiers),
+            vocabulary = corpusWords,
+        )
+        assertFalse("abstained on an answerable eligibility question", out.abstained)
+        assertTrue("must rule on the 60%, got: ${out.lead}", out.lead.startsWith("No"))
+    }
+
+    @Test fun `the subject is looked for in whole chunks, not in one sentence`() {
+        // "Debarred" lives in a table row, and sentencesOf drops rows on
+        // purpose. A per-sentence version of this rule would refuse a question
+        // the retrieval answered correctly.
+        val q = AnswerCheck.parse("what happens to my scholarship if I am debarred for attendance")
+        assertEquals(listOf("happens", "debarred"), AnswerCheck.subjectTerms(q.terms))
+        assertTrue(
+            AnswerCheck.unsupportedSubject(q, listOf(attendancePolicyRule), corpusWords).isEmpty()
+        )
+    }
+
+    @Test fun `a word missing from the retrieval is not a word missing from the corpus`() {
+        // The near-miss that decided the shape of this rule. "How long does a
+        // bonafide certificate take" retrieves the right notice, and the notice
+        // says neither "long" nor "take" -- two subject words, neither in any
+        // retrieved chunk, and the question is answered correctly today. Only
+        // the corpus-wide check separates it from the cheating question: "long"
+        // is in 13 chunks and "take" in 11, "cheating" in none.
+        val q = AnswerCheck.parse("how long does a bonafide certificate take")
+        assertEquals(listOf("long", "take"), AnswerCheck.subjectTerms(q.terms))
+        assertTrue(
+            AnswerCheck.unsupportedSubject(q, listOf(bonafideNotice), corpusWords).isEmpty()
+        )
+        val out = AnswerComposer.compose(
+            "how long does a bonafide certificate take",
+            listOf(bonafideNotice),
+            vocabulary = corpusWords,
+        )
+        assertFalse("abstained on an answerable question: ${out.reason}", out.abstained)
+        assertTrue(out.lead.contains("3 working days"))
+    }
+
+    @Test fun `the gate does not touch the questions the last fix repaired`() {
+        // The regression risk of any new abstention rule. All three of these
+        // are answered today and must stay answered.
+        val attendance = listOf(attendanceSignature, attendancePolicyRule, condonation)
+        listOf(
+            "how much attendance do I need",
+            "minimum attendance to sit exams",
+            "what is the minimum attendance",
+        ).forEach { q ->
+            val out = AnswerComposer.compose(q, attendance, vocabulary = corpusWords)
+            assertFalse("$q -> ${out.reason}", out.abstained)
+            assertTrue(q, out.lead.contains("75%"))
+        }
+    }
 }
