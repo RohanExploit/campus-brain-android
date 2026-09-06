@@ -1,10 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  One suggested question. AskFragment sets the label and the click listener as
+  it inflates each one; clickable and focusable are declared here as well so
+  the chip is a control from the moment it is inflated rather than only once a
+  listener happens to have been attached, and so it is reachable by keyboard
+  and announced as a button by TalkBack.
+
+  minHeight is the full 48dp touch target even though the text is 14sp: the
+  row sits directly above the input field and a short chip would put its
+  bottom edge within a thumb's width of the keyboard.
+-->
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:minHeight="@dimen/touch_min"
     android:gravity="center_vertical"
     android:background="@drawable/bg_suggestion"
+    android:clickable="true"
+    android:focusable="true"
     android:paddingStart="@dimen/space_4"
     android:paddingEnd="@dimen/space_4"
     android:layout_marginEnd="@dimen/space_2"

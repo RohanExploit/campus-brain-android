@@ -39,53 +39,105 @@
             android:maxLines="1"
             android:ellipsize="end" />
 
-        <!-- A drawn dot, sized and coloured from the palette. The claim is
-             load-bearing: the build declares no INTERNET permission for
-             retrieval, so this states something the APK enforces. -->
-        <View
-            android:id="@+id/liveDot"
-            android:layout_width="7dp"
-            android:layout_height="7dp"
-            android:layout_marginEnd="@dimen/space_2"
-            android:background="@drawable/dot_live" />
-
-        <TextView
-            android:id="@+id/statusPillState"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/offline_banner"
-            android:textColor="@color/verified"
-            android:textSize="@dimen/type_caption"
-            android:maxLines="1" />
-
-        <TextView
-            android:id="@+id/statusPillDocs"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/space_3"
-            android:textColor="@color/text_tertiary"
-            android:textSize="@dimen/type_caption"
-            android:maxLines="1"
-            android:visibility="gone" />
-
         <!--
-          The entitlement nudge, and nothing else. It appears only when the
-          offline grace window is nearly out or already past, it is two or
-          three words long, and it never replaces the offline claim beside the
-          live dot — that line is the product's whole promise and the licence
-          state is a footnote to it. Elided rather than wrapped, because the
-          header is one line by design.
+          The status pill, and the way in to enrolment.
+
+          Wrapping what was already here in one clickable row rather than
+          adding a control: an un-enrolled device must see the header it saw
+          before, so there is nothing new to look at — the dot, the offline
+          claim and the document count are in the same places, at the same
+          sizes, in the same colours. What changed is that they now respond to
+          a tap, with a ripple, a tooltip and a content description, and lead
+          to the one screen that explains what a licence has to do with any of
+          it.
+
+          Why here and not on the title: the title's long-press already reaches
+          the self test, and two destinations on one gesture is how a demo ends
+          up on the wrong screen. The pill is also the honest host — it is the
+          thing that DISPLAYS entitlement state, so it is the thing that should
+          lead to changing it.
+
+          paddingStart only. An end padding would pull the row in from the
+          gutter and shift every pill left of where it sits today; the ripple
+          taking a little extra room on the left is invisible against ink.
         -->
-        <TextView
-            android:id="@+id/statusPillChunks"
+        <LinearLayout
+            android:id="@+id/statusPill"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/space_3"
-            android:textColor="@color/text_tertiary"
-            android:textSize="@dimen/type_caption"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:visibility="gone" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/touch_min"
+            android:paddingStart="@dimen/space_2"
+            android:paddingEnd="0dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
+            android:tooltipText="@string/enrol_pill_tooltip"
+            android:contentDescription="@string/enrol_pill_description">
+
+            <!-- A drawn dot, sized and coloured from the palette. The claim is
+                 load-bearing: the build declares no INTERNET permission for
+                 retrieval, so this states something the APK enforces. -->
+            <View
+                android:id="@+id/liveDot"
+                android:layout_width="7dp"
+                android:layout_height="7dp"
+                android:layout_marginEnd="@dimen/space_2"
+                android:background="@drawable/dot_live" />
+
+            <!--
+              The three texts below are importantForAccessibility="no" and the
+              row above carries one description for all of them. Left as they
+              were, TalkBack would focus the pill as a button and then focus
+              "Offline", "58 documents" and the licence separately — four stops
+              on one control, announcing the affordance last. The container's
+              description is the whole of what the pill is for.
+            -->
+            <TextView
+                android:id="@+id/statusPillState"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/offline_banner"
+                android:textColor="@color/verified"
+                android:textSize="@dimen/type_caption"
+                android:importantForAccessibility="no"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/statusPillDocs"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_3"
+                android:textColor="@color/text_tertiary"
+                android:textSize="@dimen/type_caption"
+                android:maxLines="1"
+                android:visibility="gone" />
+
+            <!--
+              The licence slot. GONE until a grant exists, which is the state
+              this ships in and the state an un-enrolled phone stays in
+              forever: no nag, no placeholder, no empty box inviting a tap.
+
+              Once there is a grant it carries the institution's name and its
+              state — "KRIET · enrolled", "KRIET · renew in 3d". It never
+              replaces the offline claim beside the live dot; that line is the
+              product's whole promise and the licence is a footnote to it.
+              Elided rather than wrapped, because the header is one line by
+              design and a long display_name must lose its tail rather than
+              push the row into two.
+            -->
+            <TextView
+                android:id="@+id/statusPillChunks"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_3"
+                android:textColor="@color/text_tertiary"
+                android:textSize="@dimen/type_caption"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:visibility="gone" />
+        </LinearLayout>
     </LinearLayout>
 
     <View

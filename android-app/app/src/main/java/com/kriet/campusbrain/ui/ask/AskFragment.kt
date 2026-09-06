@@ -60,9 +60,20 @@ class AskFragment : Fragment() {
         binding.messages.adapter = adapter
 
         // One suggestion per route, so a demo can exercise all four in four taps.
+        //
+        // Cleared first. The row is rebuilt from an empty inflated view every
+        // time this fragment's view is created, so today it is a no-op — but
+        // a second pass over a populated row would stack five more chips
+        // behind the first five, and the ones underneath would be the dead
+        // controls this loop is otherwise careful not to produce.
+        binding.chipRow.removeAllViews()
         SUGGESTIONS.forEach { (label, query) ->
             val chip = layoutInflater.inflate(R.layout.item_suggestion, binding.chipRow, false)
             (chip as android.widget.TextView).text = label
+            // The label is what fits on a chip; the question is what gets
+            // asked. A screen reader should hear the second, because "Minimum
+            // attendance" does not tell anyone what pressing it will do.
+            chip.contentDescription = query
             chip.setOnClickListener { submit(query) }
             binding.chipRow.addView(chip)
         }

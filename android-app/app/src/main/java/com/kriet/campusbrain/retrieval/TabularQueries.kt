@@ -467,6 +467,138 @@ class TabularQueries(private val db: BrainDb) {
             "conditions at once."
     }
 
+    /**
+     * The clean sheets, counted both ways the records allow.
+     *
+     * "How many students have no backlogs" has two defensible readings -- no FF
+     * in any subject, and an overall result of PASS -- and the honest answer
+     * names which one produced the number rather than picking one silently.
+     * Both are computed here, in one statement, so the sentence can say whether
+     * they agree instead of asserting that they do. Measured on the shipped
+     * bundle they do agree, at 334 of 369; that is a fact about this export and
+     * not a guarantee, which is exactly why it is queried and not assumed.
+     *
+     * NOT EXISTS, not `COUNT(FF) = 0` through a join: a student with no
+     * `student_subjects` rows at all would vanish from a join and be counted as
+     * neither clean nor failing.
+     */
+    fun studentsWithoutBacklogs(): TemplateResult {
+        val sql = "SELECT (SELECT COUNT(*) FROM students s WHERE NOT EXISTS (" +
+            "SELECT 1 FROM student_subjects ss WHERE ss.roll_no = s.roll_no " +
+            "AND ss.grade IN ($failList))), " +
+            "(SELECT COUNT(*) FROM students WHERE result = 'PASS'), " +
+            "(SELECT COUNT(*) FROM students)"
+        val row = db.conn.query(sql) { Triple(it.getLong(0), it.getLong(1), it.getLong(2)) }
+            .firstOrNull()
+            ?: return TemplateResult("No result data available.", sql, "no_backlogs")
+        val (noFf, passed, total) = row
+        val body = if (noFf == passed) {
+            "$noFf of $total students have no backlogs — no FF grade in any subject. " +
+                "That is also the number whose overall result is PASS, so both readings of " +
+                "the question give the same $noFf. The other ${total - noFf} each carry at " +
+                "least one FF."
+        } else {
+            "Counted as no FF grade in any subject: $noFf of $total students. Counted instead " +
+                "as an overall result of PASS: $passed of $total. The two readings do not " +
+                "agree in these records, so both are given rather than one being chosen for you."
+        }
+        return TemplateResult(body, sql, "no_backlogs")
+    }
+
+    /**
+     * Whether anyone missed the examination.
+     *
+     * Asked on hardware as "which students did not appear for the exam", this
+     * matched no template, fell through to document retrieval, and answered with
+     * the placement cell's registration rule -- confidently, and about an
+     * entirely different kind of registering. The records answer it: three
+     * columns are the only trace they keep of a student not sitting a paper, and
+     * all three are empty.
+     *
+     * Phrased as a negative existential ("no student is marked as...") rather
+     * than as the affirmative universal ("all 369 appeared"). Attendance at the
+     * examination is not a field in this schema, so the affirmative would be an
+     * inference wearing the deterministic badge; what the tables can actually
+     * support is that nothing in them records an absence. The columns checked
+     * are named in the answer for the same reason -- a student who knows the
+     * basis can tell when it is the wrong basis.
+     */
+    fun examAttendance(): TemplateResult {
+        val sql = "SELECT COUNT(*), COUNT(*) FILTER (WHERE seat_cancelled = 1), " +
+            "COUNT(*) FILTER (WHERE is_supply = 1), " +
+            "COUNT(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM student_subjects ss " +
+            "WHERE ss.roll_no = students.roll_no AND ss.grade IS NOT NULL)) FROM students"
+        val row = db.conn.query(sql) {
+            listOf(it.getLong(0), it.getLong(1), it.getLong(2), it.getLong(3))
+        }.firstOrNull()
+            ?: return TemplateResult("No result data available.", sql, "exam_attendance")
+        val (total, cancelled, supply, ungraded) = row
+        val basis = "Seat cancellations, supplementary candidature and a missing grade are the " +
+            "only trace these records keep of a student not sitting the regular examination — " +
+            "attendance at the exam itself is not a column here."
+        if (cancelled == 0L && supply == 0L && ungraded == 0L) {
+            return TemplateResult(
+                "No student in these records is marked as having missed the examination. " +
+                    "All $total have a result recorded, none has a cancelled seat, none is " +
+                    "marked as a supplementary candidate, and every one of them carries a " +
+                    "grade in at least one subject. $basis",
+                sql, "exam_attendance"
+            )
+        }
+        val parts = ArrayList<String>()
+        if (cancelled > 0L) parts += "$cancelled had a cancelled seat"
+        if (supply > 0L) parts += "$supply are marked as supplementary candidates"
+        if (ungraded > 0L) parts += "$ungraded carry no grade in any subject"
+        return TemplateResult(
+            "Of $total students, ${parts.joinToString("; ")}. $basis",
+            sql, "exam_attendance"
+        )
+    }
+
+    /**
+     * The students at one exact SGPA.
+     *
+     * "List students who scored 10 SGPA" abstained, while "how many students
+     * scored above 9.0 SGPA" answered the same true zero exactly. The
+     * difference was a comparator, not a fact.
+     *
+     * The empty answer branches on the maximum because one sentence cannot
+     * serve both misses. Above the top of the scale, naming the real maximum
+     * IS the answer -- nobody reached 10, the best is 8.82. Inside the range,
+     * quoting a maximum that is higher than the number asked about reads as a
+     * contradiction, so the miss is reported as what it is: no row holds that
+     * exact value, to the two decimals these records keep.
+     */
+    fun studentsWithSgpa(value: Double): TemplateResult {
+        val sql = "SELECT roll_no, name, sgpa FROM students " +
+            "WHERE sgpa IS NOT NULL AND ROUND(sgpa, 2) = ROUND(?, 2) ORDER BY sgpa DESC, roll_no LIMIT 100"
+        val rows = db.conn.query(sql, { it.bindDouble(1, value) }) {
+            Triple(it.getText(0), if (it.isNull(1)) null else it.getText(1), it.getDouble(2))
+        }
+        val t = trimNum(value)
+        if (rows.isNotEmpty()) {
+            val body = buildString {
+                append("${rows.size} student${if (rows.size == 1) "" else "s"} scored exactly $t SGPA:\n")
+                rows.forEach { (roll, name, sgpa) ->
+                    append("- ${label(name, roll)}: SGPA ${"%.2f".format(sgpa)}\n")
+                }
+            }
+            return TemplateResult(body.trimEnd(), sql, "students_with_sgpa")
+        }
+        val max = db.conn.query("SELECT MAX(sgpa) FROM students") {
+            if (it.isNull(0)) null else it.getDouble(0)
+        }.firstOrNull()
+        val body = when {
+            max == null -> "No SGPA is recorded for any student, so nobody can be listed at $t."
+            value > max -> "No student has an SGPA of $t. The highest SGPA in these records is " +
+                "${"%.2f".format(max)}."
+            else -> "No student has an SGPA of exactly $t. SGPA is recorded here to two decimal " +
+                "places, so an exact value often matches nobody — ask for above or below $t if " +
+                "you meant a range."
+        }
+        return TemplateResult(body, sql, "students_with_sgpa")
+    }
+
     fun supplementaryCount(): TemplateResult {
         val sql = "SELECT COUNT(*) FROM students WHERE is_supply = 1"
         val n = db.conn.query(sql) { it.getLong(0) }.first()
