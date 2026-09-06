@@ -5,11 +5,8 @@ for _p in (_Path(__file__).resolve().parent, _Path(__file__).resolve().parent.pa
         _sys.path.append(str(_p))
 from config import PROJECT_ROOT
 import json
-import sqlite3
-import hashlib
 import logging
 from pathlib import Path
-from datetime import datetime, timezone
 from docling.document_converter import DocumentConverter
 from utils.logging_config import setup_logging
 

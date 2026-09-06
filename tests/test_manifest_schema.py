@@ -88,7 +88,6 @@ def test_legacy_manifest_is_migrated_in_place(tmp_path):
 
 def test_no_second_manifest_schema_definition_in_repo():
     """Only ingestion/parse.py may declare the manifest table."""
-    pattern = re.compile(r"CREATE\s+TABLE.*?\bmanifest\b", re.IGNORECASE | re.DOTALL)
     offenders = []
     skip_dirs = {
         ".git", "node_modules", "__pycache__", ".venv312", "dashboard",

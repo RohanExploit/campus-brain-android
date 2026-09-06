@@ -382,6 +382,11 @@ object AnswerCheck {
         // at a student who asked for a ruling -- a loosening with no verdict
         // behind it, on the one path where a wrong answer reads as permission.
         Need.ELIGIBILITY -> lowerSentence.any(Char::isDigit)
+        // Declared on [Need] ahead of the classifier change that will emit
+        // them; [parse] cannot produce either value yet, so they behave as
+        // [OTHER] -- topic overlap only, no shape enforced -- until the rule
+        // each one is meant to carry is written.
+        Need.CONSEQUENCE, Need.PERMISSION -> true
         Need.OTHER -> true
     }
 

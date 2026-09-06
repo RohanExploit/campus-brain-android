@@ -5,7 +5,6 @@ All tests import from here via conftest auto-discovery.
 import sys
 import uuid
 import shutil
-import sqlite3
 import logging
 import tempfile
 from pathlib import Path

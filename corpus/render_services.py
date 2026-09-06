@@ -16,9 +16,9 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from corpus.render_base import NoticeDoc, weighted_col_widths  # noqa: E402
 from corpus.student_world import (  # noqa: E402
-    ATTENDANCE_POLICY, DEPARTMENTS, GRIEVANCE, INCUBATION, LIBRARY, NOTICE_LOG, PEOPLE,
+    ATTENDANCE_POLICY, GRIEVANCE, INCUBATION, LIBRARY, NOTICE_LOG, PEOPLE,
     PLACEMENT_POLICY, PLACEMENTS, SCHEMES, SPOC_DIRECTORY, SPORTS_CULTURAL_BENEFITS,
-    TRAINING, dept_by_code, person, rupees,
+    TRAINING, dept_by_code, rupees,
 )
 
 OUT = PROJECT_ROOT / "corpus" / "out"
