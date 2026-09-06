@@ -253,6 +253,13 @@ class UserCorpusDb private constructor(
             return buf.array()
         }
 
+        /**
+         * Long enough to outlast an entitlement write, which is a single
+         * statement, and deliberately far short of a whole import, so a genuine
+         * deadlock still surfaces as a failure rather than a frozen screen.
+         */
+        private const val PRAGMA_BUSY_TIMEOUT = "PRAGMA busy_timeout = 5000"
+
         /** Null when the file cannot be opened or created, which is survivable. */
         fun openOrCreate(context: Context): UserCorpusDb? = try {
             val file = File(context.filesDir, FILE_NAME)
@@ -260,6 +267,17 @@ class UserCorpusDb private constructor(
             // Same driver as the bundle, so FTS5 and the porter tokenizer are
             // present here too. The platform's android.database.sqlite has no
             // fts5 module at all -- see BrainDb's doc comment.
+
+            // This file has a second writer: data/auth/EntitlementStore, on its
+            // own connection. Without a busy_timeout this connection defaults
+            // to zero, so a lock held by that store -- even for the microsecond
+            // of a single-statement write -- makes the BEGIN IMMEDIATE in
+            // [write] fail outright, and the student is told their document
+            // could not be added. The entitlement store already waits 5s for an
+            // import; this is the same courtesy in the other direction, and the
+            // direction that matters more, because a lost entitlement write
+            // retries tomorrow while a lost import is a visible failure.
+            conn.execSQL(PRAGMA_BUSY_TIMEOUT)
             createSchema(conn)
             Log.i(TAG, "user corpus ready at ${file.absolutePath}")
             UserCorpusDb(conn, file.absolutePath)
