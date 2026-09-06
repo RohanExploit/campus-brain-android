@@ -233,6 +233,10 @@ object LicenseCopy {
         LicenseKey.Rejection.BAD_FIELD -> R.string.license_refused_field
         LicenseKey.Rejection.EXPIRED -> R.string.license_refused_expired
         LicenseKey.Rejection.WRONG_DEVICE -> R.string.license_refused_device
+        // Not the admin's fault and the copy must not imply it is. It asks for
+        // the one thing that actually helps -- the app version -- rather than
+        // sending them to re-read a key that was probably fine.
+        LicenseKey.Rejection.INTERNAL -> R.string.license_refused_internal
     }
 
     fun tierNameFor(tier: Tier): Int = when (tier) {

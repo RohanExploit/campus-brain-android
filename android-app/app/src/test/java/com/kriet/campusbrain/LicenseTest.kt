@@ -225,7 +225,62 @@ class LicenseTest {
         junk.forEach { s ->
             val outcome = verify(s)
             assertTrue("\"$s\" should have been refused", outcome is LicenseKey.Outcome.Invalid)
+            // Refused by a NAMED reason, never by an exception the outer catch
+            // relabelled. See the next test for why that distinction is worth
+            // a separate assertion.
+            assertFalse(
+                "\"$s\" was refused by something throwing, not by a check",
+                (outcome as LicenseKey.Outcome.Invalid).reason == LicenseKey.Rejection.INTERNAL
+            )
         }
+    }
+
+    @Test fun `nothing in the verifier throws, on any input, valid or hostile`() {
+        // The regression test for the defect that took this suite down.
+        //
+        // `parse` used `split('|', limit = -1)`, which is the Java and Python
+        // idiom for "keep trailing empty fields". Kotlin's `split` keeps them
+        // anyway and its `limit` is require(limit >= 0), so -1 threw
+        // IllegalArgumentException -- inside the one arm that is reached only
+        // AFTER a signature has verified. Every forged key was still correctly
+        // rejected. Every GENUINE key was rejected too, reported as though the
+        // admin had mistyped it.
+        //
+        // What makes it worth its own test is that the acceptance tests above
+        // could not name the cause: they all just said "not valid". This one
+        // fails with the word INTERNAL in it, which points at this file rather
+        // than at the key.
+        val fixtures = listOf(
+            institutionalKey(),
+            institutionalKey(expiresAtMs = t0 - day),
+            institutionalKey(schemaVersion = 99),
+            institutionalKey(displayName = "Arts | Science"),
+            // The empty trailing field is the whole point: an institutional
+            // key's `deviceId` is always "", so the record's ninth field is
+            // empty and a split that dropped it would leave eight.
+            ownerKey("5b1f0c62-0000-4000-8000-abcdefabcdef"),
+            "", "CBI-", "CBI-AAAA", "garbage",
+        )
+        fixtures.forEach { key ->
+            val outcome = verify(key, deviceId = "5b1f0c62-0000-4000-8000-abcdefabcdef")
+            val reason = (outcome as? LicenseKey.Outcome.Invalid)?.reason
+            assertTrue(
+                "verifying a key threw instead of deciding about it",
+                reason != LicenseKey.Rejection.INTERNAL
+            )
+        }
+    }
+
+    @Test fun `an institutional key really does carry nine fields, the last one empty`() {
+        // Pinned directly, because the field count is a wire format shared with
+        // scripts/issue_license.py and the failure mode when the two disagree
+        // is every key being rejected at once.
+        val body = LicenseKey.body(
+            "tenant_1", "Example Institute", Tier.INSTITUTIONAL, t0, t0 + day, 25, 51_200, null,
+        )
+        val fields = body.split('|')
+        assertEquals("the record is nine fields", 9, fields.size)
+        assertEquals("the ninth is the empty device binding", "", fields.last())
     }
 
     @Test fun `a truncated key is rejected`() {

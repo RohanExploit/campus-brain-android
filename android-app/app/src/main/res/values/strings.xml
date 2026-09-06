@@ -354,6 +354,12 @@
     <string name="license_refused_field">That key is not readable. Ask for it to be reissued.</string>
     <string name="license_refused_expired">That key has expired. Ask for a renewal — nothing on this phone changed, and every document already imported is untouched.</string>
     <string name="license_refused_device">That key was issued for a different device.</string>
+    <!-- A defect in the app, not a mistyped key, so the copy does not send the
+         admin back to check something that was probably correct. Reported
+         separately from the malformed case because those two used to share a
+         sentence, and a defect wearing the label for user error is a defect
+         nobody investigates. -->
+    <string name="license_refused_internal">That key could not be checked — this is a fault in the app rather than anything wrong with the key. Note the app version and report it; nothing on this device changed.</string>
     <!-- Verified, but the disk would not take it. Distinct copy, because the
          key is fine and telling the admin to re-check it would waste an hour. -->
     <string name="license_refused_storage">That key is valid, but this device\'s storage would not accept it. Restart the app and try once more.</string>

@@ -212,6 +212,24 @@ object LicenseKey {
         EXPIRED,
         /** An OWNER key issued for a different install of the app. */
         WRONG_DEVICE,
+
+        /**
+         * Something in this file threw. A defect here, not a bad paste.
+         *
+         * Separate from [MALFORMED] because the two were once the same value,
+         * and that cost a release cycle. `parse` threw on every key whose
+         * signature had just VERIFIED -- see the note in `parse` -- and the
+         * blanket catch below reported it as "that does not look like a
+         * licence key". Every forged key was correctly refused and every
+         * genuine one was refused too, while the app said the admin had
+         * mistyped it.
+         *
+         * The catch stays: a licence screen that crashes on a paste is worse
+         * than one that says no. But a defect must never again be able to wear
+         * the label for user error, because that label is the one a reader
+         * stops investigating.
+         */
+        INTERNAL,
     }
 
     sealed interface Outcome {
@@ -241,7 +259,11 @@ object LicenseKey {
         deviceId: String?,
         publicKeyB64: String = PUBLIC_KEY_B64,
     ): Outcome = runCatching { verifyOrThrow(key, nowMs, deviceId, publicKeyB64) }
-        .getOrElse { Outcome.Invalid(Rejection.MALFORMED) }
+        // [Rejection.INTERNAL], not MALFORMED. Everything below this line that
+        // can legitimately be defeated by hostile input already returns its own
+        // reason; anything that reaches here THREW, which is a defect in this
+        // file and not a statement about what the admin pasted.
+        .getOrElse { Outcome.Invalid(Rejection.INTERNAL) }
 
     private fun verifyOrThrow(
         key: String,
@@ -277,9 +299,25 @@ object LicenseKey {
 
     /** Split, validate, and turn nine strings into a [License]. */
     private fun parse(body: String, nowMs: Long, deviceId: String?): Outcome {
-        // limit = -1 so a trailing empty deviceId field is not dropped, which
-        // would make an INSTITUTIONAL key look like it had eight fields.
-        val f = body.split('|', limit = -1)
+        // No `limit` argument, and that is load-bearing rather than a default
+        // taken lazily.
+        //
+        // The trailing `deviceId` field is EMPTY on every institutional key,
+        // and if a split dropped it the record would arrive here with eight
+        // fields instead of nine and every valid institutional key would be
+        // rejected. Java's `String.split(regex)` does drop trailing empties,
+        // so the reflex is to pass -1 the way you would there -- and this
+        // function was written that way. Kotlin's `split` is not Java's: it
+        // keeps trailing empty strings already, and its `limit` parameter is
+        // `require(limit >= 0)`, so -1 does not mean "no limit", it throws
+        // IllegalArgumentException.
+        //
+        // That threw here, inside the arm reached only AFTER a signature had
+        // verified, where `verify`'s outer runCatching turned it into
+        // Rejection.MALFORMED. The visible symptom was the exact inverse of a
+        // security bug and much easier to misread: every forged key was
+        // correctly rejected, and every GENUINE key was rejected too.
+        val f = body.split('|')
         if (f.size != 9) return Outcome.Invalid(Rejection.BAD_FIELD)
 
         val schema = f[0].toIntOrNull() ?: return Outcome.Invalid(Rejection.BAD_FIELD)
