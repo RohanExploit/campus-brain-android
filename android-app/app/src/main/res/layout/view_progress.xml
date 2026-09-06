@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Work in progress, one component for both places it happens.
+
+  Answering takes one to three seconds and importing a document takes longer,
+  and until now both showed nothing at all — the app looked frozen at exactly
+  the moment it was doing the thing it exists to do.
+
+  Determinate and indeterminate are the same view because the difference is
+  knowledge, not design: importing knows how many passages it has to embed and
+  says so, answering does not and should not pretend. Callers set
+  isIndeterminate and fill in `progressDetail` when they have a count.
+
+  The bar is drawn in the text ramp rather than amber. Progress is a state, not
+  an outcome, and the accent is spoken for by the answer, the send action and
+  the selected tab.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_surface_card"
+    android:paddingStart="@dimen/space_5"
+    android:paddingEnd="@dimen/space_5"
+    android:paddingTop="@dimen/space_4"
+    android:paddingBottom="@dimen/space_4"
+    android:layout_marginTop="@dimen/space_2"
+    android:layout_marginBottom="@dimen/space_5">
+
+    <TextView
+        android:id="@+id/progressLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/type_body_sm"
+        android:textColor="@color/text_secondary"
+        android:justificationMode="none" />
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/progressBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_3"
+        android:indeterminate="true"
+        app:trackThickness="@dimen/progress_height"
+        app:trackColor="@color/hairline"
+        app:indicatorColor="@color/text_secondary" />
+
+    <!-- "23 of 51 passages". Hidden while indeterminate: a count that cannot
+         be given is worse than no count. -->
+    <TextView
+        android:id="@+id/progressDetail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_2"
+        android:textSize="@dimen/type_micro"
+        android:textColor="@color/text_tertiary"
+        android:visibility="gone" />
+</LinearLayout>

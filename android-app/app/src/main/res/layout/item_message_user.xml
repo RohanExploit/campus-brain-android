@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The question is context for the answer below it, so it sits quiet and
+     right-aligned rather than competing as a saturated blue slab. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:orientation="horizontal"
     android:gravity="end"
-    android:paddingVertical="4dp">
+    android:layout_marginTop="@dimen/space_6">
 
     <TextView
         android:id="@+id/text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:maxWidth="280dp"
+        android:maxWidth="300dp"
         android:background="@drawable/bg_bubble_user"
-        android:padding="12dp"
-        android:textColor="@color/on_brand"
-        android:textSize="14sp" />
+        android:paddingStart="@dimen/space_4"
+        android:paddingEnd="@dimen/space_4"
+        android:paddingTop="@dimen/space_3"
+        android:paddingBottom="@dimen/space_3"
+        android:textSize="@dimen/type_body_sm"
+        android:textColor="@color/text_secondary"
+        android:justificationMode="none" />
 </LinearLayout>

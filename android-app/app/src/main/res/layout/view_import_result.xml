@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What happened to the document the student just added.
+
+  Deliberately a card on the page and not a Toast or a Snackbar. Three of the
+  four outcomes carry copy a student has to read and act on — "save it as
+  .docx", "add it in parts", "the file is 12MB" — and a message that times out
+  after two seconds is the wrong container for an instruction. It also has to
+  survive a rotation, which a Toast does not.
+
+  One card serves success and failure rather than two: the shape of the
+  information is identical (what happened, what to do next) and a separate
+  success surface would drift out of step with the failure one.
+
+  Same ordinary surface as item_message_error, for the same reason given
+  there: the icon and the headline carry the outcome. A red slab would say the
+  app is damaged when in fact one file was the wrong format.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_surface_card"
+    android:paddingStart="@dimen/space_5"
+    android:paddingEnd="@dimen/space_5"
+    android:paddingTop="@dimen/space_4"
+    android:paddingBottom="@dimen/space_3">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:id="@+id/importIcon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_alert"
+            android:importantForAccessibility="no" />
+
+        <TextView
+            android:id="@+id/importTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="@dimen/space_3"
+            android:textSize="@dimen/type_body"
+            android:textStyle="bold"
+            android:letterSpacing="-0.01"
+            android:textColor="@color/text_primary"
+            android:justificationMode="none" />
+    </LinearLayout>
+
+    <!-- The outcome in a sentence. For Unsupported this is the backend's
+         `message` printed verbatim: it already names the formats that work and
+         paraphrasing it here would let the two drift apart. -->
+    <TextView
+        android:id="@+id/importBody"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_3"
+        android:textSize="@dimen/type_body_sm"
+        android:textColor="@color/text_secondary"
+        android:lineSpacingExtra="@dimen/line_extra_body"
+        android:justificationMode="none"
+        android:hyphenationFrequency="none" />
+
+    <!-- The limitation note: no graph edges, or keyword-only when the embedder
+         is absent. A step down the ramp because it qualifies the success above
+         rather than competing with it — but present, because a student who
+         later asks a "how does X relate to Y" question and gets nothing back
+         deserves to have been told. -->
+    <TextView
+        android:id="@+id/importNote"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_3"
+        android:textSize="@dimen/type_micro"
+        android:textColor="@color/text_tertiary"
+        android:lineSpacingExtra="@dimen/line_extra_body"
+        android:justificationMode="none"
+        android:hyphenationFrequency="none"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- The whole point of a successful import, so it is the one thing on
+             this card allowed to wear the accent. GONE on every failure: there
+             is nothing to ask about. -->
+        <TextView
+            android:id="@+id/importAsk"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/touch_min"
+            android:paddingEnd="@dimen/space_4"
+            android:gravity="center_vertical"
+            android:text="@string/import_ok_action"
+            android:textSize="@dimen/type_caption"
+            android:textColor="@color/accent"
+            android:background="?attr/selectableItemBackground"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/importDismiss"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/touch_min"
+            android:paddingEnd="@dimen/space_4"
+            android:gravity="center_vertical"
+            android:text="@string/import_dismiss"
+            android:textSize="@dimen/type_caption"
+            android:textColor="@color/text_tertiary"
+            android:background="?attr/selectableItemBackground" />
+    </LinearLayout>
+</LinearLayout>

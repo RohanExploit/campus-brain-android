@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The one filled action on the enrolment screen.
+
+  bg_send is the precedent and the reason this exists rather than reusing it:
+  that one is an oval sized for a 48dp icon button, and stretching it across a
+  full-width control would give the primary action a capsule nothing else in
+  the app wears. Same two-real-states rule though — enabled and disabled are
+  different shapes, not one sprite at lower opacity, because a greyed accent on
+  a near-black ground reads as broken rather than as waiting.
+
+  No new colour and no new dimension: accent, ink_input, hairline, radius_md.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="false">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/ink_input" />
+            <corners android:radius="@dimen/radius_md" />
+            <stroke android:width="@dimen/hairline" android:color="@color/hairline" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/accent" />
+            <corners android:radius="@dimen/radius_md" />
+        </shape>
+    </item>
+</selector>

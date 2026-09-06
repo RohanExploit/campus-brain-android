@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp" android:height="20dp"
+    android:viewportWidth="24" android:viewportHeight="24"
+    android:tint="@color/grade_fail">
+    <!-- A drawn glyph, not a "⚠". An emoji renders in the system font at a
+         size and colour this palette does not control, and on Samsung it
+         arrives full-colour. -->
+    <path android:fillColor="@android:color/white"
+        android:pathData="M12,2A10,10 0 1,0 22,12 10,10 0 0,0 12,2M11,7h2v7h-2V7M11,16h2v2h-2V16Z" />
+</vector>

@@ -1,11 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Campus Brain — dark editorial palette.
+
+  The app is used one-handed, indoors, often in a badly lit corridor between
+  classes, and its whole promise is that an answer is trustworthy. So: a near
+  black ground that stays readable at low brightness, one warm accent that
+  nothing else in the interface is allowed to borrow, and route colours that
+  read as meaning rather than decoration.
+
+  The accent is amber, not blue. Every model-backed product on a student's
+  phone is blue or violet; amber reads as a highlighter over a record, which
+  is what this app actually does.
+-->
 <resources>
-    <color name="brand">#1F5FA9</color>
-    <color name="on_brand">#FFFFFF</color>
-    <color name="route_fact">#1565C0</color>
-    <color name="route_local">#6A1B9A</color>
-    <color name="route_global">#00897B</color>
-    <color name="route_tabular">#2E7D32</color>
-    <color name="grade_pass">#2E7D32</color>
-    <color name="grade_fail">#C62828</color>
-    <color name="grade_audit">#757575</color>
+
+    <!-- Ground. Four steps, each one a real surface, not a gradient. -->
+    <color name="ink">#0A0C10</color>          <!-- app background -->
+    <color name="ink_raised">#12151B</color>   <!-- cards, answer surface -->
+    <color name="ink_input">#171B22</color>    <!-- fields, pressed states -->
+    <color name="hairline">#242A34</color>     <!-- 1dp separators, borders -->
+
+    <!--
+      Type. Secondary is tinted from the ground's hue, never neutral grey, so
+      it sits in the same world instead of looking washed out.
+
+      Ratios are quoted against ink_input, the darkest-contrast case, because
+      that is the surface the input hints sit on and a ramp is only as good as
+      its worst ground. The figures here were previously quoted "on ink" but
+      measured on ink_raised, which flattered them.
+
+      text_tertiary was #68717F, annotated "4.6:1 on ink, meets AA". It
+      measured 3.97 on ink, 3.71 on ink_raised and 3.50 on ink_input, so it
+      missed AA on every surface — and it carries nineteen references,
+      including every unselected nav label, the search and question hints, and
+      all of the answer card's metadata. None of them are near the 24sp the
+      large-text exemption needs.
+
+      #828C9E clears 4.5:1 on all three grounds with about half a point of
+      headroom, so a later tweak to a surface colour cannot silently push it
+      back under. The smallest passing lift, #7C8696, cleared ink_input by
+      only 0.19 and was rejected for that reason.
+
+      Known cost, and it needs a look on a real device: raising the floor
+      compresses the ramp. Secondary against tertiary is now 1.32:1 where
+      primary against secondary is 2.38:1, so the bottom two tiers are a much
+      softer step than the top two. If they do not read as distinct in a
+      corridor, the honest fix is to collapse to two tiers rather than keep a
+      distinction nobody can see — not to darken tertiary back below AA.
+    -->
+    <color name="text_primary">#F4F6FA</color>    <!-- 15.96:1 on ink_input -->
+    <color name="text_secondary">#98A2B3</color>  <!--  6.70:1 on ink_input -->
+    <color name="text_tertiary">#828C9E</color>   <!--  5.09:1 on ink_input, AA -->
+
+    <!-- The single accent. Reserved for the answer and the primary action. -->
+    <color name="accent">#FFB224</color>
+    <color name="accent_dim">#8A5F12</color>
+    <color name="on_accent">#150E00</color>
+
+    <!-- Route identity. Desaturated to live on near-black; each one names how
+         the answer was reached, so they must stay distinguishable at 10sp. -->
+    <color name="route_tabular">#3FCF8E</color>  <!-- computed by SQL -->
+    <color name="route_fact">#6AA8FF</color>     <!-- quoted from a document -->
+    <color name="route_local">#C48BFF</color>    <!-- followed a relationship -->
+    <color name="route_global">#4ECDC4</color>   <!-- read across the corpus -->
+
+    <!-- Verdicts. -->
+    <color name="verified">#3FCF8E</color>
+    <color name="grade_pass">#3FCF8E</color>
+    <color name="grade_fail">#F1656B</color>
+    <!--
+      There is no grade_audit fill any more, and that is the point.
+
+      It was #68717F, which put near-black ink on it at 3.9:1 and missed AA.
+      Lifting it to #808A99 fixed the ratio and then collided with the raised
+      text_tertiary (#828C9E) — a badge whose fill matches the text beside it
+      reads as a bug, not as a tier.
+
+      An audit is not a verdict, so it should never have been wearing a
+      verdict's filled badge. ResultFragment draws it outlined instead, on
+      bg_chip in the text ramp: present, counted, not scored. Pass and fail
+      keep the two saturated fills, which is now the only thing a fill means
+      on this screen.
+    -->
+
+    <!-- Retained: the launcher background is referenced by the mipmap. -->
+    <color name="brand">#0A0C10</color>
+    <color name="on_brand">#F4F6FA</color>
 </resources>

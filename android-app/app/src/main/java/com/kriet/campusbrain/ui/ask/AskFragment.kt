@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import androidx.fragment.app.Fragment
+import com.google.android.material.transition.MaterialFadeThrough
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -28,6 +29,16 @@ import kotlinx.coroutines.withContext
  * answers; a bubble that only showed prose would hide the part worth seeing.
  */
 class AskFragment : Fragment() {
+    // Sibling tabs are peers, so they cross-fade rather than slide: a
+    // directional transition would imply a hierarchy the bottom bar does not
+    // have. MaterialFadeThrough carries Material's own easing and duration,
+    // which is why it is used instead of a hand-rolled alpha animation.
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enterTransition = MaterialFadeThrough()
+        exitTransition = MaterialFadeThrough()
+    }
+
 
     private var _binding: FragmentAskBinding? = null
     private val binding get() = _binding!!
@@ -49,10 +60,10 @@ class AskFragment : Fragment() {
         binding.messages.adapter = adapter
 
         // One suggestion per route, so a demo can exercise all four in four taps.
-        SUGGESTIONS.forEach { q ->
+        SUGGESTIONS.forEach { (label, query) ->
             val chip = layoutInflater.inflate(R.layout.item_suggestion, binding.chipRow, false)
-            (chip as android.widget.TextView).text = q
-            chip.setOnClickListener { submit(q) }
+            (chip as android.widget.TextView).text = label
+            chip.setOnClickListener { submit(query) }
             binding.chipRow.addView(chip)
         }
 
@@ -79,19 +90,32 @@ class AskFragment : Fragment() {
         binding.input.setText("")
         binding.emptyHint.visibility = View.GONE
         adapter.addUser(query)
+        // Retrieval, embedding and composition take one to three seconds on
+        // the phone. Until now the screen showed the question and then
+        // nothing, which on a device with no network activity to point at
+        // looks exactly like an app that has hung.
+        adapter.showPending(getString(R.string.ask_working))
         scrollToEnd()
 
         viewLifecycleOwner.lifecycleScope.launch {
-            val result: AnswerResult? = withContext(Dispatchers.IO) {
-                when (val s = BrainRepository.state.value) {
-                    is InitState.Ready -> runCatching { s.repo.router.answer(query) }.getOrNull()
-                    else -> null
-                }
+            val ready = BrainRepository.state.value as? InitState.Ready
+            val result: AnswerResult? = ready?.let {
+                withContext(Dispatchers.IO) { runCatching { it.repo.router.answer(query) }.getOrNull() }
             }
-            if (result == null) {
-                adapter.addError("The corpus is not available on this device.")
-            } else {
-                adapter.addAnswer(result)
+            adapter.clearPending()
+            when {
+                // Two different failures that used to share one sentence. The
+                // corpus being absent is an install problem the student can
+                // act on; a query that threw is not.
+                ready == null -> adapter.addError(
+                    getString(R.string.error_no_corpus_title),
+                    getString(R.string.error_no_corpus_body),
+                )
+                result == null -> adapter.addError(
+                    getString(R.string.error_answer_title),
+                    getString(R.string.error_answer_body),
+                )
+                else -> adapter.addAnswer(result)
             }
             scrollToEnd()
         }
@@ -107,13 +131,22 @@ class AskFragment : Fragment() {
     }
 
     companion object {
-        /** Deliberately one per route: FACT, GLOBAL, LOCAL, TABULAR, plus a miss. */
+        /**
+         * Deliberately one per route: FACT, GLOBAL, LOCAL, TABULAR, plus a miss.
+         *
+         * Label and query are separate because the chip used to be captioned
+         * with the question it sent. The first of those is wider than the
+         * screen, so a student saw one pill spanning both edges and no sign
+         * that four more sat off to the right. The label is what fits on a
+         * chip; the query is still the full sentence the router is given, so
+         * the routes each one exercises are unchanged.
+         */
         val SUGGESTIONS = listOf(
-            "What is the minimum attendance percentage?",
-            "What scholarships are available?",
-            "Who handles hostel allotment?",
-            "What is the pass percentage?",
-            "Which subject has the most failures?",
+            "Minimum attendance" to "What is the minimum attendance percentage?",
+            "Scholarships" to "What scholarships are available?",
+            "Hostel allotment" to "Who handles hostel allotment?",
+            "Pass percentage" to "What is the pass percentage?",
+            "Most failures" to "Which subject has the most failures?",
         )
     }
 }

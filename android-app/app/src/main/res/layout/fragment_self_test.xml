@@ -1,15 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  The pre-demo check. Monospace and dense on purpose: it is a wall of PASS and
+  FAIL lines to be scanned in thirty seconds, not a screen to be read.
+
+  It had no background at all, so it inherited whatever the window happened to
+  be painting and the text arrived in the platform default rather than the
+  ramp. It is on the app's own ground now.
+-->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/ink"
+    android:scrollbars="none"
     android:fillViewport="true">
 
     <TextView
         android:id="@+id/status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp"
+        android:paddingStart="@dimen/gutter"
+        android:paddingEnd="@dimen/gutter"
+        android:paddingTop="@dimen/space_5"
+        android:paddingBottom="@dimen/space_6"
         android:fontFamily="monospace"
-        android:textSize="11sp"
+        android:textSize="@dimen/type_micro"
+        android:textColor="@color/text_secondary"
+        android:justificationMode="none"
         android:textIsSelectable="true" />
 </ScrollView>

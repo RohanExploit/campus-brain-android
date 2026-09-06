@@ -1,12 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.CampusBrain" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/brand</item>
-        <item name="colorOnPrimary">@color/on_brand</item>
-        <!-- API 35 makes activities edge-to-edge by default, which drew the
-             toolbar underneath the clock. fitsSystemWindows on the root plus
-             an explicit status bar colour keeps the bar readable. -->
-        <item name="android:statusBarColor">@color/brand</item>
+    <!--
+      Dark is not a preference here, it is the use scene: a phone held in a
+      corridor, at low brightness, between classes. DayNight would hand half
+      the users a light theme this palette was never drawn for, so the theme
+      is pinned to Dark and the palette is the only source of colour.
+    -->
+    <style name="Theme.CampusBrain" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorOnPrimary">@color/on_accent</item>
+        <item name="colorSurface">@color/ink_raised</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="android:colorBackground">@color/ink</item>
+        <item name="colorOutline">@color/hairline</item>
+
+        <!-- The status bar sits on the app's own ground rather than a coloured
+             block, so the header reads as part of the page. Light icons
+             because the ground is near black. -->
+        <item name="android:statusBarColor">@color/ink</item>
+        <item name="android:navigationBarColor">@color/ink</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:navigationBarColor">?android:colorBackground</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowBackground">@color/ink</item>
+
+        <!-- Selection and caret are part of the design; left at the platform
+             default they arrive in a stock teal that belongs to no palette. -->
+        <item name="android:textColorHighlight">@color/accent_dim</item>
+        <item name="android:colorControlActivated">@color/accent</item>
+    </style>
+    <!-- The active-tab pill. Stock Material draws a wide lilac capsule that
+         belongs to its own palette, not ours. -->
+    <style name="NavIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">#1F1A0C</item>
+        <item name="android:width">64dp</item>
+        <item name="android:height">32dp</item>
     </style>
 </resources>

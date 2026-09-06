@@ -23,6 +23,7 @@ import com.kriet.campusbrain.data.query
 class TabularQueries(private val db: BrainDb) {
 
     private val failList = Grades.FAIL_GRADES.joinToString(",") { "'$it'" }
+    private val auditList = Grades.AUDIT_GRADES.joinToString(",") { "'$it'" }
 
     data class TemplateResult(val answer: String, val debugSql: String, val template: String)
 
@@ -250,6 +251,220 @@ class TabularQueries(private val db: BrainDb) {
             rows.forEach { (roll, name, sgpa) -> append("- ${label(name, roll)}: SGPA ${"%.2f".format(sgpa)}\n") }
         }
         return TemplateResult(body.trimEnd(), sql, "below_sgpa")
+    }
+
+    /**
+     * The average, over the rows that HAVE one.
+     *
+     * [TabularIntent] has carried an `average_sgpa` intent since the port, but
+     * nothing in [SqlTemplates] ever matched it, so "what is the average SGPA"
+     * fell through TABULAR to FACT and surfaced a paper about the 2010 Flash
+     * Crash. Measured over the shipped bundle: 7.34 across 334 of 369 students.
+     *
+     * The null branch is not defensive padding. `AVG(sgpa)` over the 35 FAIL
+     * rows is NULL, not 0.0, because not one of them carries a grade point --
+     * and a null coerced through "%.2f" prints "0.00", which is a fabricated
+     * measurement in the one place this app is meant to be exact.
+     */
+    fun averageSgpa(result: String? = null): TemplateResult {
+        val filter = when {
+            result == null -> null
+            result.uppercase().startsWith("FAIL") -> "FAIL"
+            else -> "PASS"
+        }
+        val sql = "SELECT AVG(sgpa), COUNT(sgpa), COUNT(*) FROM students" +
+            (if (filter == null) "" else " WHERE result = ?")
+        val row = db.conn.query(sql, { st -> filter?.let { st.bindText(1, it) } }) {
+            Triple(if (it.isNull(0)) null else it.getDouble(0), it.getLong(1), it.getLong(2))
+        }.firstOrNull() ?: return TemplateResult("No SGPA data available.", sql, "average_sgpa")
+        val (avg, counted, total) = row
+        val who = when (filter) {
+            "FAIL" -> "students who failed"
+            "PASS" -> "students who passed"
+            else -> "students"
+        }
+        if (avg == null || counted == 0L) {
+            return TemplateResult(
+                "No SGPA is recorded for $who — all $total of those records leave it blank, " +
+                    "so there is no average to report.",
+                sql, "average_sgpa"
+            )
+        }
+        val body = StringBuilder("The average SGPA is ${"%.2f".format(avg)}")
+        if (counted == total) {
+            body.append(", across all $total $who.")
+        } else {
+            body.append(", across the $counted of $total $who who have one ")
+            body.append("(the other ${total - counted} have no SGPA recorded).")
+        }
+        return TemplateResult(body.toString(), sql, "average_sgpa")
+    }
+
+    /**
+     * Pass RATE per subject, which is a different question from pass COUNT per
+     * subject and has a different answer in this bundle: BTCOC502 has the most
+     * failures (16) but BTAIHM503B has the worst rate (90.9%), because only 66
+     * students take it against BTCOC502's 303. "Which subject has the lowest
+     * pass rate" used to match the college-wide pass_percentage template and
+     * answer "90.5%" -- a real figure, to a question nobody asked.
+     *
+     * Audit rows are excluded from the denominator, the same rule
+     * [Grades.recomputeSgpa] applies. BTCOF408 and BTAIP408 are graded AU for
+     * every student who takes them; a subject nobody can fail sits at 100% and
+     * is noise at both ends of the ranking.
+     */
+    fun subjectPassRates(worstFirst: Boolean = true, limit: Int = 10): TemplateResult {
+        val order = if (worstFirst) "ASC" else "DESC"
+        val sql = "SELECT subject_code, COUNT(*) FILTER (WHERE grade NOT IN ($failList)) AS passed, " +
+            "COUNT(*) AS took, " +
+            "100.0 * COUNT(*) FILTER (WHERE grade NOT IN ($failList)) / COUNT(*) AS rate " +
+            "FROM student_subjects WHERE grade IS NOT NULL AND grade NOT IN ($auditList) " +
+            "GROUP BY subject_code ORDER BY rate $order, subject_code LIMIT ?"
+        val rows = db.conn.query(sql, { it.bindLong(1, limit.toLong()) }) {
+            SubjectRate(it.getText(0), it.getLong(1), it.getLong(2), it.getDouble(3))
+        }
+        if (rows.isEmpty()) {
+            return TemplateResult("No subject grade data available.", sql, "subject_pass_rates")
+        }
+        val head = if (worstFirst) "Lowest pass rate by subject:" else "Highest pass rate by subject:"
+        val body = buildString {
+            append(head).append('\n')
+            rows.forEach {
+                append("- ${it.code}: ${"%.1f".format(it.rate)}% (${it.passed} of ${it.took} passed)\n")
+            }
+        }
+        return TemplateResult(body.trimEnd(), sql, "subject_pass_rates")
+    }
+
+    private data class SubjectRate(val code: String, val passed: Long, val took: Long, val rate: Double)
+
+    /**
+     * How the cohort did, in four figures.
+     *
+     * This exists because "how is the college doing overall this semester" was
+     * answered "I don't have enough information to answer that" while the
+     * records held 334 passes out of 369. The GLOBAL route was doing what it is
+     * built to do -- retrieve widely across documents -- and there is no
+     * document to retrieve: no circular in this bundle summarises the semester.
+     * The summary is a query, not a passage.
+     *
+     * Assembled from the existing templates rather than from new SQL, so the
+     * numbers here cannot drift away from the numbers the same app gives when
+     * the questions are asked one at a time. That is the whole point of the
+     * deterministic badge: "the pass rate is 90.5%" and "overall, 90.5%" must
+     * be the same 90.5%, computed once.
+     *
+     * The weakest subject is included because it is the only part of "how are
+     * we doing" the headline rate hides -- and it is the RATE, not the count.
+     * BTCOC502 has the most failures (16) and a 94.7% pass rate; BTAIHM503B has
+     * 6 and 90.9%. Reporting the count here would name the wrong subject as the
+     * cohort's weak spot.
+     */
+    fun semesterOverview(): TemplateResult {
+        val pass = passPercentage()
+        val avg = averageSgpa()
+        val worst = db.conn.query(
+            "SELECT subject_code, COUNT(*) FILTER (WHERE grade NOT IN ($failList)) AS passed, " +
+                "COUNT(*) AS took, " +
+                "100.0 * COUNT(*) FILTER (WHERE grade NOT IN ($failList)) / COUNT(*) AS rate " +
+                "FROM student_subjects WHERE grade IS NOT NULL AND grade NOT IN ($auditList) " +
+                "GROUP BY subject_code ORDER BY rate ASC, subject_code LIMIT 1"
+        ) { SubjectRate(it.getText(0), it.getLong(1), it.getLong(2), it.getDouble(3)) }
+            .firstOrNull()
+
+        val body = StringBuilder()
+        body.append(pass.answer)
+        body.append(' ').append(avg.answer)
+        worst?.let {
+            body.append(" The weakest subject by pass rate is ").append(it.code)
+                .append(" at ").append("%.1f".format(it.rate)).append("% (")
+                .append(it.took - it.passed).append(" of ").append(it.took)
+                .append(" failed it).")
+        }
+        return TemplateResult(
+            body.toString(),
+            pass.debugSql + " ; " + avg.debugSql + " ; subjectPassRates(worstFirst=true, limit=1)",
+            "semester_overview",
+        )
+    }
+
+    /**
+     * One counter with optional predicates, rather than a new template per
+     * combination of them. Every constraint the caller passes is applied --
+     * which is the entire point: the failure this replaces was a template
+     * answering the half of the question it happened to recognise.
+     *
+     * The zero case gets an explanation because in this bundle zero is
+     * structural rather than incidental. No student with a FAIL result carries
+     * an SGPA (0 of 35), so any question intersecting a failure with an SGPA
+     * threshold is empty by construction. A bare "0" is arithmetically right
+     * and leaves the student believing the cohort is clean.
+     */
+    fun countStudentsMatching(
+        sgpaBelow: Double? = null,
+        sgpaAtLeast: Double? = null,
+        minFailedSubjects: Int? = null,
+        result: String? = null,
+    ): TemplateResult {
+        val conds = ArrayList<String>()
+        val described = ArrayList<String>()
+        sgpaBelow?.let {
+            conds += "s.sgpa IS NOT NULL AND s.sgpa < ?"
+            described += "an SGPA below ${trimNum(it)}"
+        }
+        sgpaAtLeast?.let {
+            conds += "s.sgpa IS NOT NULL AND s.sgpa >= ?"
+            described += "an SGPA of ${trimNum(it)} or above"
+        }
+        val status = result?.let { if (it.uppercase().startsWith("FAIL")) "FAIL" else "PASS" }
+        status?.let {
+            conds += "s.result = '$it'"
+            described += if (it == "FAIL") "a FAIL result" else "a PASS result"
+        }
+        minFailedSubjects?.let { n ->
+            // Interpolated, not bound: n is an Int this object parsed itself
+            // out of a digit run, never user text reaching SQL.
+            conds += "(SELECT COUNT(DISTINCT ss.subject_code) FROM student_subjects ss " +
+                "WHERE ss.roll_no = s.roll_no AND ss.grade IN ($failList)) >= $n"
+            described += "at least $n failed subject" + (if (n == 1) "" else "s")
+        }
+        if (conds.isEmpty()) return studentCount()
+
+        val sql = "SELECT COUNT(*) FROM students s WHERE " + conds.joinToString(" AND ")
+        val n = db.conn.query(sql, { st ->
+            var i = 1
+            sgpaBelow?.let { st.bindDouble(i++, it) }
+            sgpaAtLeast?.let { st.bindDouble(i++, it) }
+        }) { it.getLong(0) }.first()
+
+        val phrase = described.joinToString(" and ")
+        if (n > 0) return TemplateResult("$n students have $phrase.", sql, "students_matching")
+
+        val note = emptyIntersectionNote(
+            usedSgpa = sgpaBelow != null || sgpaAtLeast != null,
+            failSide = status == "FAIL" || minFailedSubjects != null,
+        )
+        return TemplateResult(
+            "No students have $phrase." + (note?.let { " $it" } ?: ""), sql, "students_matching"
+        )
+    }
+
+    /**
+     * Why an intersection came back empty, when the reason is a hole in the
+     * records rather than a fact about the cohort. Queried, not assumed: if a
+     * future bundle does record SGPA for failing students, this note stops
+     * appearing on its own instead of becoming a lie in a string constant.
+     */
+    private fun emptyIntersectionNote(usedSgpa: Boolean, failSide: Boolean): String? {
+        if (!usedSgpa || !failSide) return null
+        val row = db.conn.query(
+            "SELECT COUNT(*), COUNT(sgpa) FROM students WHERE result = 'FAIL'"
+        ) { it.getLong(0) to it.getLong(1) }.firstOrNull() ?: return null
+        val (fails, withSgpa) = row
+        if (fails == 0L || withSgpa > 0L) return null
+        return "That is a gap in the records rather than a clean cohort: not one of the $fails " +
+            "students with a FAIL result has an SGPA recorded, so no student can satisfy both " +
+            "conditions at once."
     }
 
     fun supplementaryCount(): TemplateResult {

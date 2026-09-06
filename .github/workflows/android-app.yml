@@ -1,8 +1,15 @@
-name: Android App
+name: Campus Brain (Android)
 
-# Scoped to android-app/ so a backend, dashboard or mobile/ (Flutter) commit
-# never triggers this Gradle build, and vice versa -- the two Android clients
-# are standalone builds on purpose (see android-app/settings.gradle.kts).
+# The native Kotlin app in android-app/.
+#
+# android.yml targets an older Flutter tree under mobile/ and is path-filtered
+# to it, so it never fires for this app. This workflow is the one that actually
+# builds what ships.
+#
+# It exists so a green build does not depend on one laptop being awake: every
+# push runs the full JVM suite and produces an installable APK as an artifact,
+# downloadable from the run page on any machine.
+
 on:
   push:
     paths:
@@ -11,40 +18,47 @@ on:
   pull_request:
     paths:
       - 'android-app/**'
-      - '.github/workflows/android-app.yml'
   workflow_dispatch:
+
+concurrency:
+  # A newer push makes an in-flight run obsolete. Cancel it rather than paying
+  # for two builds and reading the older one's result by mistake.
+  group: android-app-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     name: Unit tests and debug APK
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: android-app
+
     steps:
       - uses: actions/checkout@v4
 
-      # AGP 9 / compileSdk 36 reject the runner's other preinstalled JDKs the
-      # same way they reject a local JDK 23 -- see app/build.gradle.kts.
+      # 17 because app/build.gradle.kts pins source/targetCompatibility to 17.
+      # The dev machine has 21 and 23 installed; pinning here stops the runner
+      # drifting onto whatever the image ships this month.
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Grant execute permission for gradlew
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradlew executable
         run: chmod +x gradlew
 
+      # local.properties on the dev machine points at R:/toolchains/android-sdk
+      # and is not committed. The runner's SDK location comes from ANDROID_HOME,
+      # which setup-android/the image provides, so nothing is written here.
       - name: Unit tests
-        run: ./gradlew :app:testDebugUnitTest --stacktrace
+        run: ./gradlew :app:testDebugUnitTest --console=plain --no-daemon
 
-      # brain.db and assets/minilm/ are gitignored (real student PII; an 86MB
-      # model) and absent on a clean checkout. That is a designed-for state,
-      # not a build error: BrainRepository.init() resolves to
-      # InitState.Failed at runtime, so a debug build with no corpus assets
-      # is still a meaningful compile/package health check.
-      - name: Assemble debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace
-
+      # Always upload: a failing run is exactly when the per-test XML is worth
+      # reading, and the summary line alone does not say which case broke.
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -52,10 +66,33 @@ jobs:
           name: unit-test-results
           path: android-app/app/build/reports/tests/testDebugUnitTest
           retention-days: 14
-          if-no-files-found: ignore
+          if-no-files-found: warn
 
+      - name: Assemble debug APK
+        run: ./gradlew :app:assembleDebug --console=plain --no-daemon
+
+      # The point of the whole workflow: an installable build that outlives the
+      # machine that pushed it. Debug-signed, so it installs over a debug build
+      # already on a device without an uninstall.
       - uses: actions/upload-artifact@v4
         with:
           name: campus-brain-debug-apk
           path: android-app/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+          if-no-files-found: error
+
+      # Lint last: it must not stop the APK being produced. A build that fails
+      # only on a lint warning still yields something demonstrable.
+      - name: Lint
+        continue-on-error: true
+        run: ./gradlew :app:lintDebug --console=plain --no-daemon
+
+      - name: Upload lint report
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: android-app/app/build/reports/lint-results-debug.html
           retention-days: 14
+          if-no-files-found: ignore

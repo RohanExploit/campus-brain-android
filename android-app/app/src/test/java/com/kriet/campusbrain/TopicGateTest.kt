@@ -38,6 +38,27 @@ class TopicGateTest {
         // must resolve toward answering, not toward refusing a student.
         assertTrue(TopicGate.isEducational("what is the deadline"))
     }
+
+    @Test fun `domain vocabulary is the words that identify no question`() {
+        // Read the other way round, this list is what AnswerCheck uses to tell
+        // a question's subject from its background noise. "Students" is in a
+        // quarter of the corpus and in most questions; "cheating" is in none.
+        listOf("student", "students", "subject", "exam", "exams", "attendance",
+            "scholarship", "college", "semester", "grade")
+            .forEach { assertTrue(it, TopicGate.isDomainVocabulary(it)) }
+        listOf("cheating", "caught", "plagiarism", "wifi", "condonation", "debarred")
+            .forEach { assertFalse(it, TopicGate.isDomainVocabulary(it)) }
+    }
+
+    @Test fun `naming a campus subject is stricter than being educational`() {
+        // The router's off-topic cloud suppression turns on this difference.
+        // isEducational resolves ambiguity toward answering and so says yes to
+        // both of these; only the first is a question a wrong answer would
+        // misrepresent this college's records over.
+        assertTrue(TopicGate.namesCampusSubject("list students who were caught cheating"))
+        assertFalse(TopicGate.namesCampusSubject("what is the capital of France"))
+        assertTrue(TopicGate.isEducational("what is the capital of France"))
+    }
 }
 
 class CloudAnswerTest {

@@ -1,38 +1,111 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  The corpus, browsable, plus the one place a student can add to it.
+
+  The add action is an amber circle at the end of the search row, which is the
+  same shape, size and colour as Send on the Ask tab. That is the whole reason
+  for the arrangement: the app now has exactly one visual idea for "the
+  primary action of this screen", and a student who has learned it once on Ask
+  does not have to learn it again here.
+
+  Progress and the outcome are two separate blocks between the count and the
+  list, both GONE at rest. They sit above the list rather than over it so the
+  list never has content hidden behind a floating card, and so the outcome
+  survives a rotation without a dialog to restore.
+-->
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/ink">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/searchWrap"
+    <LinearLayout
+        android:id="@+id/searchRow"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginStart="@dimen/gutter"
+        android:layout_marginEnd="@dimen/gutter"
+        android:layout_marginTop="@dimen/space_4"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <com.google.android.material.textfield.TextInputEditText
+        <EditText
             android:id="@+id/search"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="@dimen/touch_min"
+            android:background="@drawable/bg_input"
+            android:drawableStart="@drawable/ic_search"
+            android:drawablePadding="@dimen/space_3"
+            android:paddingStart="@dimen/space_4"
+            android:paddingEnd="@dimen/space_4"
+            android:paddingTop="@dimen/space_3"
+            android:paddingBottom="@dimen/space_3"
             android:hint="@string/search_docs"
+            android:textColorHint="@color/text_tertiary"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/type_body_sm"
             android:inputType="text"
-            android:maxLines="1" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:maxLines="1"
+            android:importantForAutofill="no" />
+
+        <!-- bg_send, not a new drawable: this IS the send treatment, reused
+             deliberately rather than approximated. Its disabled state is never
+             reached here because adding a document is always available. -->
+        <ImageView
+            android:id="@+id/addDoc"
+            android:layout_width="@dimen/touch_min"
+            android:layout_height="@dimen/touch_min"
+            android:layout_marginStart="@dimen/space_3"
+            android:background="@drawable/bg_send"
+            android:src="@drawable/ic_add"
+            android:scaleType="centerInside"
+            android:contentDescription="@string/add_document" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/count"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:paddingHorizontal="16dp"
-        android:paddingBottom="4dp"
-        android:textSize="11sp"
-        android:alpha="0.6"
-        app:layout_constraintTop_toBottomOf="@id/searchWrap"
+        android:paddingStart="@dimen/gutter"
+        android:paddingEnd="@dimen/gutter"
+        android:paddingTop="@dimen/space_3"
+        android:textSize="@dimen/type_caption"
+        android:textColor="@color/text_tertiary"
+        app:layout_constraintTop_toBottomOf="@id/searchRow"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- The shared progress component, indeterminate while the file is being
+         read and determinate once the chunk count is known. -->
+    <include
+        android:id="@+id/importProgress"
+        layout="@layout/view_progress"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/gutter"
+        android:layout_marginEnd="@dimen/gutter"
+        android:layout_marginTop="@dimen/space_3"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/count"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <include
+        android:id="@+id/importResult"
+        layout="@layout/view_import_result"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/gutter"
+        android:layout_marginEnd="@dimen/gutter"
+        android:layout_marginTop="@dimen/space_3"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/importProgress"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
@@ -41,8 +114,10 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        android:paddingBottom="12dp"
-        app:layout_constraintTop_toBottomOf="@id/count"
+        android:paddingTop="@dimen/space_2"
+        android:paddingBottom="@dimen/space_4"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@id/importResult"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

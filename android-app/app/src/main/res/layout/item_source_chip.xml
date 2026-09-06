@@ -1,13 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
+<!--
+  One citation under an answer.
+
+  This is the place the provenance distinction has to land. A student reading
+  "attendance below 75% forfeits the exam" is deciding whether to believe a
+  number, and the only thing that settles it is whose document said so. The
+  Documents tab marks the import; this marks the claim.
+
+  So the college's 58 documents render exactly as they always did — one line,
+  no badge, no icon — and only an imported source grows the second line. The
+  corpus stays visually silent and the exception is the thing that speaks,
+  which is the opposite of badging all 58 as "official" and leaving the
+  student to notice an absence.
+
+  Full width and multi-line: the old horizontal chip row cut titles mid-word
+  ("Subject: Attendance C") and ran off the screen edge.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginEnd="6dp"
-    android:background="@drawable/bg_chip"
-    android:paddingHorizontal="10dp"
-    android:paddingVertical="4dp"
-    android:textSize="10sp"
-    android:textColor="@color/brand"
-    android:maxLines="1"
-    android:ellipsize="end"
-    android:maxWidth="180dp" />
+    android:orientation="vertical"
+    android:minHeight="@dimen/touch_min"
+    android:gravity="center_vertical"
+    android:paddingTop="@dimen/space_2"
+    android:paddingBottom="@dimen/space_2"
+    android:background="?attr/selectableItemBackground">
+
+    <TextView
+        android:id="@+id/sourceTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/type_body_sm"
+        android:textColor="@color/text_secondary"
+        android:justificationMode="none"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <!--
+      GONE for every bundled document, which is all of them until the student
+      imports something. Drawn in the text ramp with a hairline glyph rather
+      than a filled badge: amber is spoken for by the answer above, and a
+      route colour would be a category error — those name how an answer was
+      reached, not where it came from.
+    -->
+    <TextView
+        android:id="@+id/sourceOrigin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_1"
+        android:text="@string/source_added_by_you"
+        android:drawableStart="@drawable/ic_added"
+        android:drawablePadding="@dimen/space_2"
+        android:gravity="center_vertical"
+        android:textSize="@dimen/type_micro"
+        android:textColor="@color/text_tertiary"
+        android:justificationMode="none"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:visibility="gone" />
+</LinearLayout>
