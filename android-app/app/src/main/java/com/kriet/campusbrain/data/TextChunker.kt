@@ -46,6 +46,43 @@ object TextChunker {
      */
     private val SENTENCE_END = Regex("""(?<=[.!?])\s+""")
 
+    /**
+     * A line that carries its own structure and must keep its own newline: a
+     * bullet, a numbered item, a table row, or a `key: value` field. Joining
+     * these to the line above would run two list items into one sentence.
+     */
+    private val STRUCTURAL_LINE = Regex("""^\s*(?:[-*•·]|\d{1,3}[.)]|\|)\s+|^[^\s:]{1,40}:\s""")
+
+    /**
+     * Whether [prev] flows into [next] as one wrapped sentence.
+     *
+     * A hard-wrapped paragraph is the normal shape of a .txt file, and until
+     * this existed every wrap became a sentence boundary downstream:
+     * AnswerCheck.SENTENCE_SPLIT treats a bare newline as a terminator, which
+     * it must, because that is what separates one bullet from the next. The
+     * consequence on a device was an answer that stopped mid-clause -- "meets
+     * every Thursday at 5:30 pm in" -- with the rest of the sentence sitting
+     * one line below, unread.
+     *
+     * The bundled corpus never showed this: its chunks were built by an offline
+     * exporter that had already unwrapped them. Only imported documents carry
+     * source wrapping, which is why the defect appeared the day ingestion did.
+     *
+     * Conservative on purpose. A line is joined only when the previous line
+     * does not end a sentence AND neither line is structural, so anything that
+     * might be a list keeps its break. A missed join costs a slightly short
+     * extract; a wrong join welds two list items together and reads as
+     * nonsense.
+     */
+    private fun continuesSentence(prev: String, next: String): Boolean {
+        if (prev.isEmpty() || next.isEmpty()) return false
+        if (STRUCTURAL_LINE.containsMatchIn(next)) return false
+        if (STRUCTURAL_LINE.containsMatchIn(prev)) return false
+        // A terminator ends the sentence even mid-paragraph; the next line is a
+        // new one and deserves its own boundary.
+        return prev.last() !in ".!?:;"
+    }
+
     fun chunk(rawText: String): List<Chunk> {
         val lines = rawText.replace("\r\n", "\n").replace('\r', '\n').split('\n')
         val out = ArrayList<Chunk>()
@@ -107,7 +144,18 @@ object TextChunker {
             }
 
             if (buffer.isEmpty()) bufferSection = section
-            buffer.append(line.trim()).append('\n')
+            val trimmed = line.trim()
+            // Join a wrapped continuation to the line above with a space rather
+            // than a newline. See [continuesSentence]: downstream a newline is
+            // a sentence boundary, so keeping the source's wrapping here is
+            // what cut imported answers off mid-clause.
+            val prev = buffer.dropLastWhile { it == '\n' }.takeLastWhile { it != '\n' }.toString()
+            if (buffer.isNotEmpty() && continuesSentence(prev, trimmed)) {
+                buffer.setLength(buffer.length - 1)   // drop the pending '\n'
+                buffer.append(' ').append(trimmed).append('\n')
+            } else {
+                buffer.append(trimmed).append('\n')
+            }
             i++
         }
         flush()

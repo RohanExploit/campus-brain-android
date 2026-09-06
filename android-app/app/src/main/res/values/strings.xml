@@ -122,4 +122,116 @@
          taking a line of its own: it is the same fact the row already showed,
          and this screen's job is the document, not its paperwork. -->
     <string name="detail_added_meta_fmt">%1$s · added by you</string>
+
+    <!--
+      Enrolment.
+
+      Same two rules as the import copy above, and one more that is specific to
+      this screen: it must never read as a gate. Every answer this app gives is
+      read from documents already on the phone, and that is true before
+      enrolment, after it, and after a licence lapses. So the copy offers a
+      confirmation, never demands one, and every terminal state below says out
+      loud that answering is unaffected.
+
+      On why there is a code and no verification email: this project's Supabase
+      SMTP is capped at two mails an hour PROJECT-WIDE, so mailing 400 students
+      is not a design that exists. `mailer_autoconfirm` is on, no mail is ever
+      sent, and the institution's own code is what proves the student belongs
+      to it. Nothing here may promise a message that will not arrive.
+    -->
+    <string name="enrol_title">Enrol this device</string>
+    <string name="enrol_intro">Enrolment links this phone to your institution so its licence stays current. It is optional. Answers are read from the documents already on this phone and keep working either way, with or without a network.</string>
+
+    <string name="enrol_email_label">Email</string>
+    <!-- The address genuinely proves nothing here, so the field says so rather
+         than implying a confirmation link is on its way. -->
+    <string name="enrol_email_help">Optional, and no mail is ever sent to it. Leave it blank and the app makes one up — your enrolment code is what proves you belong to the institution.</string>
+    <string name="enrol_email_hint">you@example.com</string>
+
+    <string name="enrol_password_label">Password</string>
+    <!-- The one consequence a student can act on: it is what gets them back in
+         after a reinstall, so it is worth writing down. -->
+    <string name="enrol_password_help">Six characters or more. You will need it if you reinstall the app on this phone or enrol a second one.</string>
+    <string name="enrol_password_hint">Six characters or more</string>
+
+    <string name="enrol_code_label">Enrolment code</string>
+    <string name="enrol_code_help">From your college — on the enrolment slip, or from your department office. Capitals and spacing do not matter.</string>
+    <string name="enrol_code_hint">Code from your college</string>
+
+    <string name="enrol_submit">Enrol this device</string>
+    <!-- Present tense, and honest about the one moment this app uses a
+         network. Up to five calls with an eight-second timeout each, so this
+         line can be on screen for a while on bad campus wifi. -->
+    <string name="enrol_working">Confirming with your institution…</string>
+
+    <!--
+      Correction copy. It replaces the help line under the field it is about
+      rather than appearing beneath it, so the form never grows a red row and
+      never jumps under the student's thumb mid-typing.
+    -->
+    <string name="enrol_problem_email">That address has a typo — check the @ and the part after the last dot. Or clear the field and enrol without one.</string>
+    <string name="enrol_problem_password">Six characters or more.</string>
+    <string name="enrol_problem_code">The enrolment code is the one thing this screen needs. Your department office can reissue it.</string>
+
+    <!--
+      Terminal states. Four, matching Identity.EnrolResult exactly.
+
+      "Already enrolled" is not among them and that is correct rather than an
+      omission: a student who reinstalls redeems the same code, the server
+      answers 23505, and ControlPlane treats that as the success it is — the
+      membership row already exists and the grant is read exactly as it would
+      have been. It arrives here as Enrolled. So the success copy below is
+      written to be true of both histories at once: it names the institution
+      and the confirmed window, and never says "welcome" or "recovered",
+      because one of those is wrong on each of the two paths.
+    -->
+    <string name="enrol_done_title_fmt">Enrolled with %1$s</string>
+    <string name="enrol_done_body_fmt">Offline access is confirmed for the next %1$s. Nothing about answering changes — it already worked offline — and opening the app once on a network before then renews the window.</string>
+    <plurals name="enrol_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+
+    <!--
+      One card for two causes, deliberately.
+
+      Identity.EnrolResult.Rejected is raised both by the sign-in fallback (an
+      account already exists at this address and the password differs) and by
+      the code redemption (unknown, used up, expired). The result type does not
+      say which, and the server's prose cannot be trusted to: SupabaseHttp
+      falls back to the first 120 characters of the body, which on campus wifi
+      may be a captive portal's HTML. So the outcome is named once, honestly,
+      with a next move for each cause — and the server's own words are not
+      printed, because they are not copy anyone wrote for a student to read.
+    -->
+    <string name="enrol_rejected_title">The code or the password was not accepted</string>
+    <string name="enrol_rejected_body">Your institution checked both and turned one of them down. Retype the enrolment code exactly as it was issued; if you have already enrolled another phone with this email, use the password you chose then. Nothing on this device changed, and answers carry on as normal.</string>
+
+    <string name="enrol_unavailable_title">Your institution could not be reached</string>
+    <string name="enrol_unavailable_body">Enrolment is the one thing in this app that needs a connection, and it did not get one. Nothing was changed on this phone. Try again on wifi — in the meantime the app answers questions from its own documents, exactly as it does now.</string>
+
+    <string name="enrol_not_configured_title">This build has no institution to enrol with</string>
+    <string name="enrol_not_configured_body">No enrolment settings were installed alongside the app, so there is no service to contact. This is a supported setup, not a fault: the college\'s documents are bundled in the app and every answer comes from them. Your college\'s IT office can supply the settings file if enrolment is wanted.</string>
+
+    <string name="enrol_action_done">Done</string>
+    <string name="enrol_action_retry">Try again</string>
+    <string name="enrol_action_back">Back</string>
+
+    <!--
+      The header pill, once a grant exists.
+
+      Entitlements.shortBanner deliberately says nothing for a healthy grant —
+      it was written when the pill had no name to show and silence was the
+      whole point. Now that the pill names the institution, a healthy device
+      would otherwise show a college name with no state beside it, which reads
+      as a label rather than a status. One word closes that, and it is a
+      statement of fact next to a name the student chose to put there, not a
+      nag: an un-enrolled device still shows nothing at all.
+    -->
+    <string name="entitlement_active_short">enrolled</string>
+    <!-- The pill is the way in to enrolment, so it has to announce itself to
+         TalkBack and to a long-press tooltip. The title keeps the self test;
+         one gesture, one destination. -->
+    <string name="enrol_pill_tooltip">Enrolment</string>
+    <string name="enrol_pill_description">Licence and enrolment</string>
 </resources>
