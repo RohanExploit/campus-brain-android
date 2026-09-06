@@ -34,8 +34,13 @@ jobs:
       #
       # REMOVE THIS STEP once `uv add --dev pytest-asyncio` has been run and
       # pyproject.toml plus uv.lock are committed.
-      - name: Install pytest-asyncio (temporary, see comment above)
-        run: uv pip install pytest-asyncio
+      # reportlab is in the same position: corpus/render_base.py imports it and
+      # tests/test_student_corpus_notices.py collects it, but it is declared in
+      # neither pyproject.toml nor uv.lock, so collection aborted with
+      # ModuleNotFoundError as soon as the lint gate stopped failing first.
+      # Same removal condition -- `uv add --dev pytest-asyncio reportlab`.
+      - name: Install pytest-asyncio and reportlab (temporary, see comment above)
+        run: uv pip install pytest-asyncio reportlab
 
       - name: Lint (ruff)
         run: uv run ruff check .
