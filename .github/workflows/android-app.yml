@@ -73,8 +73,92 @@ jobs:
           gh release download assets-v1 --repo "$GITHUB_REPOSITORY"             --pattern model.onnx --dir app/src/main/assets/minilm --clobber
           ls -la app/src/main/assets/minilm/
 
+      # Said out loud, before the suite runs, because the previous behaviour was
+      # that a failed download produced NOTHING: the batteries skipped their
+      # floors, the build went green, and the log never mentioned that the vector
+      # arm had not been exercised. The fetch above stays non-fatal -- see its
+      # comment -- so this step reports and never fails.
+      #
+      # It is an ASSET check, which is a proxy and is labelled as one. The
+      # battery's own gate is JvmCorpus.vectorArm, which is true only when the
+      # model actually LOADED; JvmCorpus.modelAssetPresent exists precisely to
+      # tell "no model on this machine" apart from "the model would not load".
+      # The authoritative per-run statement is the "JvmCorpus ready:" line the
+      # harness prints, read back out of the results below.
+      - name: Retrieval coverage (asset check)
+        shell: bash
+        run: |
+          model=app/src/main/assets/minilm/model.onnx
+          if [ -s "$model" ]; then
+            size=$(du -h "$model" | cut -f1)
+            echo "::notice title=Retrieval coverage::ONNX embedder present ($size). The JVM batteries should run fts5+vector and enforce their regression floors."
+            {
+              echo "### Retrieval coverage"
+              echo
+              echo "- ONNX embedder: **present** ($size)"
+              echo "- Expected arms: **fts5 + vector**"
+              echo "- Battery regression floors: **expected to be enforced**"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning title=Retrieval coverage REDUCED::ONNX embedder MISSING. The JVM batteries will run KEYWORD-ONLY and will SKIP their regression floors. A green build here verified less than it appears to."
+            {
+              echo "### Retrieval coverage -- REDUCED"
+              echo
+              echo "- ONNX embedder: **missing** (the \`assets-v1\` download did not produce \`model.onnx\`)"
+              echo "- Expected arms: **KEYWORD-ONLY**"
+              echo "- Battery regression floors: **skipped** -- \`JvmAdversarialBatteryTest\` and"
+              echo "  \`JvmHardQueryBatteryTest\` guard their assertions with \`if (JvmCorpus.vectorArm)\`."
+              echo "- **A green build on this run is not evidence about retrieval quality.**"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Unit tests
         run: ./gradlew :app:testDebugUnitTest --console=plain --no-daemon
+
+      # What the batteries ACTUALLY did, as opposed to what the asset check
+      # predicted. JvmCorpus prints one line per JVM naming every arm it wired
+      # up; Gradle captures test stdout into the JUnit XML, so it can be read
+      # back here without changing the build script or the test sources.
+      #
+      # if: always() because a failing suite is exactly when this matters -- a
+      # floor assertion that did not run is not a floor that passed. Ends with
+      # `true` so a missing report can never turn a green suite red.
+      - name: Report which retrieval arms the batteries used
+        if: always()
+        shell: bash
+        run: |
+          # EVERY match, not the first. Gradle may fork more than one test JVM,
+          # and JvmCorpus is built once per JVM, so there can be several of these
+          # lines -- and a run where one fork loaded the model and another did not
+          # is itself the finding. Taking `head -1` of a recursive walk would
+          # report whichever fork the walk reached first.
+          #
+          # -I matters: Gradle keeps a binary event log beside the XML, and
+          # grep -o on it prints "Binary file ... matches", which contains no
+          # "vectors=" and would be misread as keyword-only. Only the XML is
+          # read; the HTML report escapes differently and adds nothing.
+          # The sed trims a CDATA terminator: Gradle normally entity-escapes
+          # system-out, but wraps it in CDATA when the output contains markup,
+          # and "[^<]*" cannot see the end of a CDATA block.
+          lines=$(grep -rhoI --include='*.xml' 'JvmCorpus ready:[^<]*' \
+                    app/build/test-results/testDebugUnitTest 2>/dev/null \
+                    | sed 's/]]>.*$//' | sort -u || true)
+          if [ -z "$lines" ]; then
+            echo "::warning title=Battery harness did not report::No 'JvmCorpus ready:' line in the test results. The JVM batteries may not have run at all."
+            echo "- Battery harness: **no \`JvmCorpus ready:\` line found** -- the batteries may not have run." >> "$GITHUB_STEP_SUMMARY"
+          elif [ -z "$(printf '%s\n' "$lines" | grep -v 'vectors=true' || true)" ]; then
+            echo "::notice title=Batteries ran with the vector arm::$lines"
+            echo "- Batteries actually ran: **fts5 + vector**" >> "$GITHUB_STEP_SUMMARY"
+            printf '%s\n' "$lines" | sed 's/^/      /' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning title=Batteries ran KEYWORD-ONLY::$lines"
+            {
+              echo "- Batteries actually ran: **KEYWORD-ONLY** (at least one test JVM had no embedder)"
+              echo "- The regression floors were **skipped**. Do not quote this run as a retrieval result."
+            } >> "$GITHUB_STEP_SUMMARY"
+            printf '%s\n' "$lines" | sed 's/^/      /' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          true
 
       # Always upload: a failing run is exactly when the per-test XML is worth
       # reading, and the summary line alone does not say which case broke.

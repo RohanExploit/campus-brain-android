@@ -8,6 +8,7 @@
 | Remote | `github.com/RohanExploit/campus-brain-android`, branch `main` |
 | Gradle user home | `E:\gradle-home` (`GRADLE_USER_HOME`, set at User scope) |
 | Other recovered repos | `E:\projects\R-recovered\` |
+| **What each subsystem must never do** | **`docs/architecture.md` — read it before touching `app/src/`** |
 
 **Never put caches, build output, or scratch files on `C:`** — the user has asked
 for it to stay clear. `E:` is the internal NVMe and is the right place.
@@ -67,10 +68,19 @@ forever. Retrieval is local, the records live on the phone, and only identity
 goes to a server. This is the product's entire commercial claim — state it with
 the caveat below, not more strongly than that.
 
-Enforced structurally rather than by convention: there are no entitlement
-references anywhere outside `data/auth/` except three lines of `MainActivity`
-startup, and `QueryLog.record` takes doc ids and route labels, never text.
-Keep it that way.
+How it is actually held, stated exactly, because a looser version of this
+sentence was in this file and was wrong (see `docs/architecture.md` §10):
+**nothing in `retrieval/` or `answer/` references auth or licensing at all** —
+verified by grep, and that absence is the whole enforcement, so a single added
+import breaks it with every test still green. `Licensing` and `Identity` are
+reached from `MainActivity` startup (five lines, not three),
+`data/DocumentIngest` (the import cap, which is what a licence governs), and a
+handful of `ui/` screens — never from the ask path.
+`QueryLog.record` takes doc ids and route labels and has no string-shaped
+parameter at all; a reflection test enforces that. Note that the *class* can
+hold text through `recordText`, which is off by default, admin-opt-in, capped
+and local — so say "`record` cannot carry query text", not "`QueryLog` cannot".
+Keep all of it that way.
 
 **One important caveat, stated because the welcome screen once got it wrong.**
 "Nothing ever leaves the device" is true of a bare build and false of a
@@ -101,6 +111,37 @@ hidden or deleted.
   in the answer path and that is a choice, not a gap.
 - **Kotlin through a shell heredoc eats `\n`** and produces `Syntax error:
   Expecting '"'`. Use raw strings or a file-writing tool. This has bitten five times.
+
+## Traps that have cost time here
+
+Tooling and environment, all confirmed in this repo. The three habits above are
+the *verification* traps; these are the ones that waste an hour before you get
+as far as verifying anything.
+
+- **Stage explicit paths. Never `git add -A`.** More than one agent works this
+  tree at once (`.claims/`, `TEAMWORK.md`), and `-A` sweeps up whatever another
+  one is mid-write. `scripts/claim.ps1` commits only its own claim file for
+  exactly this reason. `git status` before every push: *nothing unexpected
+  staged.*
+- **An XML comment cannot contain `--`.** It is an XML syntax error, not a
+  warning. This codebase's prose style uses `--` as an em dash everywhere in
+  Kotlin and Markdown; every commented file under `app/src/main/res/` drops it,
+  and that is not a coincidence. Use an em dash or a colon in XML.
+- **Android string resources need `\'` for an apostrophe.** A bare `'` fails
+  the resource compile. See `strings.xml` — every one of `don\'t`,
+  `college\'s`, `this college\'s` is escaped.
+- **Do not export `MSYS_NO_PATHCONV=1` shell-wide.** It breaks `gradlew` with
+  `Could not find or load main class GradleWrapperMain`. Scope it inline to the
+  single `adb` call that needs a path protecting. (`docs/device-test-plan.md`.)
+- **Uninstall before installing a release build.** Debug and release are signed
+  differently, and an existing debug install rejects the release with an opaque
+  ddmlib stack trace that names nothing. Reinstall debug afterwards — the
+  instrumented batteries need it.
+- **A green CI can still mean reduced coverage.** The 86 MB ONNX embedder is
+  gitignored and fetched from release `assets-v1` with `continue-on-error`. If
+  that fetch fails the JVM batteries skip their regression floors and the build
+  goes green anyway. The workflow now writes an explicit "Retrieval coverage"
+  line into the job summary; **read it before quoting a CI run as evidence.**
 
 ## Known open work
 
