@@ -1,7 +1,7 @@
 package com.campusbrain.app
 
 import androidx.sqlite.SQLiteConnection
-import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import com.campusbrain.app.jvm.JdbcSQLiteDriver
 import com.campusbrain.app.data.auth.Entitlement
 import com.campusbrain.app.data.auth.EntitlementState
 import com.campusbrain.app.data.auth.EntitlementStore
@@ -12,7 +12,6 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
-import org.junit.Assume
 import org.junit.Test
 
 /**
@@ -21,8 +20,12 @@ import org.junit.Test
  *
  * Everything here is a pure function over an explicit clock, which is why the
  * 365-day window can be tested without waiting a year and why none of it needs
- * a device. The one test that touches SQLite is skipped rather than failed when
- * the bundled driver has no JVM native to load -- see the note on it.
+ * a device. The five tests that touch SQLite used to `Assume`-skip, because
+ * `sqlite-bundled` ships Android `.so` files only and
+ * `BundledSQLiteDriver().open(":memory:")` dies on a desktop JVM with
+ * "UnsatisfiedLinkError: no sqliteJni in java.library.path". They now run for
+ * real over [JdbcSQLiteDriver], so the entitlement store round trip -- which
+ * had no executed coverage anywhere -- is actually exercised.
  */
 class EntitlementTest {
 
@@ -196,21 +199,19 @@ class EntitlementTest {
     // --- the store --------------------------------------------------------
 
     /**
-     * A real SQLite connection, or a skip.
+     * A real SQLite connection. No longer a skip.
      *
-     * `androidx.sqlite:sqlite-bundled` is on the unit-test classpath, but
-     * whether Gradle resolves a JVM-native variant for it is not something this
-     * agent could run `gradlew` to confirm. Skipping keeps a green suite honest
-     * instead of red for an environment reason -- and every guarantee that
-     * matters above is asserted by a pure test that cannot skip.
+     * `androidx.sqlite:sqlite-bundled` has no JVM native, which is what used to
+     * make these tests unrunnable off a device. [JdbcSQLiteDriver] is a
+     * test-only implementation of the same `androidx.sqlite` interfaces over
+     * `org.xerial:sqlite-jdbc`, so [EntitlementStore] below is the production
+     * class talking to real SQLite.
      */
-    private fun memoryConn(): SQLiteConnection? =
-        runCatching { BundledSQLiteDriver().open(":memory:") }.getOrNull()
+    private fun memoryConn(): SQLiteConnection = JdbcSQLiteDriver().open(":memory:")
 
     @Test fun `a grant survives a round trip through the store`() {
         val conn = memoryConn()
-        Assume.assumeTrue("bundled SQLite has no JVM native here", conn != null)
-        val store = EntitlementStore(conn!!)
+        val store = EntitlementStore(conn)
         assertTrue(store.ensureSchema())
         assertNull("a fresh store holds nothing", store.load())
 
@@ -229,8 +230,7 @@ class EntitlementTest {
 
     @Test fun `a failed refresh cannot move a deadline that is already set`() {
         val conn = memoryConn()
-        Assume.assumeTrue("bundled SQLite has no JVM native here", conn != null)
-        val store = EntitlementStore(conn!!)
+        val store = EntitlementStore(conn)
         store.ensureSchema()
         val good = grant(graceDays = 45)
         store.save(good)
@@ -249,8 +249,7 @@ class EntitlementTest {
 
     @Test fun `a dead token clears the session and leaves the grant alone`() {
         val conn = memoryConn()
-        Assume.assumeTrue("bundled SQLite has no JVM native here", conn != null)
-        val store = EntitlementStore(conn!!)
+        val store = EntitlementStore(conn)
         store.ensureSchema()
         store.save(grant())
         store.saveSession(
@@ -270,8 +269,7 @@ class EntitlementTest {
 
     @Test fun `a half written session is not a session`() {
         val conn = memoryConn()
-        Assume.assumeTrue("bundled SQLite has no JVM native here", conn != null)
-        val store = EntitlementStore(conn!!)
+        val store = EntitlementStore(conn)
         store.ensureSchema()
         store.saveSession(EntitlementStore.Session(null, "access", "", 0L))
         assertNull("a session with no refresh token is useless", store.loadSession())
@@ -280,8 +278,7 @@ class EntitlementTest {
 
     @Test fun `the store never throws at a caller, even on a closed connection`() {
         val conn = memoryConn()
-        Assume.assumeTrue("bundled SQLite has no JVM native here", conn != null)
-        val store = EntitlementStore(conn!!)
+        val store = EntitlementStore(conn)
         store.ensureSchema()
         conn.close()
         // Every path returns a value. A screen asking "is this device enrolled"

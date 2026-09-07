@@ -85,6 +85,31 @@ android {
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
+
+    testOptions {
+        unitTests.all {
+            // The JVM retrieval battery loads the real 86MB fp32 MiniLM graph
+            // through desktop ONNX Runtime. On the default test heap that OOMs,
+            // and an OOM inside OrtEnvironment reads as "ONNX does not work on
+            // the JVM", which is the wrong conclusion to draw and expensive to
+            // un-draw.
+            it.maxHeapSize = "2g"
+        }
+    }
+}
+
+/**
+ * `onnxruntime-android` is an AAR, and its `classes.jar` lands on the unit-test
+ * classpath carrying the same `ai.onnxruntime.*` classes as the desktop
+ * artifact below -- but with Android `.so` payloads that no JVM can load.
+ * Removing it from the unit-test configurations only leaves exactly one
+ * ONNX Runtime there, the one with a JVM native. Nothing about the APK
+ * changes: `implementation` still resolves the Android artifact.
+ */
+configurations.configureEach {
+    if (name.contains("UnitTest")) {
+        exclude(group = "com.microsoft.onnxruntime", module = "onnxruntime-android")
+    }
 }
 
 kotlin {
@@ -132,4 +157,18 @@ dependencies {
     testImplementation("org.json:json:20240303")
     testImplementation("androidx.sqlite:sqlite-bundled:2.5.1")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+    // TEST ONLY, and it must stay that way -- the shipped APK's dependency
+    // list is deliberately short.
+    //
+    // `androidx.sqlite:sqlite-bundled` ships Android `.so` files and nothing
+    // else, so `BundledSQLiteDriver().open()` on a desktop JVM raises
+    // "UnsatisfiedLinkError: no sqliteJni in java.library.path". This artifact
+    // carries a JVM native with FTS5 compiled in, which is what lets
+    // `com.campusbrain.app.jvm.JdbcSQLiteDriver` run the real retrieval stack
+    // against the real brain.db in an ordinary unit test.
+    testImplementation("org.xerial:sqlite-jdbc:3.53.4.0")
+    // Desktop ONNX Runtime, so the JVM battery covers the vector arm and the
+    // prototype router rather than keyword search alone. Same 1.20.0 as the
+    // Android artifact above, so it runs the identical graph.
+    testImplementation("com.microsoft.onnxruntime:onnxruntime:1.20.0")
 }

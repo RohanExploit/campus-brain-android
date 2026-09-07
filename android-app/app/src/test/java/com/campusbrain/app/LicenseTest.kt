@@ -1,7 +1,7 @@
 package com.campusbrain.app
 
 import androidx.sqlite.SQLiteConnection
-import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import com.campusbrain.app.jvm.JdbcSQLiteDriver
 import com.campusbrain.app.data.IngestResult
 import com.campusbrain.app.data.ImportAllowance
 import com.campusbrain.app.data.auth.License
@@ -14,7 +14,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Assume
 import org.junit.Test
 import java.security.KeyPair
 import java.security.KeyPairGenerator
@@ -31,11 +30,10 @@ import java.security.spec.ECGenParameterSpec
  * exercised here -- these tests prove the ALGORITHM, and the app's own key is
  * a value the founder rotates without anything in this file caring.
  *
- * Everything below is a pure function over an explicit clock. The two tests
- * that touch SQLite are `Assume`-skipped when `sqlite-bundled` has no JVM
- * native on the unit-test classpath, exactly as EntitlementTest's are -- and
- * every guarantee that actually matters is also covered by a pure test above
- * them that cannot skip.
+ * Everything below is a pure function over an explicit clock. The three tests
+ * that touch SQLite run over the test-only JDBC driver, exactly as
+ * EntitlementTest's do: `sqlite-bundled` has no JVM native on the unit-test
+ * classpath, which used to make them skip rather than run.
  */
 class LicenseTest {
 
@@ -540,24 +538,17 @@ class LicenseTest {
     // --- persistence -------------------------------------------------------
 
     /**
-     * `sqlite-bundled` has no JVM native on the unit-test classpath on every
-     * machine, so these skip rather than fail there -- the same accommodation
-     * EntitlementTest makes, and for the same reason. Every guarantee that
-     * matters above is covered by a pure test that cannot skip; what is left
-     * down here is SQL.
+     * `sqlite-bundled` has no JVM native on the unit-test classpath on any
+     * machine -- Android `.so` files only -- so these three used to
+     * `Assume`-skip and the SQL down here never ran anywhere but a handset.
+     * [JdbcSQLiteDriver] is a test-only implementation of the same
+     * `androidx.sqlite` interfaces over `org.xerial:sqlite-jdbc`, so
+     * [LicenseStore] is the production class against real SQLite.
      */
-    private fun connectOrSkip(): SQLiteConnection {
-        val conn = try {
-            BundledSQLiteDriver().open(":memory:")
-        } catch (t: Throwable) {
-            Assume.assumeNoException("sqlite-bundled has no JVM native here", t)
-            throw t
-        }
-        return conn
-    }
+    private fun connect(): SQLiteConnection = JdbcSQLiteDriver().open(":memory:")
 
     @Test fun `the store round-trips a licence and upserts rather than duplicating`() {
-        val conn = connectOrSkip()
+        val conn = connect()
         try {
             val store = LicenseStore(conn)
             assertTrue(store.ensureSchema())
@@ -585,7 +576,7 @@ class LicenseTest {
     }
 
     @Test fun `the install id is generated once and then stable`() {
-        val conn = connectOrSkip()
+        val conn = connect()
         try {
             val store = LicenseStore(conn)
             assertTrue(store.ensureSchema())
@@ -600,7 +591,7 @@ class LicenseTest {
     }
 
     @Test fun `a garbage tier column does not become a tier`() {
-        val conn = connectOrSkip()
+        val conn = connect()
         try {
             val store = LicenseStore(conn)
             assertTrue(store.ensureSchema())

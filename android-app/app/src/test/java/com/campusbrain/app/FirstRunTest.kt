@@ -1,14 +1,13 @@
 package com.campusbrain.app
 
 import androidx.sqlite.SQLiteConnection
-import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import com.campusbrain.app.jvm.JdbcSQLiteDriver
 import com.campusbrain.app.ui.welcome.FirstRun
 import com.campusbrain.app.ui.welcome.FirstRunStore
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Assume
 import org.junit.Test
 
 /**
@@ -82,15 +81,14 @@ class FirstRunTest {
 
     // --- the store ----------------------------------------------------------
 
-    /** Skipped rather than failed where the bundled driver has no JVM native
-     * to load, matching EntitlementTest. */
-    private fun memoryConn(): SQLiteConnection? =
-        runCatching { BundledSQLiteDriver().open(":memory:") }.getOrNull()
+    /** A real connection over the test-only JDBC driver, matching
+     * EntitlementTest. These two used to `Assume`-skip because
+     * `sqlite-bundled` has no JVM native; they run for real now. */
+    private fun memoryConn(): SQLiteConnection = JdbcSQLiteDriver().open(":memory:")
 
     @Test fun `the flag survives a round trip and is written exactly once`() {
         val conn = memoryConn()
-        Assume.assumeTrue("bundled SQLite has no JVM native here", conn != null)
-        val store = FirstRunStore(conn!!)
+        val store = FirstRunStore(conn)
 
         assertEquals("a fresh device has not seen it", false, store.seen())
         assertTrue(FirstRun.shouldShow(store.seen()))
@@ -116,8 +114,7 @@ class FirstRunTest {
      */
     @Test fun `a store that cannot be reached reports unknown, not new`() {
         val conn = memoryConn()
-        Assume.assumeTrue("bundled SQLite has no JVM native here", conn != null)
-        val store = FirstRunStore(conn!!)
+        val store = FirstRunStore(conn)
         assertTrue(store.ensureSchema())
         conn.close()
 

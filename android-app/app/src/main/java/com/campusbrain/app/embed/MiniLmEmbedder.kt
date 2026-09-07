@@ -29,7 +29,7 @@ class MiniLmEmbedder private constructor(
     private val env: OrtEnvironment,
     private val session: OrtSession,
     private val tokenizer: WordPieceTokenizer,
-    private val inputNames: Set<String>,
+    internal val inputNames: Set<String>,
 ) : QueryEmbedder {
 
     override val isReady: Boolean = true
@@ -121,6 +121,34 @@ class MiniLmEmbedder private constructor(
                 if (!it.exists() || it.length() == 0L) copyAsset(context, VOCAB, it)
             }
 
+            val embedder = createFrom(modelFile, vocabFile)
+            Log.i(
+                TAG,
+                "MiniLM ready (${modelFile.length() / (1024 * 1024)}MB, " +
+                    "inputs=${embedder.inputNames})"
+            )
+            embedder
+        } catch (e: Throwable) {
+            // Missing asset, unsupported ABI, out of memory -- all mean the same
+            // thing to the caller.
+            Log.w(TAG, "MiniLM unavailable: ${e.javaClass.simpleName}: ${e.message}")
+            null
+        }
+
+        /**
+         * The session build itself, from two files that already exist on disk.
+         *
+         * Split out of [create] so a JVM unit test can run the *real* embedder
+         * -- this class, this tokenizer, this mean-pooling -- straight off
+         * `app/src/main/assets/minilm/`, with no Context and no asset copy.
+         * That is what lets the fused pipeline (FTS5 + vector + prototype
+         * router) be exercised without a device.
+         *
+         * Throws rather than returning null: [create] owns the "absent model
+         * degrades to no vector arm" policy and its log line, and duplicating
+         * that here would give two places to look when the model is missing.
+         */
+        internal fun createFrom(modelFile: File, vocabFile: File): MiniLmEmbedder {
             val tokenizer = vocabFile.inputStream().use { WordPieceTokenizer.fromVocab(it) }
             val env = OrtEnvironment.getEnvironment()
             val opts = OrtSession.SessionOptions().apply {
@@ -128,14 +156,7 @@ class MiniLmEmbedder private constructor(
                 setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
             }
             val session = env.createSession(modelFile.absolutePath, opts)
-            val names = session.inputNames.toSet()
-            Log.i(TAG, "MiniLM ready (${modelFile.length() / (1024 * 1024)}MB, inputs=$names)")
-            MiniLmEmbedder(env, session, tokenizer, names)
-        } catch (e: Throwable) {
-            // Missing asset, unsupported ABI, out of memory -- all mean the same
-            // thing to the caller.
-            Log.w(TAG, "MiniLM unavailable: ${e.javaClass.simpleName}: ${e.message}")
-            null
+            return MiniLmEmbedder(env, session, tokenizer, session.inputNames.toSet())
         }
 
         private fun copyAsset(context: Context, name: String, dest: File) {

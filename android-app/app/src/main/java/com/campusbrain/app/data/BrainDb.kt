@@ -3,6 +3,7 @@ package com.campusbrain.app.data
 import android.content.Context
 import android.util.Log
 import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteStatement
 import androidx.sqlite.execSQL
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
@@ -102,12 +103,32 @@ class BrainDb private constructor(
         }
 
         private fun openAt(path: String, source: String): BrainDb {
-            val conn = BundledSQLiteDriver().open(path)
+            val db = openWith(BundledSQLiteDriver(), path, source)
+            Log.i(TAG, "opened brain.db from $source: $path")
+            return db
+        }
+
+        /**
+         * The open itself: driver in, logging out.
+         *
+         * Split off so a JVM unit test can hand in a driver that has a JVM
+         * native. `sqlite-bundled` ships Android `.so` files only, so
+         * `BundledSQLiteDriver().open()` raises UnsatisfiedLinkError off a
+         * device, which is why every end-to-end battery used to need a phone.
+         * The logging stays in [openAt] because `android.util.Log` is a
+         * throwing stub in a unit-test JVM.
+         *
+         * `internal`, and the only caller outside this file is in
+         * `app/src/test`. Nothing about the app's own behaviour changes: the
+         * production path still builds a [BundledSQLiteDriver] and still runs
+         * the same PRAGMA.
+         */
+        internal fun openWith(driver: SQLiteDriver, path: String, source: String): BrainDb {
+            val conn = driver.open(path)
             // Read-only at the connection level: nothing in this app should ever
             // write to the bundle, and a stray UPDATE would desync it from the
             // catalog that produced it.
             conn.execSQL("PRAGMA query_only = ON")
-            Log.i(TAG, "opened brain.db from $source: $path")
             return BrainDb(conn, path, source)
         }
 
