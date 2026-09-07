@@ -21,6 +21,14 @@ import org.json.JSONObject
  *  - [postUsage]         a route label and a latency, aggregate telemetry only
  *  - [deleteAccount]     the SECURITY DEFINER deletion function, no arguments
  *
+ * One thing has been added to the app since that list was written, and it is
+ * deliberately NOT here: `data/sync/CorpusApi` carries the institution's
+ * published documents, in both directions. It was kept out of this file
+ * because this file's promise is "no endpoint here can carry a document" and
+ * merging the two would blur the promise that matters. Read that file's own
+ * header for what it does guarantee -- chiefly that nothing on it is reachable
+ * from the ask path, and that it has no method taking a question.
+ *
  * Tenancy is never sent. It is resolved server-side by `current_tenant_id()`
  * from `memberships`, so a client cannot claim its way into another
  * institution's rows -- proven against the live project: cross-tenant reads

@@ -374,7 +374,11 @@ class DeleteAccountTest {
     /** The four tables `UserCorpusDb.createSchema` creates, copied because
      * that function is private and this test needs the same file to hold the
      * account and the documents at once -- which is the situation being
-     * tested. */
+     * tested. (`UserCorpusDb.onConnection` would do it properly now; this copy
+     * is kept because the point here is that these tables and the entitlement
+     * tables coexist, not that either schema is right. `documents.origin` is
+     * carried so the copy does not drift out of readable range of the real
+     * one; the sync tables are `CorpusSyncStore`'s and are not part of it.) */
     private fun createUserCorpusTables(conn: SQLiteConnection) {
         conn.execSQL(
             "CREATE TABLE IF NOT EXISTS chunks (" +
@@ -393,7 +397,8 @@ class DeleteAccountTest {
             "CREATE TABLE IF NOT EXISTS documents (" +
                 "doc_id TEXT PRIMARY KEY, title TEXT NOT NULL, category TEXT NOT NULL, " +
                 "chunk_count INTEGER NOT NULL, preview TEXT, source_uri TEXT, " +
-                "added_at_utc TEXT NOT NULL, size_bytes INTEGER)"
+                "added_at_utc TEXT NOT NULL, size_bytes INTEGER, " +
+                "origin TEXT NOT NULL DEFAULT 'user', remote_doc_id TEXT, revision INTEGER)"
         )
     }
 

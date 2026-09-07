@@ -144,7 +144,11 @@ class DocsRepository(
 
     fun all(): List<DocumentSummary> {
         val bundled = if (db.hasDocumentsTable) fromTable() else synthesised()
-        val added = user?.documents()?.map { it.copy(isUserAdded = true) } ?: emptyList()
+        // No `.copy(isUserAdded = true)` any more. This list used to be
+        // nothing but the student's own imports, so flagging the whole of it
+        // was true; it now also holds the institution's synced documents, and
+        // UserCorpusDb.documents() reads each row's own origin instead.
+        val added = user?.documents() ?: emptyList()
         // Sorted here rather than in SQL because the two lists come from two
         // databases and the ordering is over the union, not over either half.
         return (bundled + added).sortedWith(

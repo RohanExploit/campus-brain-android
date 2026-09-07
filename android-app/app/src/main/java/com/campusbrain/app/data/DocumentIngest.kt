@@ -331,9 +331,18 @@ class DocumentIngest internal constructor(
     fun usage(): Pair<Int, Long> =
         (user?.importedCount() ?: 0) to (user?.importedBytes() ?: 0L)
 
-    /** Deletes an added document and everything indexed from it. */
+    /**
+     * Deletes a document the student added, and everything indexed from it.
+     *
+     * [UserCorpusDb.removeOwn] and not `remove`: `user_corpus.db` now also
+     * holds the institution's synced documents, and this is the path a person
+     * taps. A synced document deleted here would be gone from this phone for
+     * good -- sync only asks for what is newer than its watermark and would
+     * never offer it again -- so the refusal is in the store rather than in
+     * whichever screen happens to call this.
+     */
     fun remove(docId: String): Boolean {
-        val removed = user?.remove(docId) ?: false
+        val removed = user?.removeOwn(docId) ?: false
         if (removed) onIndexChanged()
         return removed
     }
@@ -341,18 +350,18 @@ class DocumentIngest internal constructor(
     /**
      * Documents the user added, newest first.
      *
-     * Every row is flagged [DocumentSummary.isUserAdded] here rather than
-     * relying on the caller to know what it asked for. The Documents UI was
-     * observed setting the flag itself with a `.copy()` and a comment
-     * explaining that this function did not -- which was true, and was a
-     * needless thing for a caller to have to know.
+     * Filtered to [DocumentSummary.isUserAdded] rather than flagged as it.
+     * `user_corpus.db` now also holds the institution's synced documents, and
+     * this function's contract is the student's own -- a caller asking "what
+     * have I added" must not be handed a circular the registrar published,
+     * which it cannot delete and did not choose.
      *
      * Note this is a SUBSET of `DocsRepository.all()`, which returns both
      * corpora merged and sorted. Use one or the other, never both: adding
      * this list to that one lists every imported document twice.
      */
     fun added(): List<DocumentSummary> =
-        user?.documents()?.map { it.copy(isUserAdded = true) } ?: emptyList()
+        user?.documents()?.filter { it.isUserAdded } ?: emptyList()
 
     // --- extraction --------------------------------------------------------
 

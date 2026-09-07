@@ -39,8 +39,32 @@ class UserCorpusDb private constructor(
     val path: String,
 ) {
 
-    /** One chunk on its way in: text, its heading, and its vector if we have one. */
-    data class PendingChunk(val section: String?, val content: String, val vec: FloatArray?)
+    /**
+     * One chunk on its way in: text, its heading, and its vector if we have
+     * one.
+     *
+     * The vector arrives one of two ways and they are deliberately different
+     * fields rather than one converted into the other.
+     *
+     *  - [vec] is what [DocumentIngest] produces: the ONNX embedder's own
+     *    `FloatArray`, encoded here by [encodeVector].
+     *  - [vecBlob] is what `data/sync/CorpusSync` produces: the exact bytes
+     *    the registrar's device uploaded, carried through the server as
+     *    `bytea` and written back down untouched.
+     *
+     * Decoding [vecBlob] into a `FloatArray` on the way in would put an IEEE
+     * 754 round trip -- and Java's NaN canonicalisation -- between two halves
+     * of what is supposed to be the same vector. The whole reason the server
+     * stores bytes rather than `vector(384)` is that the bytes can make the
+     * trip unexamined; taking them apart here would spend that guarantee for
+     * nothing. [vecBlob] wins if both are set.
+     */
+    data class PendingChunk(
+        val section: String?,
+        val content: String,
+        val vec: FloatArray?,
+        val vecBlob: ByteArray? = null,
+    )
 
     data class PendingDocument(
         val docId: String,
@@ -59,6 +83,29 @@ class UserCorpusDb private constructor(
          * existed reads back as "unknown" rather than as zero.
          */
         val sizeBytes: Long? = null,
+        /**
+         * Whose document this is. [Provenance.USER] for an import,
+         * [Provenance.INSTITUTION] for a synced one. [Provenance.BUNDLE] is
+         * not writable here and is coerced to [Provenance.USER] rather than
+         * throwing -- nothing can put a row in `brain.db`, so the value would
+         * be a category error rather than a dangerous one.
+         */
+        val provenance: Provenance = Provenance.USER,
+        /**
+         * The server's `corpus_documents.doc_id` for a synced document.
+         *
+         * Kept because the local [docId] may differ: a student who imported a
+         * file called "attendance_policy.md" before the registrar published a
+         * document with that id would otherwise have their own file replaced
+         * by the college's, since `doc_id` is the primary key here. The sync
+         * path allocates a free local id and remembers the remote one, and
+         * **every sync-side lookup keys on this column, never on [docId]** --
+         * keying on the local id would make a suffixed document re-insert
+         * itself as a second copy on the next run.
+         */
+        val remoteDocId: String? = null,
+        /** The `corpus_documents.revision` this content was pulled at. */
+        val revision: Long? = null,
     )
 
     /**
@@ -71,9 +118,18 @@ class UserCorpusDb private constructor(
      * searchable, and nothing in the UI could tell them which half.
      */
     fun write(doc: PendingDocument): Int {
+        val band = Band.of(doc.provenance)
         conn.execSQL("BEGIN IMMEDIATE")
         try {
-            var id = nextChunkId()
+            var id = nextChunkId(band)
+            // The band has 1,000,000,000 ids in it and a document is capped at
+            // 600 chunks, so this cannot fire in practice. It is here because
+            // the consequence if it ever did is not an error, it is a chunk
+            // silently allocated into the next band and therefore attributed
+            // to the wrong source for the rest of its life.
+            check(id + doc.chunks.size <= band.ceiling) {
+                "chunk id band ${band.base} is full"
+            }
             conn.prepare(
                 "INSERT INTO chunks(id, doc_id, section, content) VALUES (?, ?, ?, ?)"
             ).use { insertChunk ->
@@ -103,10 +159,13 @@ class UserCorpusDb private constructor(
                             insertFts.bindText(3, doc.docId)
                             insertFts.step()
 
-                            if (c.vec != null) {
+                            // vecBlob first: bytes that came off the wire are
+                            // written exactly as they arrived. See PendingChunk.
+                            val blob = c.vecBlob ?: c.vec?.let { encodeVector(it) }
+                            if (blob != null) {
                                 insertVec.reset()
                                 insertVec.bindLong(1, id)
-                                insertVec.bindBlob(2, encodeVector(c.vec))
+                                insertVec.bindBlob(2, blob)
                                 insertVec.step()
                             }
                             id++
@@ -117,17 +176,24 @@ class UserCorpusDb private constructor(
             conn.prepare(
                 "INSERT OR REPLACE INTO documents" +
                     "(doc_id, title, category, chunk_count, preview, source_uri, added_at_utc, " +
-                    " size_bytes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    " size_bytes, origin, remote_doc_id, revision) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             ).use { st ->
                 st.bindText(1, doc.docId)
                 st.bindText(2, doc.title)
-                st.bindText(3, ADDED_CATEGORY)
+                // An institution document keeps its own category so the
+                // Documents list can file it under the college's heading
+                // rather than under "Added by you", which it is not.
+                st.bindText(3, if (band == Band.INSTITUTION) SYNCED_CATEGORY else ADDED_CATEGORY)
                 st.bindLong(4, doc.chunks.size.toLong())
                 val preview = doc.chunks.firstOrNull()?.content?.take(200)
                 if (preview == null) st.bindNull(5) else st.bindText(5, preview)
                 if (doc.sourceUri == null) st.bindNull(6) else st.bindText(6, doc.sourceUri)
                 st.bindText(7, doc.addedAtUtc)
                 if (doc.sizeBytes == null) st.bindNull(8) else st.bindLong(8, doc.sizeBytes)
+                st.bindText(9, band.origin)
+                if (doc.remoteDocId == null) st.bindNull(10) else st.bindText(10, doc.remoteDocId)
+                if (doc.revision == null) st.bindNull(11) else st.bindLong(11, doc.revision)
                 st.step()
             }
             conn.execSQL("COMMIT")
@@ -141,7 +207,46 @@ class UserCorpusDb private constructor(
         }
     }
 
-    /** Removes a document and everything indexed from it. False if unknown. */
+    /**
+     * Removes a document the STUDENT added. False for anything else.
+     *
+     * The distinction is structural rather than a rule the Documents screen
+     * remembers. A synced institution document is not this device's to delete:
+     * sync only ever asks the server for `revision > watermark`, so a document
+     * removed here is gone from this phone permanently, while the watermark
+     * goes on asserting it was applied. The student would simply stop getting
+     * answers from a college document, with nothing on screen and no way back
+     * short of clearing the app's data.
+     *
+     * `DocsFragment` already gates its delete button on
+     * [DocumentSummary.isUserAdded], which is now correctly false for a synced
+     * document -- but the registrar surface Phase 2 adds will list these
+     * documents, and a gate that lives only in a fragment is a gate the next
+     * screen has to remember to build. This one it cannot get wrong.
+     *
+     * `data/sync/CorpusSync` uses [remove] instead, and must: applying a
+     * withdrawal and replacing a revision both mean deleting exactly the
+     * documents this refuses to touch.
+     */
+    fun removeOwn(docId: String): Boolean {
+        val origin = runCatching {
+            conn.query(
+                "SELECT origin FROM documents WHERE doc_id = ?",
+                bind = { it.bindText(1, docId) },
+            ) { if (it.isNull(0)) Band.USER.origin else it.getText(0) }.firstOrNull()
+        }.getOrNull() ?: return false
+        if (Band.provenanceOf(origin) != Provenance.USER) return false
+        return remove(docId)
+    }
+
+    /**
+     * Removes a document and everything indexed from it, whoever it belongs
+     * to. False if unknown.
+     *
+     * The unconditional primitive. Student-facing callers want [removeOwn];
+     * this exists for the sync path, which has to be able to take an
+     * institution document away when the institution withdraws it.
+     */
     fun remove(docId: String): Boolean {
         // Opening the transaction is itself fallible (a locked database, a
         // read-only filesystem). Outside the try it would throw past a caller
@@ -212,16 +317,100 @@ class UserCorpusDb private constructor(
     ) { it.getLong(0) }.isNotEmpty()
 
     fun documents(): List<DocumentSummary> = conn.query(
-        "SELECT doc_id, title, category, chunk_count, preview FROM documents " +
+        "SELECT doc_id, title, category, chunk_count, preview, origin FROM documents " +
             "ORDER BY added_at_utc DESC, title"
     ) {
+        val origin = if (it.isNull(5)) Band.USER.origin else it.getText(5)
         DocumentSummary(
             docId = it.getText(0),
             title = it.getText(1),
             category = if (it.isNull(2)) ADDED_CATEGORY else it.getText(2),
             chunkCount = it.getLong(3).toInt(),
             preview = if (it.isNull(4)) null else it.getText(4),
+            // Read off the row, not decided by the caller. Both call sites
+            // used to `.copy(isUserAdded = true)` over this whole list, which
+            // was true when the only writer was an import and would have
+            // announced every synced college document as the student's own.
+            provenance = Band.provenanceOf(origin),
         )
+    }
+
+    /** A synced institution document by its server-side id, or null. */
+    fun byRemoteDocId(remoteDocId: String): SyncedDocument? = conn.query(
+        "SELECT doc_id, remote_doc_id, revision FROM documents WHERE remote_doc_id = ?",
+        bind = { it.bindText(1, remoteDocId) },
+    ) {
+        SyncedDocument(
+            docId = it.getText(0),
+            remoteDocId = it.getText(1),
+            revision = if (it.isNull(2)) 0L else it.getLong(2),
+        )
+    }.firstOrNull()
+
+    /** What is on this device from the institution, and at what revision. */
+    data class SyncedDocument(val docId: String, val remoteDocId: String, val revision: Long)
+
+    // --- publishing -------------------------------------------------------
+
+    /**
+     * One chunk on its way OUT, for `data/sync/CorpusUpload`.
+     *
+     * [vec] is the stored blob, handed back without being decoded. The
+     * registrar's device ran the same ONNX MiniLM that every other device
+     * runs, so these bytes are already in the vector space the whole
+     * institution shares; turning them into floats to turn them back into
+     * bytes could only lose that guarantee, never add to it.
+     *
+     * [ordinal] is the position in `ORDER BY id`, which is the order
+     * `TextChunker` produced and therefore the order the document reads in.
+     * It is generated here rather than stored, because it is not a fact about
+     * the chunk -- it is a fact about the sequence, and storing it would let
+     * the two disagree.
+     */
+    data class ExportedChunk(
+        val ordinal: Int,
+        val section: String?,
+        val content: String,
+        val vec: ByteArray?,
+    )
+
+    data class ExportedDocument(
+        val docId: String,
+        val title: String,
+        val sizeBytes: Long?,
+        val chunks: List<ExportedChunk>,
+    )
+
+    /**
+     * Everything needed to publish a document that has already been ingested
+     * on this device, or null if it is not here.
+     *
+     * Reading it back out rather than intercepting it on the way in is what
+     * keeps the publish path from re-implementing chunking or embedding. The
+     * registrar imports a file through the pipeline every device already runs
+     * and which is already tested; this returns what that pipeline produced.
+     */
+    fun export(docId: String): ExportedDocument? {
+        val head = conn.query(
+            "SELECT title, size_bytes FROM documents WHERE doc_id = ?",
+            bind = { it.bindText(1, docId) },
+        ) { it.getText(0) to (if (it.isNull(1)) null else it.getLong(1)) }.firstOrNull()
+            ?: return null
+        val chunks = conn.query(
+            "SELECT c.section, c.content, e.vec FROM chunks c " +
+                "LEFT JOIN embeddings e ON e.chunk_id = c.id " +
+                "WHERE c.doc_id = ? ORDER BY c.id",
+            bind = { it.bindText(1, docId) },
+        ) { row ->
+            Triple(
+                if (row.isNull(0)) null else row.getText(0),
+                row.getText(1),
+                if (row.isNull(2)) null else row.getBlob(2),
+            )
+        }.mapIndexed { i, (section, content, vec) ->
+            ExportedChunk(i, section, content, vec)
+        }
+        return ExportedDocument(docId, head.first, head.second, chunks)
     }
 
     val chunkCount: Int
@@ -241,7 +430,7 @@ class UserCorpusDb private constructor(
      * a statement about anybody's licence.
      */
     fun importedCount(): Int = runCatching {
-        conn.query("SELECT COUNT(*) FROM documents") { it.getLong(0) }.first().toInt()
+        conn.query(USER_ONLY_COUNT) { it.getLong(0) }.first().toInt()
     }.getOrDefault(0)
 
     /**
@@ -253,35 +442,128 @@ class UserCorpusDb private constructor(
      * charging an institution for documents the app never measured.
      */
     fun importedBytes(): Long = runCatching {
-        conn.query("SELECT COALESCE(SUM(size_bytes), 0) FROM documents") { it.getLong(0) }.first()
+        conn.query(USER_ONLY_BYTES) { it.getLong(0) }.first()
     }.getOrDefault(0L)
 
     /**
-     * Ids are allocated from [ID_BASE] upward so a user chunk id can never
-     * collide with a bundled one (the shipped bundle's highest is 493). The
-     * two databases are fused into one ranked list by [HybridSearch] using the
-     * id as the key, and disjoint id spaces are what let that happen with no
-     * namespace tag and no translation layer.
+     * The next free id **inside one band**, not across the table.
+     *
+     * `MAX(id) + 1` over the whole table was correct while there was one band.
+     * With two it is a silent misattribution bug: once any institution chunk
+     * exists at 2e9, the next document the student imports would be allocated
+     * an id above 2e9 and would be read as a college document by
+     * [provenanceOf] for the rest of its life. Both directions are pinned in
+     * `CorpusSyncTest`.
      */
-    private fun nextChunkId(): Long =
-        conn.query("SELECT COALESCE(MAX(id), ${ID_BASE - 1}) + 1 FROM chunks") { it.getLong(0) }.first()
+    private fun nextChunkId(band: Band): Long = conn.query(
+        "SELECT COALESCE(MAX(id), ?) + 1 FROM chunks WHERE id >= ? AND id < ?",
+        bind = {
+            it.bindLong(1, band.base - 1)
+            it.bindLong(2, band.base)
+            it.bindLong(3, band.ceiling)
+        },
+    ) { it.getLong(0) }.first()
 
     fun close() = runCatching { conn.close() }
+
+    /**
+     * The two id ranges inside this file, and the `documents.origin` string
+     * that goes with each.
+     *
+     * A band is not stored on the chunk row. It is the id itself, which is why
+     * [HybridSearch] can fuse three sources into one ranked list keyed on
+     * nothing but a `Long` and still say afterwards where each hit came from.
+     * A stored flag would be a second copy of that fact and would eventually
+     * disagree with the first.
+     */
+    internal enum class Band(val base: Long, val ceiling: Long, val origin: String) {
+        USER(UserCorpusDb.ID_BASE, UserCorpusDb.INSTITUTION_ID_BASE, "user"),
+        INSTITUTION(UserCorpusDb.INSTITUTION_ID_BASE, Long.MAX_VALUE, "institution");
+
+        companion object {
+            fun of(p: Provenance): Band =
+                if (p == Provenance.INSTITUTION) INSTITUTION else USER
+
+            fun provenanceOf(origin: String): Provenance =
+                if (origin == INSTITUTION.origin) Provenance.INSTITUTION else Provenance.USER
+        }
+    }
 
     companion object {
         const val FILE_NAME = "user_corpus.db"
 
-        /** 1 was the original schema; 2 added `documents.size_bytes`. */
-        const val SCHEMA_VERSION = 2
+        /**
+         * 1 was the original schema; 2 added `documents.size_bytes`; 3 added
+         * `documents.origin`, `remote_doc_id` and `revision` for the synced
+         * institution corpus.
+         */
+        const val SCHEMA_VERSION = 3
 
         /** The category shown on the Docs tab for anything the user added. */
         const val ADDED_CATEGORY = "Added by you"
 
+        /**
+         * The category for a document the registrar published. A distinct
+         * heading rather than [ADDED_CATEGORY], because these are the two
+         * things a student most needs to tell apart and they arrive in the
+         * same list from the same file.
+         */
+        const val SYNCED_CATEGORY = "From your institution"
+
         /** Above every id the bundled corpus will plausibly ever use. */
         const val ID_BASE = 1_000_000_000L
 
-        /** True for a chunk id that came out of this database, not the bundle. */
+        /**
+         * Where synced institution chunks start.
+         *
+         * Deliberately ABOVE the user's band rather than below it, so nothing
+         * about an existing install changes: a phone that has imported
+         * documents keeps every id it already allocated, keeps answering
+         * identically, and needs no rowid migration. Moving rows in an
+         * external-content FTS5 table means deleting and reinserting every one
+         * of them by hand, and a failure halfway through that is a corpus that
+         * matches queries it can no longer cite.
+         */
+        const val INSTITUTION_ID_BASE = 2_000_000_000L
+
+        /**
+         * True for a chunk id that came out of THIS DATABASE rather than the
+         * bundle -- i.e. which file to read it from.
+         *
+         * This is a routing predicate and nothing else. `HybridSearch` uses it
+         * to decide which connection to fetch a fused id from, and both bands
+         * live here, so both must answer true. Ask [isOwnChunk] or
+         * [provenanceOf] for the question about whose document it is.
+         */
         fun isUserChunk(id: Long): Boolean = id >= ID_BASE
+
+        /** True for a chunk from a document the registrar published. */
+        fun isInstitutionChunk(id: Long): Boolean = id >= INSTITUTION_ID_BASE
+
+        /** True for a chunk from a document this student imported. */
+        fun isOwnChunk(id: Long): Boolean = id in ID_BASE until INSTITUTION_ID_BASE
+
+        /** The three-way answer. See [Provenance]. */
+        fun provenanceOf(id: Long): Provenance = when {
+            id >= INSTITUTION_ID_BASE -> Provenance.INSTITUTION
+            id >= ID_BASE -> Provenance.USER
+            else -> Provenance.BUNDLE
+        }
+
+        /**
+         * The licence caps count the student's OWN imports and nothing else.
+         *
+         * Without the filter, an institution that publishes fifty documents
+         * would spend fifty of a free device's allowance and the student's
+         * next import would be refused for a reason that has nothing to do
+         * with them -- and the refusal would arrive as "your licence", which
+         * is the worst possible wording for it. `origin IS NULL` is a row
+         * written before schema 3 and is an import by definition.
+         */
+        private const val USER_ONLY =
+            "FROM documents WHERE origin IS NULL OR origin = 'user'"
+        private const val USER_ONLY_COUNT = "SELECT COUNT(*) $USER_ONLY"
+        private const val USER_ONLY_BYTES = "SELECT COALESCE(SUM(size_bytes), 0) $USER_ONLY"
 
         /**
          * float32 little-endian, 384 values, exactly as `embeddings.vec` is
@@ -358,9 +640,35 @@ class UserCorpusDb private constructor(
                 "CREATE TABLE IF NOT EXISTS documents (" +
                     "doc_id TEXT PRIMARY KEY, title TEXT NOT NULL, category TEXT NOT NULL, " +
                     "chunk_count INTEGER NOT NULL, preview TEXT, source_uri TEXT, " +
-                    "added_at_utc TEXT NOT NULL, size_bytes INTEGER)"
+                    "added_at_utc TEXT NOT NULL, size_bytes INTEGER, " +
+                    "origin TEXT NOT NULL DEFAULT 'user', remote_doc_id TEXT, revision INTEGER)"
             )
             migrate(conn)
+            // After the ladder, so it is created over a table that certainly
+            // has the column. UNIQUE and partial: two local rows may not claim
+            // the same server document, and the hundreds of rows with no
+            // remote id at all are simply not in the index.
+            conn.execSQL(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_user_documents_remote " +
+                    "ON documents(remote_doc_id) WHERE remote_doc_id IS NOT NULL"
+            )
+        }
+
+        /**
+         * Opens the schema on a connection somebody else owns.
+         *
+         * The precedent is `data/auth/EntitlementStore`, which takes a raw
+         * [SQLiteConnection] for the same reason: it makes every line of this
+         * class runnable in a JVM unit test with no Robolectric and no device.
+         * The thing being tested here is whether an interrupted sync can
+         * duplicate a row or leave half a document searchable, and that is not
+         * a property anyone should first observe on a student's phone.
+         *
+         * [openOrCreate] remains the only way the app itself opens this file.
+         */
+        fun onConnection(conn: SQLiteConnection, path: String = ":memory:"): UserCorpusDb {
+            createSchema(conn)
+            return UserCorpusDb(conn, path)
         }
 
         /**
@@ -398,11 +706,30 @@ class UserCorpusDb private constructor(
             // column (created fresh by this build's CREATE TABLE above), or be
             // stamped 1 and not have it (created by an older build). Only the
             // table knows.
-            val hasSize = runCatching {
+            val columns = runCatching {
                 conn.query("PRAGMA table_info(documents)") { it.getText(1) }
-            }.getOrDefault(emptyList()).any { it == "size_bytes" }
-            if (!hasSize) {
+            }.getOrDefault(emptyList()).toSet()
+            if ("size_bytes" !in columns) {
                 conn.execSQL("ALTER TABLE documents ADD COLUMN size_bytes INTEGER")
+            }
+            // Schema 3. Same in-place ALTER for the same reason, and the same
+            // reading off the table rather than off the version number.
+            //
+            // `origin` gets a DEFAULT so every row that predates the column
+            // reads as 'user' -- which is not a guess, it is the only thing it
+            // could have been: before this version the sole writer of this
+            // table was a document the student imported. The default also
+            // means `write` never has to backfill and the licence caps'
+            // `origin IS NULL OR origin = 'user'` filter is belt and braces
+            // rather than the load-bearing part.
+            if ("origin" !in columns) {
+                conn.execSQL("ALTER TABLE documents ADD COLUMN origin TEXT NOT NULL DEFAULT 'user'")
+            }
+            if ("remote_doc_id" !in columns) {
+                conn.execSQL("ALTER TABLE documents ADD COLUMN remote_doc_id TEXT")
+            }
+            if ("revision" !in columns) {
+                conn.execSQL("ALTER TABLE documents ADD COLUMN revision INTEGER")
             }
             conn.execSQL("PRAGMA user_version = $SCHEMA_VERSION")
         }

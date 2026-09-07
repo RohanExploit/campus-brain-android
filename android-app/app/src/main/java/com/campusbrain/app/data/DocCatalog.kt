@@ -38,6 +38,11 @@ object DocCatalog {
         // recently decided mattered, and this group is empty for everybody
         // who has not imported anything, so it costs nothing when unused.
         UserCorpusDb.ADDED_CATEGORY,
+        // Everything the registrar has published to every enrolled phone.
+        // Second rather than first: the student chose the group above this
+        // one, and did not choose this one. Above the bundle's categories
+        // because it is the newest thing the college has said.
+        UserCorpusDb.SYNCED_CATEGORY,
         "Attendance",
         "Examinations",
         "Fees and Scholarships",
