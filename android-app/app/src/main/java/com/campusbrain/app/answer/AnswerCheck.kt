@@ -186,6 +186,19 @@ object AnswerCheck {
     private fun mentions(lowerText: String, term: String): Boolean =
         lowerText.contains(searchKey(term))
 
+    /**
+     * Is this word filler -- the stoplist alone, without [contentTerms]'
+     * length and alphanumeric rules?
+     *
+     * Split out for [com.campusbrain.app.retrieval.FtsSearch.sanitize], which
+     * wants the same vocabulary and emphatically not the same tokenizer: this
+     * class throws away "60%", "70" and "A+" on purpose, and says so above
+     * [Question.statedPercent], because a term list is for topic overlap. A
+     * keyword search that discarded the number the student typed would be
+     * searching for a different question.
+     */
+    fun isFiller(word: String): Boolean = word.lowercase() in STOPWORDS
+
     /** Content words of [query], filler and duplicates removed. */
     fun contentTerms(query: String): List<String> =
         query.lowercase()

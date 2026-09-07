@@ -1,6 +1,7 @@
 package com.campusbrain.app.retrieval
 
 import androidx.sqlite.SQLiteConnection
+import com.campusbrain.app.answer.AnswerCheck
 import com.campusbrain.app.data.BrainDb
 import com.campusbrain.app.data.RetrievedChunk
 import com.campusbrain.app.data.query
@@ -64,6 +65,38 @@ class FtsSearch(private val conn: SQLiteConnection) {
          * The explicit OR matters: FTS5's implicit conjunction requires every
          * term to be present, which returns nothing for an ordinary
          * natural-language question. Same choice the Dart retriever documents.
+         *
+         * What the OR costs, and why the filler is dropped from it: under OR,
+         * bm25 rewards a chunk for every term it carries, and "what", "is",
+         * "if", "it" are carried by most of the corpus. On "what happens if I
+         * miss it attendance" the four filler words outvoted "miss" and
+         * "attendance", and the Attendance Policy's own tier table -- chunk
+         * 150 -- came back at rank 25 of 25 while unrelated procedure notices
+         * took the top four places. Filtered, 150 is rank 4 and the 65-74%
+         * condonation rows are inside the window, which is the difference
+         * between naming one tier and naming the ladder.
+         *
+         * The vocabulary is [AnswerCheck.isFiller], not a list local to this
+         * file, on purpose: the answer check already decides which words of a
+         * question a correct answer has to contain, and a keyword arm hunting
+         * for a different set of words than the check demands is how a chunk
+         * gets retrieved and then rejected. One list, stated once, with the
+         * measurement behind each entry recorded there.
+         *
+         * Only the list is borrowed, not [AnswerCheck.contentTerms] whole.
+         * That function also drops every token of two characters or fewer and
+         * splits on non-alphanumerics, so "70" and "60%" do not survive it --
+         * a documented consequence of its job, and the wrong trade here.
+         * Measured on "am I eligible for a scholarship if my attendance is 70
+         * percent": with the number kept, the eligibility matrix row carrying
+         * the Alumni Grant's 80% threshold is the keyword arm's 4th hit and
+         * the answer names it; using contentTerms it leaves the window and the
+         * answer silently lists one scheme fewer.
+         *
+         * A question made entirely of filler ("what is it") reduces to nothing,
+         * and an empty MATCH is a syntax error rather than an empty result, so
+         * the unfiltered tokens stand in. Keeping the old behaviour for a
+         * question the filter cannot improve is cheaper than a special case.
          */
         fun sanitize(queryText: String): String {
             val cleaned = OPERATOR_CHARS.replace(queryText, " ")
@@ -71,8 +104,9 @@ class FtsSearch(private val conn: SQLiteConnection) {
                 .map { it.trim().trimEnd('?', '!', '.', ',', ';') }
                 .filter { it.isNotBlank() && it.uppercase() !in KEYWORDS }
                 .filter { it.any(Char::isLetterOrDigit) }
-            if (tokens.isEmpty()) return ""
-            return tokens.joinToString(" OR ") { "\"${it.replace("\"", "")}\"" }
+            val terms = tokens.filterNot(AnswerCheck::isFiller).ifEmpty { tokens }
+            if (terms.isEmpty()) return ""
+            return terms.joinToString(" OR ") { "\"${it.replace("\"", "")}\"" }
         }
     }
 }
