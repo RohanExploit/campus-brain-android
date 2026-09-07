@@ -54,6 +54,25 @@ jobs:
       # local.properties on the dev machine points at R:/toolchains/android-sdk
       # and is not committed. The runner's SDK location comes from ANDROID_HOME,
       # which setup-android/the image provides, so nothing is written here.
+      # The ONNX embedder is gitignored: it is 86MB and regenerable, so it would
+      # bloat every clone forever. Without it the JVM battery still runs, but the
+      # vector arm is absent and it silently degrades to keyword-only -- a green
+      # CI that verified noticeably less than it appears to. Pulling it from the
+      # release makes the runner exercise the same fused pipeline a phone does.
+      #
+      # Non-fatal on purpose: a release that is missing or renamed should show up
+      # as reduced coverage in the log, not as a red build on unrelated work. The
+      # battery's regression floors already skip themselves when vectors are
+      # absent, so nothing silently passes a weaker bar.
+      - name: Fetch the ONNX embedder for full-fidelity tests
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p app/src/main/assets/minilm
+          gh release download assets-v1 --repo "$GITHUB_REPOSITORY"             --pattern model.onnx --dir app/src/main/assets/minilm --clobber
+          ls -la app/src/main/assets/minilm/
+
       - name: Unit tests
         run: ./gradlew :app:testDebugUnitTest --console=plain --no-daemon
 
