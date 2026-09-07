@@ -237,6 +237,63 @@
     <string name="enrol_action_back">Back</string>
 
     <!--
+      Deleting the account.
+
+      Same three rules as the enrolment copy — name the outcome in the title,
+      name the next move in the body, never say "error" — plus the one this
+      screen exists for: a destructive action has to name what is lost AND
+      what is not, in that order, before the button is offered.
+
+      The second half is the load-bearing one here, and it is easy to leave
+      out because it sounds like reassurance. It is not. What a student risks
+      believing is that deleting their enrolment takes the app's answers with
+      it, and that belief is wrong: retrieval never consults the enrolment, so
+      the corpus, every answer, and the documents the student imported are all
+      exactly as they were a second before. Saying so is not softening the
+      warning, it is the accurate description of a deletion that would
+      otherwise be over-read.
+    -->
+    <string name="delete_account_link">Delete this account</string>
+    <string name="delete_title">Delete this account</string>
+    <string name="delete_intro">This removes your enrolment from your institution\'s records. It cannot be undone, and it is not the same as signing out — signing out forgets this phone, this forgets the account.</string>
+
+    <string name="delete_lost_heading">What this removes</string>
+    <string name="delete_lost_body">Your enrolment with the institution, the licence grant that comes with it, and whatever your institution\'s enrolment service holds for this account. The offline window stops renewing, and the header stops naming your college. Getting back in means a new enrolment code from your department office — a spent code is not returned to circulation by this.</string>
+
+    <string name="delete_kept_heading">What this does not touch</string>
+    <string name="delete_kept_body">Everything you actually use the app for. The college\'s documents stay on this phone, every question keeps being answered from them, offline, exactly as it is now, and any document you imported yourself stays imported and stays searchable. Answering never consulted your enrolment, so nothing about it changes when the enrolment goes.</string>
+
+    <!-- Step one of two. The button says what it does, and the confirmation
+         below it is a second deliberate tap rather than a dialog — a dialog
+         would cover the two paragraphs the student is meant to have read. -->
+    <string name="delete_action">Delete this account</string>
+    <string name="delete_confirm_question">Delete the enrolment for good? The documents and the answers stay.</string>
+    <string name="delete_confirm_yes">Yes, delete it</string>
+    <string name="delete_confirm_no">Keep my enrolment</string>
+    <string name="delete_working">Asking your institution to delete it…</string>
+
+    <string name="delete_done_title">The account has been deleted</string>
+    <string name="delete_done_body">Your institution has removed the enrolment and this phone has forgotten it. The college\'s documents, your own imported documents and every answer are untouched — ask a question and see. If you ever want to enrol again, your department office issues a new code.</string>
+
+    <!-- Not a failure, and the title must not read as one: the student asked
+         for a state that already holds. -->
+    <string name="delete_none_title">There is no account on this phone</string>
+    <string name="delete_none_body">Nothing is enrolled here, so there was nothing to delete — either this phone never enrolled, or the account has already been removed. Nothing on the phone changed and the app carries on answering from its own documents.</string>
+
+    <string name="delete_session_title">Your sign-in has expired</string>
+    <string name="delete_session_body">Your institution would not accept the request as you, so nothing was deleted and the account is still there. Enrol again on the previous screen with the same email and password to prove it is yours, then delete it. Nothing on this phone changed.</string>
+
+    <!-- True of both causes that reach it: no network, and a control plane
+         that has not had the deletion function installed yet. So it does not
+         promise that trying again will work. -->
+    <string name="delete_unavailable_title">Your institution could not be reached</string>
+    <string name="delete_unavailable_body">The request never got an answer, so nothing was deleted — not on this phone and not at your institution. Try again on wifi. If it keeps failing, your department office can delete the account for you; the address is in the privacy policy. The app answers questions either way.</string>
+
+    <string name="delete_action_done">Done</string>
+    <string name="delete_action_retry">Try again</string>
+    <string name="delete_action_back">Back</string>
+
+    <!--
       The header pill, once a grant exists.
 
       Entitlements.shortBanner deliberately says nothing for a healthy grant —

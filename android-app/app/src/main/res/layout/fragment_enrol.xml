@@ -281,5 +281,31 @@
                 android:textColor="@color/accent"
                 android:background="?attr/selectableItemBackground" />
         </LinearLayout>
+
+        <!--
+          The way out. Outside both the form and the outcome card, so it is on
+          screen in every state this fragment can be in — including the one
+          where the form has been replaced by a success card, which is exactly
+          when a student is most likely to have changed their mind.
+
+          Play requires the deletion route to be reachable in the app, and a
+          route that only appears in one of three states is a route a reviewer
+          may not find. It is quiet — caption weight, in the text ramp rather
+          than in the accent or in a warning colour — because it is a door,
+          not an invitation.
+        -->
+        <TextView
+            android:id="@+id/enrolDeleteLink"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_6"
+            android:minHeight="@dimen/touch_min"
+            android:gravity="center_vertical"
+            android:text="@string/delete_account_link"
+            android:textSize="@dimen/type_caption"
+            android:textColor="@color/text_secondary"
+            android:background="?attr/selectableItemBackground"
+            android:focusable="true"
+            android:clickable="true" />
     </LinearLayout>
 </ScrollView>

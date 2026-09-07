@@ -209,10 +209,62 @@ class EntitlementStore(private val conn: SQLiteConnection) {
         true
     }.getOrDefault(false)
 
+    /**
+     * Forgets the account: the session AND the grant, and NOTHING ELSE.
+     *
+     * Called after the server has confirmed the account is gone (see
+     * [ControlPlane.deleteAccount]). What makes this function worth writing
+     * when [clear] and [clearSession] already exist is the list it is written
+     * against: [ACCOUNT_TABLES] is the whole definition of "what belongs to
+     * the account", it is asserted for equality in a test, and a future table
+     * cannot join it without someone saying out loud that it is the account's
+     * and not the student's.
+     *
+     * The distinction is the entire point of this feature. `user_corpus.db`
+     * also holds the documents the student imported (`documents`, `chunks`,
+     * `chunks_fts`, `embeddings`), the on-device usage aggregates
+     * (`analytics_*`), the licence and the install id (`license`,
+     * `install_id`). None of those is part of the account and none of them is
+     * touched here. Deleting the file wholesale would be data loss the
+     * confirmation screen did not warn about -- the student asked to be
+     * un-enrolled, not to lose the timetable they added.
+     *
+     * The session goes first. If the second statement fails, the remnant left
+     * behind is an entitlement -- a banner, and one that expires on its own --
+     * rather than a live refresh token, which is the remnant that would
+     * actually matter.
+     *
+     * Two single statements, no transaction, for the reason in this file's
+     * header: this store must never hold a write lock while an import waits.
+     */
+    fun clearAccount(): Boolean = ACCOUNT_TABLES
+        // Eager, and not `all { }` over the raw list: both statements must be
+        // attempted even if the first one fails, so a wedged row cannot leave
+        // the other table's row behind untried.
+        .map { table -> runCatching { conn.execSQL(deleteRow(table)); true }.getOrDefault(false) }
+        .all { it }
+
     companion object {
         /** Long enough to outlast a fifty-chunk document import holding the
          * write lock, short enough that a genuinely wedged file does not hang
          * a screen. */
         const val PRAGMA_BUSY_TIMEOUT = "PRAGMA busy_timeout = 5000"
+
+        /**
+         * Every table in `user_corpus.db` that belongs to the ACCOUNT rather
+         * than to the student, in the order [clearAccount] empties them.
+         *
+         * Asserted for EQUALITY in the tests, not containment -- the reasoning
+         * is [ControlPlane.USAGE_KEYS]'s. A table added here silently is a
+         * table that account deletion starts destroying without anyone having
+         * argued that it is the account's to destroy, and on this database the
+         * neighbouring tables are the student's own documents.
+         */
+        val ACCOUNT_TABLES = listOf("auth_session", "entitlement")
+
+        /** The table name is interpolated, so it may only ever come from
+         * [ACCOUNT_TABLES] -- a compile-time constant list in this file, never
+         * anything that reached the app over a wire. */
+        private fun deleteRow(table: String) = "DELETE FROM $table WHERE id = 1"
     }
 }

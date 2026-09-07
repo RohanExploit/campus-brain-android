@@ -40,7 +40,24 @@
     -->
     <fragment android:id="@+id/enrolFragment"
         android:name="com.campusbrain.app.ui.auth.EnrolFragment"
-        android:label="@string/enrol_title" />
+        android:label="@string/enrol_title">
+        <action android:id="@+id/toDeleteAccount"
+            app:destination="@id/deleteAccountFragment" />
+    </fragment>
+
+    <!--
+      Account deletion, which Google Play requires of any app that lets a user
+      create an account. One way in, from the screen that creates the account,
+      because that is where a student looks for the way to undo it.
+
+      Not a tab, for the same reason enrolment is not one — and the entry point
+      being one level behind the header pill is a known cost, recorded in
+      `docs/play/release-checklist.md`: a reviewer has to be able to find this
+      without being told the gesture.
+    -->
+    <fragment android:id="@+id/deleteAccountFragment"
+        android:name="com.campusbrain.app.ui.auth.DeleteAccountFragment"
+        android:label="@string/delete_title" />
 
     <!--
       Registered exactly as selfTestFragment and enrolFragment are: a

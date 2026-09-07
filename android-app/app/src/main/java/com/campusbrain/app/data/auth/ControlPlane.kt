@@ -7,7 +7,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * The four PostgREST calls this app is allowed to make, and nothing else.
+ * The five PostgREST calls this app is allowed to make, and nothing else.
  *
  * Read the list and note what is not on it: there is no endpoint here that
  * takes a question, a retrieved passage, a document, an embedding, or a
@@ -19,6 +19,7 @@ import org.json.JSONObject
  *  - [fetchGrant]        the caller's own membership row + their tenant row
  *  - [fetchCorpusVersion] metadata about a newer corpus (not the corpus)
  *  - [postUsage]         a route label and a latency, aggregate telemetry only
+ *  - [deleteAccount]     the SECURITY DEFINER deletion function, no arguments
  *
  * Tenancy is never sent. It is resolved server-side by `current_tenant_id()`
  * from `memberships`, so a client cannot claim its way into another
@@ -106,6 +107,75 @@ class ControlPlane(
             null -> RedeemOutcome.Unavailable
             else -> RedeemOutcome.Invalid
         }
+    }
+
+    // --- deletion ---------------------------------------------------------
+
+    /**
+     * What the server did with a deletion request. Four outcomes, and the
+     * split between them decides both what the student is told and whether
+     * this device forgets anything.
+     */
+    sealed interface DeleteOutcome {
+        /** The account is gone. */
+        data object Deleted : DeleteOutcome
+        /**
+         * There was nothing to delete: no session on this device, or the
+         * server found no user row behind the one there is.
+         *
+         * A success with a different history, the way
+         * [RedeemOutcome.AlreadyEnrolled] is. A student tapping the button a
+         * second time, or one whose account a registrar already removed, is
+         * asking for a state that already holds.
+         */
+        data object NoAccount : DeleteOutcome
+        /**
+         * The server will not accept the request as this user: the refresh
+         * token was refused, or the function found no `auth.uid()` (SQLSTATE
+         * 28000). Nothing was deleted and the student has to sign in again
+         * before anything can be.
+         */
+        data object NotSignedIn : DeleteOutcome
+        /** No usable answer. **Nothing was deleted**, on the server or here. */
+        data object Unavailable : DeleteOutcome
+    }
+
+    /**
+     * Deletes the signed-in account, server-side.
+     *
+     * Calls `delete_my_account`, a SECURITY DEFINER function that takes **no
+     * parameters** and derives the account from `auth.uid()` -- see
+     * `supabase/migrations/20260907000000_delete_my_account.sql`. There is
+     * deliberately no user id on this call: an id the client could send is an
+     * id the client could get wrong, and the safest version of that argument
+     * is the one that does not exist.
+     *
+     * Google Play requires this route for any app that lets a user create an
+     * account. GoTrue's admin delete needs the service-role key, which cannot
+     * ship in an APK, so the deletion happens inside the database as the
+     * signed-in user instead.
+     */
+    suspend fun deleteAccount(): DeleteOutcome = withContext(Dispatchers.IO) {
+        // Never enrolled on this device, or already signed out. No round trip:
+        // there is no session to delete an account with, and asking the server
+        // about it would only turn a knowable answer into a network gamble.
+        if (!auth.hasSession()) return@withContext DeleteOutcome.NoAccount
+        val token = auth.accessToken() ?: return@withContext when {
+            // The session survived the failed refresh, so the refresh was
+            // TRANSIENT -- offline, or a portal. Nothing has been decided.
+            auth.hasSession() -> DeleteOutcome.Unavailable
+            // SupabaseAuth.refresh cleared it, which it does only when the
+            // server refused the refresh token outright.
+            else -> DeleteOutcome.NotSignedIn
+        }
+        val response = SupabaseHttp.post(
+            "${config.restBase}/rpc/delete_my_account",
+            // No arguments, and there is no version of this call that has one.
+            JSONObject(),
+            config.anonKey,
+            bearer = token,
+        ) ?: return@withContext DeleteOutcome.Unavailable
+        classifyDelete(response.code, response.body)
     }
 
     // --- the grant --------------------------------------------------------
@@ -224,6 +294,45 @@ class ControlPlane(
         // --- pure parsing and payload building ----------------------------
 
         data class Member(val tenantId: String, val role: String, val status: String)
+
+        /**
+         * Reads the deletion response, pure, so every branch of it is pinned
+         * in a test rather than first observed against a live project.
+         *
+         * `delete_my_account` is declared `returns boolean`, and PostgREST
+         * sends a PostgreSQL boolean as the bare token `true` or `false` --
+         * not as JSON, so nothing here may go through [SupabaseHttp.sqlState]
+         * or `JSONObject` on the success path, both of which throw on it.
+         *
+         * The two rules that matter, and both of them are about not deleting
+         * a working device's state on evidence that does not support it:
+         *
+         *  - **A 2xx that is not one of those two tokens is
+         *    [DeleteOutcome.Unavailable]**, and the caller clears nothing.
+         *    The reasoning is [redeem]'s, arrived at on the same wifi: on
+         *    campus a 200 with an unreadable body is almost always a captive
+         *    portal's login page, and reading a portal's HTML as "your account
+         *    was deleted" would sign a student out of an account that still
+         *    exists and tell them it is gone.
+         *  - **A missing function reads as unavailable, not as deleted.**
+         *    Before the migration is applied PostgREST answers 404 with
+         *    `PGRST202`; that lands in the `else` below, which is the arm that
+         *    changes nothing.
+         */
+        fun classifyDelete(status: Int, body: String): DeleteOutcome = when {
+            status in 200..299 -> when (body.trim().lowercase()) {
+                "true" -> DeleteOutcome.Deleted
+                "false" -> DeleteOutcome.NoAccount
+                else -> DeleteOutcome.Unavailable
+            }
+            // The function's own refusal, raised with errcode 28000 exactly as
+            // redeem_enrolment_code raises it for the same condition.
+            SupabaseHttp.sqlState(body) == "28000" -> DeleteOutcome.NotSignedIn
+            // PostgREST refusing the JWT, or refusing `anon` execute rights.
+            // Either way the fix is a fresh sign-in, not a retry.
+            status == 401 || status == 403 -> DeleteOutcome.NotSignedIn
+            else -> DeleteOutcome.Unavailable
+        }
 
         fun firstRow(body: String): JSONObject? = runCatching {
             val array = JSONArray(body)

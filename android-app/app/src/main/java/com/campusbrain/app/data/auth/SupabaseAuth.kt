@@ -120,6 +120,19 @@ class SupabaseAuth(
         }
     }
 
+    /**
+     * Whether this device holds a refresh token at all.
+     *
+     * Local, synchronous, and no network. It exists so that a null from
+     * [accessToken] can be read correctly: null with a session still stored is
+     * a device that could not reach the server, null with the session gone is
+     * a refresh the server REFUSED (see [refresh]'s `Rejected` branch, which
+     * is the only thing that clears it). Those need different words on screen
+     * -- "try again" against "sign in again" -- and without this there is no
+     * way to tell them apart from outside.
+     */
+    fun hasSession(): Boolean = store?.loadSession() != null
+
     /** Forgets tokens AND the grant. Only for an explicit sign-out -- an
      * expiring token must never take this path. */
     fun signOut() {

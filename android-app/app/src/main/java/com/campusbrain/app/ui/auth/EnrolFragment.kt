@@ -73,6 +73,13 @@ class EnrolFragment : Fragment() {
         binding.enrolCode.addTextChangedListener(watcher)
 
         binding.enrolSubmit.setOnClickListener { submit() }
+        // The account-deletion route Play requires. Always available, in every
+        // state of this screen, and it navigates rather than doing anything:
+        // nothing is deleted from here, and the destination explains what
+        // would be before it offers a button.
+        binding.enrolDeleteLink.setOnClickListener {
+            findNavController().navigate(R.id.toDeleteAccount)
+        }
         binding.enrolCode.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) { submit(); true } else false
         }

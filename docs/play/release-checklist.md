@@ -84,25 +84,57 @@ Play requires in-app disclosures to agree with the Data Safety declaration. A
 replacement string is drafted in `data-safety.md` §5. Sweep the same claim out
 of `README.md`, `docs/pitch.md` and the decks while you are there.
 
-### 5. There is no way to delete an account — Play requires one
-
-`data/auth/ControlPlane.kt` holds exactly four calls (`:75 redeem`,
-`:124 fetchGrant`, `:171 fetchCorpusVersion`, `:194 postUsage`) and none of them
-deletes anything. `SupabaseAuth.signOut` (`:125`) and `Identity.signOut`
-(`:291`) clear the **local** session and grant only; the GoTrue user and the
-`memberships` row survive.
+### 5. Account deletion — built, but not yet applied or hosted
 
 Google Play requires apps that let users create an account to offer account
 deletion — in-app **and** through a URL reachable without installing the app.
+Both halves are now written. Three things remain, and each one is a blocker on
+its own:
 
-Do one of:
-- ship the deletion route (a `delete_account` RPC plus an in-app control and a
-  web form), **or**
-- do not ship the enrolment path in v1 at all, in which case no account exists
-  and the requirement does not apply.
+**5a. Apply the migration.** `supabase/migrations/20260907000000_delete_my_account.sql`
+creates `public.delete_my_account()`, a `SECURITY DEFINER` function that derives
+the account from `auth.uid()` and takes no parameters, so it cannot be aimed at
+another user. It deletes `usage_events`, `memberships` and the `auth.users` row,
+and returns `true` when a user row existed. It has **never been run against the
+project** — nobody here has applied it or seen it succeed. Two things to watch
+when it is applied:
 
-Until it exists, `privacy-policy.md` §8 carries a `TODO` and Data Safety §1.3
-must be answered **No**.
+- if any table not named in the migration references `auth.users` with the
+  default `NO ACTION`, the final `DELETE` raises a foreign-key violation and the
+  function deletes nothing. That is the designed failure and it is loud; add the
+  table to the migration rather than working around it.
+- until it is applied, PostgREST answers `404 / PGRST202`, which the client
+  reads as *"Your institution could not be reached"* — nothing is deleted and no
+  local state is cleared. Pinned in `DeleteAccountTest`.
+
+**5b. Give the in-app route a discoverable home.** It exists — enrolment screen,
+bottom, **Delete this account** — but the enrolment screen is itself reached
+only by tapping the header status pill, an undocumented gesture, and a reviewer
+who cannot find the control will fail the submission for not having one.
+`MainActivity` and the nav host own that entry point. Either surface it
+somewhere a reviewer lands without being told, or write the exact path into the
+Play Console review notes: *tap the status pill in the header → Enrol this
+device → Delete this account*.
+
+**5c. Host `docs/play/account-deletion.md` and fill its TODOs.** Play wants the
+URL to work without installing the app. It needs `TODO: contact email`, an
+effective date, and a stated handling commitment (who acts on emailed requests
+and within how long). Enter the URL in Play Console **and** back into the
+document header.
+
+Follow-up, not a blocker on its own: `privacy-policy.md` §8 still says "the app
+has no in-app control and no server call that deletes a Supabase account", and
+its appendix source map repeats it. That is now false and must be rewritten to
+point at this route before the policy is published. Once it is, Data Safety §1.3
+can be answered **Yes**.
+
+What was built, for review: `ControlPlane.deleteAccount` + `classifyDelete`,
+`Identity.deleteAccount`, `AccountDeletion` (the outcome→result and
+what-gets-cleared decisions, Android-free), `EntitlementStore.clearAccount` +
+`ACCOUNT_TABLES`, `ui/auth/DeleteAccount{Fragment,ViewModel,Copy}`, and
+`DeleteAccountTest` (12 tests). The local wipe empties `auth_session` and
+`entitlement` and **nothing else** — imported documents, the analytics store and
+the licence are in the same file and are asserted to survive.
 
 ### 6. Publish the privacy policy at a real URL
 

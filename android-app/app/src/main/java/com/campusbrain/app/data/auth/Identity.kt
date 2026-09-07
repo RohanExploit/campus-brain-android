@@ -287,6 +287,52 @@ object Identity {
         ok: Boolean? = null,
     ): Boolean = plane?.postUsage(event, route, latencyMs, ok) ?: false
 
+    // --- deletion ---------------------------------------------------------
+
+    /**
+     * Deletes the account on the institution's control plane and, only if the
+     * server settled the question, forgets it here too.
+     *
+     * The second half of [signOut]'s missing sentence. `signOut` clears this
+     * phone and leaves the membership row and the GoTrue user in place; this
+     * removes them, which is what Google Play requires of any app that lets a
+     * user create an account.
+     *
+     * What survives, in every branch: the bundled corpus, every answer the app
+     * can give, the documents the student imported and the on-device usage
+     * store. See [AccountDeletion.KEPT_TABLES]. Nothing on the answering path
+     * ever consulted the account, so nothing on it changes when the account
+     * goes -- the app in airplane mode after this call behaves identically to
+     * the app in airplane mode before it.
+     *
+     * Whether anything local is cleared at all is [AccountDeletion.clearsLocalState]'s
+     * decision, not this function's: a delete that did not get a definite
+     * answer must leave the device enrolled.
+     */
+    suspend fun deleteAccount(): AccountDeletion.Result {
+        val p = plane ?: return when {
+            // No `config.json`, so there is no control plane to delete
+            // anything from. With nothing stored either, the honest answer is
+            // that there is no account -- which is the state the student
+            // wanted. With something stored, this build cannot reach whoever
+            // issued it, and saying so is the only truthful option; clearing
+            // the device would hide a row that still exists on a server.
+            store?.loadSession() == null && _entitlement.value == null ->
+                AccountDeletion.Result.NoAccount
+            else -> AccountDeletion.Result.Unavailable
+        }
+        val result = AccountDeletion.resultOf(p.deleteAccount())
+        if (AccountDeletion.clearsLocalState(result)) {
+            // Two rows in this database, named in EntitlementStore.ACCOUNT_TABLES.
+            // The file itself, and the student's documents inside it, are not
+            // touched -- deleting it would be data loss the confirmation
+            // screen did not warn about.
+            store?.clearAccount()
+            _entitlement.value = null
+        }
+        return result
+    }
+
     /** Forgets everything on this device. Retrieval carries on regardless. */
     fun signOut() {
         auth?.signOut()

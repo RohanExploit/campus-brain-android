@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Deleting the account. Reached from the enrolment screen, and from nowhere
+  else, so a student cannot arrive here without having gone looking.
+
+  The ordering is the design, exactly as it is on the enrolment screen and for
+  the mirror-image reason. That screen leads with "this is optional and
+  nothing stops working" so it reads as an offer rather than a demand. This
+  one leads with what is removed, then with what is kept, and only then shows
+  the button — so it reads as a decision the student is being equipped to
+  make, not a trap laid under a red control.
+
+  Three sections, one visible at a time: the explanation, the confirmation,
+  the outcome. Never two, because a confirmation question sharing a screen
+  with the button that raised it gives a student two things to tap for one
+  decision.
+
+  No red slab anywhere, matching the import and enrolment cards. The
+  destructive control is a quiet outlined button in grade_fail; the reassuring
+  one — keeping the enrolment — is the filled accent action, because the safe
+  choice should be the one a thumb finds first.
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ink"
+    android:scrollbars="none"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/gutter"
+        android:paddingEnd="@dimen/gutter"
+        android:paddingTop="@dimen/space_5"
+        android:paddingBottom="@dimen/space_8">
+
+        <TextView
+            android:id="@+id/deleteTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/delete_title"
+            android:textSize="@dimen/type_heading"
+            android:textStyle="bold"
+            android:letterSpacing="-0.01"
+            android:textColor="@color/text_primary" />
+
+        <TextView
+            android:id="@+id/deleteIntro"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_3"
+            android:text="@string/delete_intro"
+            android:textSize="@dimen/type_body_sm"
+            android:textColor="@color/text_secondary"
+            android:lineSpacingExtra="@dimen/line_extra_body"
+            android:justificationMode="none"
+            android:hyphenationFrequency="none" />
+
+        <!-- The explanation and the action that arms the confirmation. -->
+        <LinearLayout
+            android:id="@+id/deleteExplain"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="@dimen/space_6">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/delete_lost_heading"
+                android:textSize="@dimen/type_caption"
+                android:textColor="@color/text_secondary" />
+
+            <TextView
+                android:id="@+id/deleteLostBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_2"
+                android:text="@string/delete_lost_body"
+                android:textSize="@dimen/type_body_sm"
+                android:textColor="@color/text_primary"
+                android:lineSpacingExtra="@dimen/line_extra_body"
+                android:justificationMode="none"
+                android:hyphenationFrequency="none" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_5"
+                android:text="@string/delete_kept_heading"
+                android:textSize="@dimen/type_caption"
+                android:textColor="@color/text_secondary" />
+
+            <TextView
+                android:id="@+id/deleteKeptBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_2"
+                android:text="@string/delete_kept_body"
+                android:textSize="@dimen/type_body_sm"
+                android:textColor="@color/text_primary"
+                android:lineSpacingExtra="@dimen/line_extra_body"
+                android:justificationMode="none"
+                android:hyphenationFrequency="none" />
+
+            <TextView
+                android:id="@+id/deleteAction"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_6"
+                android:minHeight="@dimen/touch_min"
+                android:gravity="center"
+                android:background="@drawable/bg_input"
+                android:text="@string/delete_action"
+                android:textSize="@dimen/type_body_sm"
+                android:textStyle="bold"
+                android:textColor="@color/grade_fail"
+                android:focusable="true"
+                android:clickable="true" />
+        </LinearLayout>
+
+        <!--
+          The confirmation. Its own step rather than a dialog: a dialog would
+          cover the two paragraphs the student is meant to have just read, and
+          a rotation would dismiss it and quietly disarm the decision.
+        -->
+        <LinearLayout
+            android:id="@+id/deleteConfirm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="@dimen/space_6"
+            android:background="@drawable/bg_surface_card"
+            android:paddingStart="@dimen/space_5"
+            android:paddingEnd="@dimen/space_5"
+            android:paddingTop="@dimen/space_4"
+            android:paddingBottom="@dimen/space_4"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/deleteConfirmQuestion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/delete_confirm_question"
+                android:textSize="@dimen/type_body"
+                android:textStyle="bold"
+                android:letterSpacing="-0.01"
+                android:textColor="@color/text_primary"
+                android:lineSpacingExtra="@dimen/line_extra_body"
+                android:justificationMode="none"
+                android:hyphenationFrequency="none" />
+
+            <!-- Keeping the enrolment is the filled action. The destructive
+                 answer is available, legible and one tap away, but it is not
+                 the thing the eye lands on. -->
+            <TextView
+                android:id="@+id/deleteConfirmNo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_4"
+                android:minHeight="@dimen/touch_min"
+                android:gravity="center"
+                android:background="@drawable/bg_primary_action"
+                android:text="@string/delete_confirm_no"
+                android:textSize="@dimen/type_body_sm"
+                android:textStyle="bold"
+                android:textColor="@color/on_accent"
+                android:focusable="true"
+                android:clickable="true" />
+
+            <TextView
+                android:id="@+id/deleteConfirmYes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_3"
+                android:minHeight="@dimen/touch_min"
+                android:gravity="center"
+                android:background="@drawable/bg_input"
+                android:text="@string/delete_confirm_yes"
+                android:textSize="@dimen/type_body_sm"
+                android:textStyle="bold"
+                android:textColor="@color/grade_fail"
+                android:focusable="true"
+                android:clickable="true" />
+        </LinearLayout>
+
+        <!--
+          The outcome. Same shape as the enrolment card — icon, headline,
+          sentence, one action — and, like that one, its own layout rather
+          than a shared include: the ids and the actions belong to this
+          screen, and sharing the file would couple two screens that have no
+          reason to change together.
+        -->
+        <LinearLayout
+            android:id="@+id/deleteResult"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="@dimen/space_6"
+            android:background="@drawable/bg_surface_card"
+            android:paddingStart="@dimen/space_5"
+            android:paddingEnd="@dimen/space_5"
+            android:paddingTop="@dimen/space_4"
+            android:paddingBottom="@dimen/space_3"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:id="@+id/deleteResultIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_check"
+                    android:importantForAccessibility="no" />
+
+                <TextView
+                    android:id="@+id/deleteResultTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="@dimen/space_3"
+                    android:textSize="@dimen/type_body"
+                    android:textStyle="bold"
+                    android:letterSpacing="-0.01"
+                    android:textColor="@color/text_primary"
+                    android:justificationMode="none" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/deleteResultBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_3"
+                android:textSize="@dimen/type_body_sm"
+                android:textColor="@color/text_secondary"
+                android:lineSpacingExtra="@dimen/line_extra_body"
+                android:justificationMode="none"
+                android:hyphenationFrequency="none" />
+
+            <TextView
+                android:id="@+id/deleteResultAction"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/touch_min"
+                android:paddingEnd="@dimen/space_4"
+                android:gravity="center_vertical"
+                android:textSize="@dimen/type_caption"
+                android:textColor="@color/accent"
+                android:background="?attr/selectableItemBackground" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

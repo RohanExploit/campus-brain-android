@@ -25,3 +25,6 @@ keystore/
 # `keystore.properties.bak`/`.aside`, which is exactly how a signing password
 # becomes stageable during routine editing.
 keystore.properties*
+
+# Kotlin compiler session dir, regenerated on every build.
+.kotlin/

@@ -201,13 +201,24 @@ deletion that a restore would undo.
 entitlement record from the phone. Answering is unaffected — it never depended
 on them.
 
-**Server-side deletion.** `TODO: describe the deletion route.` As built, the app
-has no in-app control and no server call that deletes a Supabase account, a
-membership row, or any usage row. Signing out clears the phone only. If your
-deployment uses identity, you must provide a way for a student to request
-deletion of their account and membership — for example a contact address handled
-by your institution's registrar, or a self-service page — and name it here.
-Google Play requires this to be stated for apps that let users create an account.
+**Deleting the account.** The enrolment screen offers **Delete this account**.
+It asks for confirmation, naming what goes and what stays, and then calls a
+function on the institution's server that removes the account, the membership
+row and any usage rows belonging to it. The function derives the account from
+the caller's own signed-in identity and takes no parameters, so it cannot reach
+another person's data.
+
+What deletion removes: the account, the membership that ties it to the
+institution, the licence grant, and the usage rows recorded against it.
+
+What deletion leaves alone, on purpose: the college's bundled documents, every
+answer the app can give, and any documents added by the student. None of that
+belonged to the account, and the app keeps working exactly as before — offline,
+indefinitely, with no sign-in.
+
+A student who cannot open the app can request the same deletion by writing to
+`TODO: contact email`. See `account-deletion.md` for the full description,
+which is the page hosted for Google Play's web-accessible requirement.
 
 ---
 
