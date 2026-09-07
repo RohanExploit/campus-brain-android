@@ -40,6 +40,35 @@
             android:ellipsize="end" />
 
         <!--
+          A second, plainly-labelled way to the same screen the status pill
+          already reaches. The pill's tap works and stays; it just is not
+          something a person finds without being told, and Play requires the
+          account-deletion route underneath it to be findable by a reviewer
+          who has read no instructions. This is text, not an icon or a
+          gesture, on screen in every state of every tab, and it says the word
+          a reviewer is looking for.
+
+          Unconditional, like the pill's own tap: it does not read enrolment
+          state to decide whether to appear or where to go, so there is
+          nothing here for a fourth place to get out of sync with.
+        -->
+        <TextView
+            android:id="@+id/headerAccountLink"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/touch_min"
+            android:gravity="center_vertical"
+            android:paddingStart="@dimen/space_3"
+            android:paddingEnd="@dimen/space_3"
+            android:text="@string/header_account_label"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/type_caption"
+            android:maxLines="1"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground" />
+
+        <!--
           The status pill, and the way in to enrolment.
 
           Wrapping what was already here in one clickable row rather than

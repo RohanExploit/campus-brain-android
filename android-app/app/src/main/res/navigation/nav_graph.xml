@@ -29,12 +29,17 @@
         android:label="Self test" />
 
     <!--
-      Registered the same way the self test is: a destination with no action
-      into it and no tab pointing at it, reached by a gesture from the header.
+      A destination with no tab pointing at it, reached two ways from the
+      header: the status pill's tap (a gesture, undocumented on its own) and,
+      since 2026-09-07, a plain "Account" text entry beside the app name
+      (`headerAccountLink` in `activity_main.xml`) — added so a Play reviewer
+      can find the account-deletion route one level behind this screen without
+      being told a gesture. Both lead here unconditionally; neither reads
+      enrolment state to decide.
 
-      Deliberately NOT a bottom-nav item. The four tabs are the things a
+      Deliberately NOT a bottom-nav item. The three tabs are the things a
       student does with the app; enrolment is something they do once, to the
-      app. A fifth tab would also make it look like a place answers come from,
+      app. A fourth tab would also make it look like a place answers come from,
       which is the one impression this feature must not give — nothing on the
       answering path consults it.
     -->
@@ -66,7 +71,7 @@
       enrolment.
 
       Deliberately NOT a bottom-nav item, and the reason is stronger here than
-      it was for enrolment. The four tabs are what a student does with the app.
+      it was for enrolment. The three tabs are what a student does with the app.
       A licence tab would put a price next to the thing this product gives away
       — every answer, every route, offline, at every tier — and would make the
       free experience look like a sample of a paid one. It is not one.

@@ -29,7 +29,7 @@ Your college's own documents, answered offline, with the source shown.
 
 **Why this is safe:** offline answering is the default and only local path
 (`data/BrainDb.kt`, `retrieval/*` — no network code); citations are attached to
-every locally-answered result (`data/Models.kt:61 AnswerResult.sources`,
+every locally-answered result (`data/Models.kt:88 AnswerResult.sources`,
 rendered as chips by `ui/ask/MessageAdapter.kt:168-172`). It says "your college's
 own documents", not "knows everything about your campus".
 
@@ -113,7 +113,7 @@ every tier, with or without a licence and with or without a network.
 | "AI-powered assistant that knows your campus" | The local answer path is extractive, not generative — `answer/AnswerComposer.kt:76 compose` ends at `val lead = applied ?: finding!!.sentence` (`:177`), i.e. a sentence lifted out of a retrieved passage. Calling it AI would misdescribe it, and would then be contradicted by the one place a model *is* used. |
 | "It does not compose answers" as an unqualified claim | True of the local path only. With the fallback configured, a language-model service composes the reply (`answer/CloudAnswer.kt:81`). The heading is "IT QUOTES, IT DOES NOT PARAPHRASE" and is scoped to answers from the college's documents, with the fallback paragraph carrying the exception. |
 | "Nothing ever leaves your device" | False whenever `config.json` is provisioned — `retrieval/QueryRouter.kt:285-287` sends the question and the retrieved passages. The "OPTIONAL GENERAL GUIDANCE" paragraph exists to keep the listing consistent with the Data Safety form. |
-| "Understands the meaning of your question" | The neural embedder (`app/src/main/assets/minilm/`) is gitignored, absent from the repo, and lost with the drive. Without it the app falls back to keyword-only retrieval and says so in the header (`MainActivity.kt` — "keyword only"). Do not promise semantic search until the asset ships. |
+| "Understands the meaning of your question" | The neural embedder (`app/src/main/assets/minilm/`) is gitignored and was lost with the drive, then regenerated (`CLAUDE.md`, "Lost with the drive"). It is present in this working tree, and a `:app:bundleRelease` run on 2026-09-07 confirmed `base/assets/minilm/model.onnx` is actually packed into the signed release bundle — so the file being missing is no longer the blocker. What is still unconfirmed is that it *loads and runs*: without it the app falls back to keyword-only retrieval and says so in the header (`MainActivity.kt` — `s.repo.vectorReady`, "keyword only"), and `vectorReady` is only ever set by decoding the ONNX graph at runtime, which needs a device. Keep the listing free of any semantic-search claim until item 15 of `release-checklist.md` confirms `vectorReady` off a real install. |
 | "Answers instantly" / any latency figure | Per `CLAUDE.md`, nothing has run on hardware since ~2026-09-06 and the release build has never run on a device, so there is no current measurement to stand behind. |
 | Multi-hop question support | Broken and known-broken — see `CLAUDE.md`, "Known open work". |
 | Any institution or university name | Sold per-institution; the name arrives as data. |

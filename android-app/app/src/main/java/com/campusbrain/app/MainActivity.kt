@@ -63,6 +63,16 @@ class MainActivity : AppCompatActivity() {
             navController.navigate(R.id.enrolFragment)
         }
 
+        // The discoverable route to the same screen, for a reviewer who has
+        // no reason to suspect the status pill is tappable. Same destination,
+        // same unconditional navigation, same reasoning as the pill's own tap
+        // above — this just also says "Account" in plain text, in every state,
+        // on every tab, because Play requires the account-deletion screen one
+        // level behind it to be reachable without being told a gesture.
+        binding.headerAccountLink.setOnClickListener {
+            navController.navigate(R.id.enrolFragment)
+        }
+
         // The third gesture, and the third destination. Long-press the pill
         // for the licence screen; the title's long-press still goes to the
         // self test, and the pill's tap still goes to enrolment. Each gesture
