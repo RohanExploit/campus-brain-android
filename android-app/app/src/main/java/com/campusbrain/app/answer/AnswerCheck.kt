@@ -116,6 +116,26 @@ object AnswerCheck {
         val topicHits: Int,
     )
 
+    /**
+     * A composed clause together with the chunks it was read out of.
+     *
+     * [applyToStated], [tierConsequences] and [schemeConditions] can each read
+     * a rule that lives in one retrieved chunk and a number, tier or condition
+     * that lives in a different one -- that is the whole point of them. Before
+     * this existed they returned a bare [String], so [AnswerComposer] had no
+     * way to know which chunks a two-document answer actually rested on and
+     * ordered its passage list by retrieval rank alone. A composed answer
+     * could cite a document that never made the top three, or fail to cite the
+     * one document its own claim depended on. [chunkIndices] is what lets the
+     * caller lead with the same evidence the claim is built from.
+     *
+     * Kept `internal`, not `private`: the three composition functions below
+     * still return the plain [String] their existing callers and tests expect
+     * -- see their doc comments -- and this is the additional channel
+     * [AnswerComposer] reads.
+     */
+    data class Composition(val text: String, val chunkIndices: List<Int>)
+
     // --- question parsing -------------------------------------------------
 
     private val STOPWORDS = setOf(
@@ -1080,21 +1100,36 @@ object AnswerCheck {
      * disagreed about which chunks a question is about would be three
      * different answers to the same question depending on which one fired.
      */
-    fun subjectRelevant(q: Question, chunks: List<RetrievedChunk>): List<RetrievedChunk> {
+    fun subjectRelevant(q: Question, chunks: List<RetrievedChunk>): List<RetrievedChunk> =
+        subjectRelevantIndexed(q, chunks).map { it.second }
+
+    /**
+     * [subjectRelevant], paired with which index of [chunks] each survivor
+     * came from -- so [applyToStated] and [tierConsequences] can report which
+     * chunks their answer actually rests on, in [Composition.chunkIndices].
+     * The one place the filter runs, so a caller reading indices and a caller
+     * reading chunks can never disagree about which chunk survived.
+     */
+    fun subjectRelevantIndexed(q: Question, chunks: List<RetrievedChunk>): List<Pair<Int, RetrievedChunk>> {
         val longest = q.terms.maxByOrNull { it.length }?.length ?: return emptyList()
         val subject = q.terms.filter { it.length == longest }
-        return chunks.filter { c ->
+        return chunks.withIndex().filter { (_, c) ->
             val lower = c.content.lowercase()
             subject.any { mentions(lower, it) }
-        }
+        }.map { it.index to it.value }
     }
 
-    fun applyToStated(q: Question, chunks: List<RetrievedChunk>): String? {
+    fun applyToStated(q: Question, chunks: List<RetrievedChunk>): String? =
+        applyToStatedEvidence(q, chunks)?.text
+
+    /** [applyToStated], plus which chunks the verdict actually rests on. */
+    internal fun applyToStatedEvidence(q: Question, chunks: List<RetrievedChunk>): Composition? {
         if (q.need != Need.ELIGIBILITY) return null
         val stated = q.statedPercent ?: return null
-        val relevant = subjectRelevant(q, chunks)
-        if (relevant.isEmpty()) return null
-        val text = relevant.joinToString("\n") { it.content }
+        val indexed = subjectRelevantIndexed(q, chunks)
+        if (indexed.isEmpty()) return null
+        val indices = indexed.map { it.first }
+        val text = indexed.joinToString("\n") { it.second.content }
         val bands = parseBands(text)
 
         // Scope resolution, before any comparison. The old line here was
@@ -1114,12 +1149,15 @@ object AnswerCheck {
             // Two different institute-wide minima in the retrieved text means
             // the retrieval, not the corpus, is confused. Picking one would be
             // a coin toss reported as a ruling.
-            general.size > 1 -> return "I can see more than one general minimum in the records (" +
-                general.sorted().joinToString(", ") { "${num(it)}%" } +
-                "), so I will not rule on ${num(stated)}% — tell me which rule applies."
+            general.size > 1 -> return Composition(
+                "I can see more than one general minimum in the records (" +
+                    general.sorted().joinToString(", ") { "${num(it)}%" } +
+                    "), so I will not rule on ${num(stated)}% — tell me which rule applies.",
+                indices,
+            )
             // Only scheme-specific figures. The honest answer is that it
             // depends on the scheme, WITH the numbers, not a shrug.
-            scoped.isNotEmpty() -> return dependsOnScheme(stated, scoped)
+            scoped.isNotEmpty() -> return Composition(dependsOnScheme(stated, scoped), indices)
             else -> return null
         }
 
@@ -1149,7 +1187,7 @@ object AnswerCheck {
                 verdict.append(", which applies only to that scheme.")
             }
         }
-        return verdict.toString()
+        return Composition(verdict.toString(), indices)
     }
 
     /**
@@ -1196,18 +1234,23 @@ object AnswerCheck {
      * in both the Attendance Policy and the Defaulter List Procedure, and a
      * retrieval pass that returns both would otherwise print each tier twice.
      */
-    fun tierConsequences(q: Question, chunks: List<RetrievedChunk>): String? {
+    fun tierConsequences(q: Question, chunks: List<RetrievedChunk>): String? =
+        tierConsequencesEvidence(q, chunks)?.text
+
+    /** [tierConsequences], plus which chunks the tiers were read out of. */
+    internal fun tierConsequencesEvidence(q: Question, chunks: List<RetrievedChunk>): Composition? {
         if (q.need != Need.CONSEQUENCE) return null
-        val relevant = subjectRelevant(q, chunks)
-        if (relevant.isEmpty()) return null
-        val bands = parseBands(relevant.joinToString("\n") { it.content })
+        val indexed = subjectRelevantIndexed(q, chunks)
+        if (indexed.isEmpty()) return null
+        val bands = parseBands(indexed.joinToString("\n") { it.second.content })
         if (bands.isEmpty()) return null
-        return bands
+        val text = bands
             .map { it.label to it.consequence }
             .distinct()
             .joinToString(" ") { (label, cell) ->
                 label.replaceFirstChar { it.uppercase() } + ": " + cell.trimEnd('.') + "."
             }
+        return Composition(text, indexed.map { it.first })
     }
 
     /**
@@ -1253,13 +1296,17 @@ object AnswerCheck {
      * particular student can sign one is a fact about the student that no
      * document here holds, and answering "no" would be inventing it.
      */
-    fun schemeConditions(q: Question, chunks: List<RetrievedChunk>): String? {
+    fun schemeConditions(q: Question, chunks: List<RetrievedChunk>): String? =
+        schemeConditionsEvidence(q, chunks)?.text
+
+    /** [schemeConditions], plus which chunk each named row was read out of. */
+    internal fun schemeConditionsEvidence(q: Question, chunks: List<RetrievedChunk>): Composition? {
         if (q.need != Need.PERMISSION) return null
         val condition = q.terms.filter { it !in CONDITION_STOPWORDS }
         if (condition.isEmpty()) return null
 
-        val rows = ArrayList<Pair<String, String>>()
-        for (chunk in chunks) {
+        val rows = ArrayList<Triple<String, String, Int>>()
+        chunks.forEachIndexed { ci, chunk ->
             for (line in chunk.content.lineSequence()) {
                 val t = line.trim()
                 if (!t.startsWith("|")) continue
@@ -1269,14 +1316,150 @@ object AnswerCheck {
                     val lower = c.lowercase()
                     condition.any { mentions(lower, it) }
                 } ?: continue
-                rows += schemeLabel(cells[0]) to normalise(cell)
+                rows += Triple(schemeLabel(cells[0]), normalise(cell), ci)
             }
         }
-        val named = rows.filter { questionNames(it.first, q.raw) }.distinct()
+        val named = rows.filter { questionNames(it.first, q.raw) }.distinctBy { it.first to it.second }
         if (named.isEmpty()) return null
-        return "The records answer that as a requirement rather than a yes or no: " +
-            named.joinToString("; ") { (scheme, cell) -> "$scheme requires ${cell.trimEnd('.')}" } +
+        val text = "The records answer that as a requirement rather than a yes or no: " +
+            named.joinToString("; ") { (scheme, cell, _) -> "$scheme requires ${cell.trimEnd('.')}" } +
             "."
+        return Composition(text, named.map { it.third }.distinct())
+    }
+
+    /**
+     * A named drive, as it appears in the sentence every drive notice opens
+     * with: "<Company> will conduct a campus placement drive on <date>." Read
+     * off the ORIGINAL case, same reasoning as [SCHEME_NAME] -- these are
+     * proper nouns too.
+     */
+    private val DRIVE_NAME = Regex(
+        """\b([A-Z][A-Za-z.&'-]*(?:\s+[A-Za-z.&'-]+){0,4})\s+will\s+conduct\s+a\s+campus\s+placement\s+drive"""
+    )
+
+    /** "| Maximum Live Backlogs Allowed | 0 |", the per-drive cap. */
+    private val BACKLOG_CAP_ROW = Regex(
+        """\|\s*Maximum\s+Live\s+Backlogs\s+Allowed\s*\|\s*(\d+)\s*\|""", RegexOption.IGNORE_CASE
+    )
+
+    /**
+     * The Placement Policy sentence that gives the cap above a consequence:
+     * "a student with more live backlogs than a drive's stated limit is not
+     * permitted to register for that specific drive". Without this sentence
+     * in view, a cap is just a number with no rule attached to it.
+     */
+    private val BACKLOG_RULE_CUE = Regex("""more\s+live\s+backlogs\s+than""", RegexOption.IGNORE_CASE)
+
+    private val CARDINAL_VALUE = mapOf(
+        "zero" to 0, "one" to 1, "two" to 2, "three" to 3, "four" to 4,
+        "five" to 5, "six" to 6, "seven" to 7, "eight" to 8, "nine" to 9, "ten" to 10,
+    )
+
+    /** "1 backlog", "two live backlogs" -- a small enough count that a numeral
+     *  or a single spelled word covers everything the corpus ever states. */
+    private val STATED_BACKLOG = Regex(
+        """\b(\d{1,2}|(?:$CARDINAL_WORDS))\s+(?:live\s+)?backlogs?\b""", RegexOption.IGNORE_CASE
+    )
+
+    /**
+     * The backlog count the student stated, or null. Read off the raw query,
+     * same reasoning as [Question.statedPercent]: a term list would have
+     * thrown "1" and "one" away before this could see them.
+     */
+    private fun statedBacklogCount(query: String): Int? {
+        val lower = query.lowercase()
+        val g = STATED_BACKLOG.find(lower)?.groups?.get(1) ?: return null
+        g.value.toIntOrNull()?.let { return it }
+        // "One" is the ambiguous case WORD_CARDINAL exists for -- reused here
+        // rather than re-litigated, because "the one backlog I have" and "no
+        // one has a backlog" are exactly the partitive/pronoun uses
+        // [isQuantityUse] already tells apart from a stated count.
+        if (!isQuantityUse(lower, g.range)) return null
+        return CARDINAL_VALUE[g.value]
+    }
+
+    /**
+     * "If I have 1 backlog, can I sit for the Ratnagiri Softworks drive" --
+     * the fourth link in [AnswerComposer]'s chain, and the one that answers a
+     * question spanning two documents that DO reference each other (the drive
+     * notice names the Placement Policy) but neither restates the other's
+     * number. The cap the student is judged against lives only in the drive's
+     * own notice; the rule that a cap above it disqualifies the student lives
+     * only in the Placement Policy.
+     *
+     * Neither existing composition fits this shape. [applyToStated] falls
+     * back to an institute-wide minimum when nothing scheme-specific is named,
+     * and there is no institute-wide backlog cap to fall back to -- the
+     * Placement Policy states only that the number "is set by the recruiting
+     * company". [schemeConditions] reads the scholarship matrix's five-cell
+     * rows; a drive notice's cap is a two-cell Field/Detail row in a different
+     * document shape entirely.
+     *
+     * Deliberately independent of [Need] -- seeded by evidence in hand rather
+     * than a parser cue, on purpose. "If I have one live backlog can I sit for
+     * the Ratnagiri Softworks drive" leads with a conditional clause, so
+     * [PERMISSION_MODAL]'s start anchor never fires and this question is
+     * [Need.OTHER]. Widening that cue would touch every question already
+     * decided by it -- this file's own note on [Need.PERMISSION] records "8 of
+     * 64 questions change Need" for the last time a cue was added, and that
+     * was a narrower change than reworking an anchored regex. Four
+     * independent conditions gate this instead, each one evidence rather than
+     * phrasing: a stated count, a drive named in the RAW question, that
+     * drive's own cap in the retrieved chunks, and the policy's rule sentence
+     * also in the retrieved chunks. All four have to be true before this
+     * says anything.
+     *
+     * Ambiguity refuses rather than guesses, same as [applyToStated] on two
+     * general attendance minima: a "backlog" question routinely retrieves
+     * several drives' cap rows at once (they all carry the word), so more
+     * than one drive matching the question, or none, returns null and the
+     * caller falls back to the ordinary sentence search.
+     */
+    internal fun backlogAgainstDrive(q: Question, chunks: List<RetrievedChunk>): Composition? {
+        val stated = statedBacklogCount(q.raw) ?: return null
+
+        // A drive's name and its cap live in the same document but not always
+        // the same chunk -- the table splits across chunks and only the first
+        // half carries the opening sentence. Resolved by docId, which survives
+        // retrieval re-ranking; chunk adjacency would not.
+        val nameByDoc = HashMap<String, String>()
+        chunks.forEach { c ->
+            DRIVE_NAME.find(c.content)?.groupValues?.get(1)?.trim()
+                ?.let { nameByDoc.putIfAbsent(c.docId, it) }
+        }
+        if (nameByDoc.isEmpty()) return null
+
+        data class Cap(val drive: String, val value: Int, val chunkIndex: Int)
+        val caps = chunks.withIndex().mapNotNull { (ci, c) ->
+            val value = BACKLOG_CAP_ROW.find(c.content)?.groupValues?.get(1)?.toIntOrNull() ?: return@mapNotNull null
+            val drive = nameByDoc[c.docId] ?: return@mapNotNull null
+            Cap(drive, value, ci)
+        }
+        if (caps.isEmpty()) return null
+
+        // The question has to name the one drive this verdict is about.
+        // Reuses [questionNames]'s distinctive-word match, the same test
+        // [applyToStated] uses to tell "the merit scholarship" apart from "a
+        // scholarship" -- and the same reason a drive's own two- or
+        // three-letter suffix words ("Pvt", "Ltd") never decide a match: they
+        // fail that function's length floor before this ever sees them.
+        val distinctDrives = caps.distinctBy { it.drive }
+        val named = distinctDrives.filter { questionNames(it.drive, q.raw) }
+        if (named.size != 1) return null
+        val cap = named.single()
+
+        val ruleChunkIndex = chunks.indexOfFirst { BACKLOG_RULE_CUE.containsMatchIn(it.content) }
+        if (ruleChunkIndex < 0) return null
+        val ruleSentence = sentencesOf(chunks[ruleChunkIndex].content)
+            .firstOrNull { BACKLOG_RULE_CUE.containsMatchIn(it) } ?: return null
+
+        val plural = if (cap.value == 1) "backlog" else "backlogs"
+        val verdict = if (stated > cap.value)
+            "No — you stated $stated, and ${cap.drive} allows a maximum of ${cap.value} live $plural."
+        else
+            "Yes on backlogs — you stated $stated, and ${cap.drive} allows up to ${cap.value} live $plural."
+        val text = "$verdict ${ruleSentence.trimEnd('.')}."
+        return Composition(text, listOf(cap.chunkIndex, ruleChunkIndex).distinct())
     }
 
     // --- helpers ----------------------------------------------------------

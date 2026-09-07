@@ -85,7 +85,7 @@ object AnswerComposer {
 
         val question = AnswerCheck.parse(query)
 
-        // One slot, three compositions, tried in order. Each reads a rule out
+        // One slot, four compositions, tried in order. Each reads a rule out
         // of the retrieved text and states it as the answer to the question
         // that was actually asked, rather than quoting whichever sentence sits
         // nearest the question's vocabulary.
@@ -99,13 +99,26 @@ object AnswerComposer {
         //    a tier table, so the tiers are the answer.
         //  - schemeConditions: the question asks whether something is allowed
         //    and the eligibility matrix states the condition in a cell.
+        //  - backlogAgainstDrive: the cap the student is judged against lives
+        //    in one document (a placement drive notice) and the rule that a
+        //    cap above it disqualifies them lives in another (the Placement
+        //    Policy). Unlike the three above it is not keyed off Need -- see
+        //    its own doc comment for why -- so it only reaches this line when
+        //    none of the Need-shaped compositions already answered.
         //
-        // They are mutually exclusive by Need, so the order is documentation
-        // rather than precedence; it is written as a chain so that adding a
-        // fourth is one line and cannot accidentally shadow a third.
-        val applied = AnswerCheck.applyToStated(question, chunks)
-            ?: AnswerCheck.tierConsequences(question, chunks)
-            ?: AnswerCheck.schemeConditions(question, chunks)
+        // The first three are mutually exclusive by Need, so their order is
+        // documentation rather than precedence. Computed as separate `val`s
+        // rather than one `?:` chain so [composition] below can report which
+        // one actually spoke -- collapsing them loses that the moment a
+        // fourth link is not itself Need-exclusive with the first three.
+        val eligible = AnswerCheck.applyToStatedEvidence(question, chunks)
+        val tiered = if (eligible == null) AnswerCheck.tierConsequencesEvidence(question, chunks) else null
+        val schemed = if (eligible == null && tiered == null)
+            AnswerCheck.schemeConditionsEvidence(question, chunks) else null
+        val backlogged = if (eligible == null && tiered == null && schemed == null)
+            AnswerCheck.backlogAgainstDrive(question, chunks) else null
+        val appliedComposition = eligible ?: tiered ?: schemed ?: backlogged
+        val applied = appliedComposition?.text
 
         // Every chunk is searched, not just the top-ranked one. The measured
         // failure was an answering sentence sitting in chunk two while chunk
@@ -176,13 +189,21 @@ object AnswerComposer {
 
         val lead = applied ?: finding!!.sentence
 
-        // Lead with the chunk the answer came out of, so the first passage
-        // under the bubble is the one the claim can be checked against. Before
-        // the search widened this was always chunks[0] and the two were the
-        // same thing; now they need not be.
-        val ordered = finding?.let { f ->
-            listOf(chunks[f.chunkIndex]) + chunks.filterIndexed { i, _ -> i != f.chunkIndex }
-        } ?: chunks
+        // Lead with the chunks the answer actually rests on, so the passages
+        // under the bubble are the ones the claim can be checked against.
+        // Before [AnswerCheck.Composition] existed this read only [finding],
+        // so a composed answer -- one built by reading a rule out of one
+        // retrieved chunk and a number, tier or cap out of a DIFFERENT one --
+        // could cite whichever chunk merely ranked highest and leave its
+        // second document out of the passage list entirely, or out of it
+        // whenever that document did not also rank in the top three. A set,
+        // not a list: [appliedComposition] and [finding] can point at the
+        // same chunk, and a passage must not repeat.
+        val leadIndices = LinkedHashSet<Int>()
+        appliedComposition?.chunkIndices?.forEach { leadIndices.add(it) }
+        finding?.let { leadIndices.add(it.chunkIndex) }
+        val ordered = if (leadIndices.isEmpty()) chunks
+        else leadIndices.map { chunks[it] } + chunks.filterIndexed { i, _ -> i !in leadIndices }
 
         val passages = buildList {
             if (!prefix.isNullOrBlank()) {
@@ -192,13 +213,15 @@ object AnswerComposer {
         }
 
         // Which composition spoke, not just that one did. The trace is the
-        // only place the three are told apart, and "applied rule to null%" is
+        // only place the four are told apart, and "applied rule to null%" is
         // what the old wording printed once a composition with no stated
         // number could reach this line.
         val composition = when {
-            question.statedPercent != null -> "applied rule to ${question.statedPercent}%"
-            question.need == AnswerCheck.Need.CONSEQUENCE -> "read the tier table"
-            else -> "read the eligibility matrix"
+            eligible != null -> "applied rule to ${question.statedPercent}%"
+            tiered != null -> "read the tier table"
+            schemed != null -> "read the eligibility matrix"
+            backlogged != null -> "compared the stated backlog against the drive's cap"
+            else -> "" // unreachable: applied == null whenever all four are null
         }
         val reason = when {
             applied != null && finding != null ->
