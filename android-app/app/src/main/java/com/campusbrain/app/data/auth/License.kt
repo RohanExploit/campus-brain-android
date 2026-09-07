@@ -179,8 +179,8 @@ object LicenseKey {
      * --print-public-key` emits exactly this line.
      */
     const val PUBLIC_KEY_B64 =
-        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE41Z4e+WfHfC2C8UVIOSIcLVVjsDbhHjW" +
-            "XSwYzGqlaQD1798+BlAT0Jnvt90iBtc1TA2e2uIJexDmPvA/SpGBBA=="
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE9s25kUS6qAf471xuhjCz8oXWizCQdGf6" +
+            "OgCJT4ZP8uUfNWR+iAX3Kb9jEsHMpV0hEY6jjYJcD8mKrMTpI1RiDg=="
 
     private const val SIGNATURE_ALGORITHM = "SHA256withECDSA"
 
