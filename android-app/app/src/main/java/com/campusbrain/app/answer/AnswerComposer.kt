@@ -85,11 +85,27 @@ object AnswerComposer {
 
         val question = AnswerCheck.parse(query)
 
-        // When the student states a number, answer the question they asked
-        // rather than reading the rule back at them. "Can I write the exam
-        // with 60% attendance" used to return the 65-74% condonation band
-        // verbatim, which reads as a yes to someone who has 60%.
+        // One slot, three compositions, tried in order. Each reads a rule out
+        // of the retrieved text and states it as the answer to the question
+        // that was actually asked, rather than quoting whichever sentence sits
+        // nearest the question's vocabulary.
+        //
+        //  - applyToStated: the student stated a number, so answer the
+        //    question they asked rather than reading the rule back at them.
+        //    "Can I write the exam with 60% attendance" used to return the
+        //    65-74% condonation band verbatim, which reads as a yes to
+        //    someone who has 60%.
+        //  - tierConsequences: the question asks what follows and the rule is
+        //    a tier table, so the tiers are the answer.
+        //  - schemeConditions: the question asks whether something is allowed
+        //    and the eligibility matrix states the condition in a cell.
+        //
+        // They are mutually exclusive by Need, so the order is documentation
+        // rather than precedence; it is written as a chain so that adding a
+        // fourth is one line and cannot accidentally shadow a third.
         val applied = AnswerCheck.applyToStated(question, chunks)
+            ?: AnswerCheck.tierConsequences(question, chunks)
+            ?: AnswerCheck.schemeConditions(question, chunks)
 
         // Every chunk is searched, not just the top-ranked one. The measured
         // failure was an answering sentence sitting in chunk two while chunk
@@ -129,9 +145,27 @@ object AnswerComposer {
             val nearest = chunks.take(3)
                 .map { it.section?.substringAfterLast(" > ") ?: it.docId }
                 .distinct()
-            val lead = if (nearest.isEmpty()) ABSTENTION else
-                ABSTENTION + "\n\nThe closest material in the corpus is " +
-                    nearest.joinToString(", ") + " — none of it addresses the question directly."
+            val lead = buildString {
+                append(ABSTENTION)
+                if (nearest.isNotEmpty()) {
+                    append("\n\nThe closest material in the corpus is ")
+                    append(nearest.joinToString(", "))
+                    append(" — none of it addresses the question directly.")
+                }
+                // A consequence question is the one shape where the generic
+                // refusal is actively misleading. "None of it addresses the
+                // question" reads as "the search went wrong, try again"; what
+                // is true here is narrower and more useful, and it is the
+                // honest answer to a real gap. Every scholarship notice states
+                // a minimum attendance and not one document anywhere says what
+                // becomes of a granted scholarship if the student is debarred
+                // for attendance. Saying so is a better answer than any
+                // sentence in the corpus, all of which would be a ruling on a
+                // question nobody asked.
+                if (question.need == AnswerCheck.Need.CONSEQUENCE) {
+                    append(" None of it states what follows in that case, so I will not guess at one.")
+                }
+            }
             return Composed(
                 lead,
                 chunks.take(2).map { Passage(it.section ?: it.docId, it.content.trim()) },
@@ -157,10 +191,19 @@ object AnswerComposer {
             ordered.take(3).forEach { add(Passage(it.section ?: it.docId, it.content.trim())) }
         }
 
+        // Which composition spoke, not just that one did. The trace is the
+        // only place the three are told apart, and "applied rule to null%" is
+        // what the old wording printed once a composition with no stated
+        // number could reach this line.
+        val composition = when {
+            question.statedPercent != null -> "applied rule to ${question.statedPercent}%"
+            question.need == AnswerCheck.Need.CONSEQUENCE -> "read the tier table"
+            else -> "read the eligibility matrix"
+        }
         val reason = when {
             applied != null && finding != null ->
-                "applied rule to ${question.statedPercent}% (quote available from chunk ${finding.chunkIndex + 1})"
-            applied != null -> "applied rule to ${question.statedPercent}%"
+                "$composition (quote available from chunk ${finding.chunkIndex + 1})"
+            applied != null -> composition
             else -> "chunk ${finding!!.chunkIndex + 1}/${chunks.size}, " +
                 "${finding.topicHits}/${question.terms.size} topic terms, need=${question.need}"
         }

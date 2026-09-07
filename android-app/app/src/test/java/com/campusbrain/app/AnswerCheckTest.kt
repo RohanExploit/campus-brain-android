@@ -438,11 +438,25 @@ class AnswerCheckTest {
     }
 
     @Test fun `the subject is looked for in whole chunks, not in one sentence`() {
-        // "Debarred" lives in a table row, and sentencesOf drops rows on
-        // purpose. A per-sentence version of this rule would refuse a question
-        // the retrieval answered correctly.
+        // The property under test is that unsupportedSubject reads CHUNKS
+        // while bestAnswer reads SENTENCES, and that the two disagree about
+        // "debarred" -- so a per-sentence version of this rule would refuse a
+        // question the retrieval had the material for.
+        //
+        // The disagreement is asserted directly rather than inferred from the
+        // question's term list. It used to be inferred, and the inference was
+        // wrong twice over: the comment claimed sentencesOf drops the row (it
+        // does not -- the split after "at this tier." leaves two pipes, under
+        // the three-pipe bar), and the assertion it rested on was about
+        // "happens", which is now filler and no longer a subject word at all.
+        val chunkHasIt = attendancePolicyRule.content.lowercase().contains("debarred")
+        val sentenceHasIt = AnswerCheck.sentencesOf(attendancePolicyRule.content)
+            .any { it.lowercase().contains("debarred") }
+        assertTrue("the chunk must contain it", chunkHasIt)
+        assertTrue("the row survives sentencesOf; two pipes, not three", sentenceHasIt)
+
         val q = AnswerCheck.parse("what happens to my scholarship if I am debarred for attendance")
-        assertEquals(listOf("happens", "debarred"), AnswerCheck.subjectTerms(q.terms))
+        assertEquals(listOf("debarred"), AnswerCheck.subjectTerms(q.terms))
         assertTrue(
             AnswerCheck.unsupportedSubject(q, listOf(attendancePolicyRule), corpusWords).isEmpty()
         )

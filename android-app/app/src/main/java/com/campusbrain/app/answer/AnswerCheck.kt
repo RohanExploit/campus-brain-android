@@ -152,6 +152,18 @@ object AnswerCheck {
         // about, which is exactly the argument the block above makes for
         // "available".
         "list", "lists", "show", "shows", "display", "find", "name", "names",
+        // The predicate of a consequence question, for the same reason as
+        // "available" above: it says what KIND of answer is wanted, not what
+        // the answer is about. Measured, and this one costs answers twice
+        // over. "Happens" occurs in exactly 4 of 493 chunks, all of them
+        // scholarship procedure notices, so it is simultaneously the rarest
+        // and the least informative word in "what happens if I miss it" --
+        // rare enough to clear the two-term floor on the one document that
+        // cannot answer, and empty enough to mean nothing when it does.
+        // "Consequence" is worse still: it is a COLUMN HEADING in both
+        // attendance tables, so a question about backlogs that used the word
+        // was answered with the attendance tiers.
+        "happen", "happens", "consequence", "consequences",
     )
 
     /**
@@ -203,6 +215,50 @@ object AnswerCheck {
         RegexOption.IGNORE_CASE
     )
 
+    /**
+     * "What happens if ...", and nothing looser.
+     *
+     * A closed cue on purpose. The temptation is to read any "if" clause as a
+     * consequence question, and that would swallow "can I apply if I have a
+     * backlog", which wants a rule and not an outcome. Every alternative below
+     * names the outcome explicitly.
+     */
+    private val CONSEQUENCE_CUE = Regex(
+        """\bwhat\s+happens\b|\bwhat\s+will\s+happen\b|\bwhat\s+would\s+happen\b""" +
+            """|\bwhat\s+(?:is|are)\s+the\s+(?:consequence|penalty|penalties|result)\b""" +
+            """|\bconsequences?\s+(?:of|for|if)\b""" +
+            """|\bwhat\s+(?:do|does)\s+i\s+do\s+if\b""",
+        RegexOption.IGNORE_CASE
+    )
+
+    /**
+     * A modal of permission. Necessary but not sufficient -- see
+     * [PERMISSION_ACT].
+     */
+    private val PERMISSION_MODAL = Regex(
+        """^\s*(?:can|could|may|am\s+i|is\s+it\s+possible)\b|\bam\s+i\s+allowed\b""" +
+            """|\bis\s+(?:a|an|the)?\s*\w+\s+allowed\b|\beligible\s+to\b|\bpermitted\s+to\b""",
+        RegexOption.IGNORE_CASE
+    )
+
+    /**
+     * A verb of DOING, which is the half that makes a modal a request for
+     * permission rather than a request for a fact.
+     *
+     * "Is the library open on Sunday" opens with a modal-shaped clause and asks
+     * for opening hours; "can a student with a backlog apply" asks whether an
+     * action is allowed. Requiring both halves is what keeps the first in
+     * [Need.OTHER], where its answer already lives, and it is the same
+     * two-condition construction [ELIGIBILITY_CUE] uses with its number.
+     */
+    private val PERMISSION_ACT = Regex(
+        """\b(?:apply|applying|register|registering|enrol|enroll|enrolling|appear|""" +
+            """sit|write|take|submit|submitting|claim|claiming|avail|availing|""" +
+            """reapply|re-?appear|attend|attending|join|joining|borrow|borrowing|""" +
+            """get|receive|request|requesting|renew|renewing|opt)\b""",
+        RegexOption.IGNORE_CASE
+    )
+
     fun parse(query: String): Question {
         val stated = STATED_PERCENT.find(query)?.groupValues?.get(1)?.toDoubleOrNull()
         val need = when {
@@ -212,6 +268,15 @@ object AnswerCheck {
             stated != null && ELIGIBILITY_CUE.containsMatchIn(query) -> Need.ELIGIBILITY
             COUNT_CUE.containsMatchIn(query) -> Need.COUNT
             QUANTITY_CUE.containsMatchIn(query) -> Need.QUANTITY
+            // Last, and after the two cues that carry a battery. A question is
+            // only a consequence or permission question if no earlier shape
+            // claimed it, so nothing that was answered before can be stolen by
+            // the two rules added here; measured over both battery files and
+            // the JVM fixtures, 8 of 64 questions change Need and all 8 are
+            // questions no shape was enforced on at all.
+            CONSEQUENCE_CUE.containsMatchIn(query) -> Need.CONSEQUENCE
+            PERMISSION_MODAL.containsMatchIn(query) &&
+                PERMISSION_ACT.containsMatchIn(query) -> Need.PERMISSION
             else -> Need.OTHER
         }
         return Question(query, need, contentTerms(query), stated)
@@ -222,13 +287,83 @@ object AnswerCheck {
     private val SENTENCE_SPLIT = Regex("""(?<=[.!?])\s+|\n""")
 
     /**
+     * Full stops that end an abbreviation, not a sentence.
+     *
+     * A measured defect, and the expensive kind: it made an answer
+     * UNREACHABLE rather than merely mis-ranked, so no amount of tuning
+     * downstream could have recovered it. "A late fee of Rs. 50 per day
+     * applies after the due date, capped at Rs. 2,000." splits after "Rs."
+     * into "A late fee of Rs." -- 17 characters, below the 25-character floor,
+     * discarded -- and a remainder that no longer contains the words "late
+     * fee". Asked what the late fee is, the app could not see the sentence
+     * that says. The same split decapitated "who is eligible for the
+     * post-matric scholarship", which used to stop dead at "... family income
+     * up to Rs."
+     *
+     * The list is closed and measured, not guessed: these are the six tokens
+     * that actually precede a mid-sentence full stop anywhere in the 248
+     * campus chunks -- Dr. 89, No. 62, Rs. 51, Prof. 49, Mrs. 24, Mr. 14 --
+     * plus "Ms." as the obvious sibling of the last two. Nothing else in the
+     * corpus fires at all, and every entry that does not fire is a rule whose
+     * failure modes nobody has looked at.
+     */
+    private val ABBREVIATIONS =
+        setOf("rs", "no", "mr", "mrs", "ms", "dr", "prof")
+
+    /**
+     * Read by hand rather than with an anchored regex: Java's `$` also matches
+     * before a final line terminator, and this is asked about a buffer whose
+     * last character is the whole question.
+     */
+    private fun endsWithAbbreviation(s: CharSequence): Boolean {
+        if (s.isEmpty() || s[s.length - 1] != '.') return false
+        val word = s.subSequence(0, s.length - 1).takeLastWhile { it.isLetter() }
+        return word.isNotEmpty() && word.toString().lowercase() in ABBREVIATIONS
+    }
+
+    /**
+     * [text] cut at sentence ends, with the abbreviation guard applied.
+     *
+     * Written as an explicit merge pass rather than as a lookbehind in
+     * [SENTENCE_SPLIT] for two reasons. First, scope: this is the only
+     * consumer that needs the guard. The other reader of [SENTENCE_SPLIT] is
+     * the sentence loop in [requiredMinimums], where merging would change
+     * which scope a threshold is recorded under -- "Rajarshi Shahu Maharaj
+     * Merit Scholarship is open to ... with family income up to Rs. 8,00,000
+     * per annum, a minimum attendance of 75%" is two sentences today, and the
+     * 75% is correctly recorded as the institute's general figure precisely
+     * because the scheme name is in the other half. Second, honesty: a split
+     * that never breaks a line is easier to reason about than a lookbehind,
+     * and a break whose separator contains a newline is always taken, so a
+     * table row cannot be glued to the row below it.
+     */
+    private fun sentencePieces(text: String): List<String> {
+        val out = ArrayList<String>()
+        val cur = StringBuilder()
+        var pos = 0
+        for (m in SENTENCE_SPLIT.findAll(text)) {
+            cur.append(text, pos, m.range.first)
+            pos = m.range.last + 1
+            if (!m.value.contains('\n') && endsWithAbbreviation(cur)) {
+                cur.append(' ')
+                continue
+            }
+            out.add(cur.toString())
+            cur.setLength(0)
+        }
+        cur.append(text, pos, text.length)
+        out.add(cur.toString())
+        return out
+    }
+
+    /**
      * Sentences worth quoting as a lead. Table rows are excluded: a line that
      * is mostly pipes reads as noise once lifted out of its table, and the
      * band parser in [parseBands] reads the raw text anyway, so nothing is
      * lost by keeping them out of here.
      */
     fun sentencesOf(text: String): List<String> =
-        text.split(SENTENCE_SPLIT)
+        sentencePieces(text)
             .map { it.trim() }
             .filter { s -> s.length in 25..400 && s.count { it == '|' } < 3 }
 
@@ -273,11 +408,20 @@ object AnswerCheck {
      * "caught" in 1.
      *
      * Checked over whole CHUNKS, not over the candidate sentence, and that is
-     * load-bearing. "What happens to my scholarship if I am debarred for
-     * attendance" is answerable, and "debarred" lives in a pipe row that
-     * [sentencesOf] deliberately drops -- a per-sentence version of this rule
-     * would refuse it. What is being asked here is whether retrieval found the
+     * load-bearing. A word can be everywhere in the retrieved material and
+     * still not be in any sentence [bestAnswer] is allowed to quote: the
+     * attendance tiers are a table, and [sentencesOf] drops rows of three
+     * pipes or more. What is being asked here is whether retrieval found the
      * topic, not whether one sentence restates it.
+     *
+     * An earlier version of this comment offered "debarred" as the example and
+     * said it "lives in a pipe row that [sentencesOf] deliberately drops". The
+     * conclusion is right and that reason was wrong, so it is corrected rather
+     * than repeated: [SENTENCE_SPLIT] breaks after the full stop that ends the
+     * consequence cell, so the row arrives as `| Below 65% | Debarred outright
+     * ... at this tier.` -- two pipes, under the three-pipe bar, kept. The
+     * word is refused a quote by the two-term floor in [bestAnswer], not by
+     * this filter.
      *
      * Two subject words are required before it may refuse. One word absent from
      * the corpus is usually a phrasing accident -- "can I WRITE the exam with
@@ -358,7 +502,7 @@ object AnswerCheck {
                 // signature block. Retrieval rank breaks whatever is left.
                 val requirement =
                     if (q.need == Need.QUANTITY && REQUIREMENT_CUE.containsMatchIn(lower)) 200 else 0
-                val score = hits * 1000 + requirement +
+                val score = hits * 1000 + requirement + permissionBonus(q, lower) +
                     (if (numberNearTerm(lower, q.terms)) 100 else 0) - ci
                 if (score > bestScore) {
                     bestScore = score
@@ -367,6 +511,82 @@ object AnswerCheck {
             }
         }
         return best
+    }
+
+    /**
+     * Text that states an OUTCOME. The shape a [Need.CONSEQUENCE] question
+     * demands, and the reason it is a hard gate rather than a preference.
+     *
+     * The measured failure is not that the right sentence ranked second. It is
+     * that the only sentence in the whole corpus containing the word "happens"
+     * -- "A separate procedure notice for each scheme above states its own
+     * notice number, the exact steps to apply, and what happens after
+     * submission" -- is a sentence about procedure notices existing. Topic
+     * overlap ranks it first and can never rank it anywhere else, because it
+     * is the nearest thing in the corpus to the WORDS of the question and the
+     * furthest thing from its answer. Nothing short of refusing it works.
+     *
+     * The first six alternatives are the corpus's own vocabulary, counted:
+     * "debarred" 5, "not permitted" 10, "no condonation" 2, "placed on the
+     * defaulter list" 2, "no action" 2, "may apply for condonation" 4, "late
+     * fee" 1, "penalt-" 4, "fine of" 2, "returned on the portal" 2,
+     * "withdrawn" 1. The rest are ordinary English ways of stating a
+     * consequence, present for imported documents; each occurs 0 times in the
+     * bundle, so each is measurably free of any effect on the batteries.
+     */
+    private val CONSEQUENCE_TEXT = Regex(
+        """\bdebarred\b|\bnot\s+permitted\b|\bno\s+condonation\b""" +
+            """|\bplaced\s+on\s+the\s+defaulter\s+list\b|\bno\s+action\b""" +
+            """|\bmay\s+apply\s+for\s+condonation\b|\blate\s+fee\b|\bpenalt""" +
+            """|\bfine\s+of\b|\breturned\s+on\s+the\s+portal\b|\bwithdrawn\b""" +
+            """|\b(?:will|shall|may|can)\s+not\s+be\b|\bnot\s+be\s+allowed\b""" +
+            """|\bforfeit|\bcancelled\b|\brejected\b|\bineligible\b|\bsuspend""" +
+            """|\bbarred\s+from\b|\bdisqualif|\bexpelled\b""",
+        RegexOption.IGNORE_CASE
+    )
+
+    /**
+     * Text that states a RULE about who may do a thing, as opposed to text
+     * that narrates what an office does afterwards.
+     *
+     * Used as a preference in [permissionBonus] and NOT as a gate, which is a
+     * deliberate departure from how [CONSEQUENCE_TEXT] is used. Measured: as a
+     * gate this turned "can I apply for a scholarship" from an answer into an
+     * abstention -- the scheme notices state their rule in a sentence that does
+     * not contain the word "apply", so nothing cleared the two-term floor AND
+     * the shape at once, and the only sentence that cleared the floor ("Apply
+     * through: National Scholarship Portal") is not rule-shaped. Refusing a
+     * question the corpus answers, to protect against a question it answers
+     * badly, is the trade this whole file exists to refuse. As a preference it
+     * can only change which sentence wins, never whether one does.
+     *
+     * Note the absence of "declaration". It was in the first draft, and it
+     * matches the exact sentence probe 1 has to lose: "The Scholarship SPOC
+     * verifies the CGPA and no-backlog DECLARATION against examination
+     * records". A word that appears in the paperwork is not a mark of a rule.
+     */
+    private val RULE_TEXT = Regex(
+        """\beligible\b|\beligibility\b|\bis\s+open\s+to\b|\bopen\s+to\b|\bmay\s+apply\b""" +
+            """|\bmust\b|\bis\s+required\b|\bare\s+required\b|\brequires\b|\brequired\b""" +
+            """|\bminimum\b|\bno\s+minimum\b|\bnot\s+permitted\b|\bpermitted\b|\ballowed\b""" +
+            """|\bshall\b|\bcannot\b|\bmay\s+not\b|\bqualif|\bceiling\b""",
+        RegexOption.IGNORE_CASE
+    )
+
+    /**
+     * The tie-break for a [Need.PERMISSION] question, mirroring the QUANTITY
+     * bonus above it: first prefer a sentence that states a rule, then prefer
+     * one that carries every distinctive word of the question rather than the
+     * generic half of it. Both are worth less than one extra topic hit, so
+     * neither can promote a sentence that is about something else.
+     */
+    private fun permissionBonus(q: Question, lowerSentence: String): Int {
+        if (q.need != Need.PERMISSION) return 0
+        var bonus = 0
+        if (RULE_TEXT.containsMatchIn(lowerSentence)) bonus += 400
+        val distinctive = subjectTerms(q.terms)
+        if (distinctive.isNotEmpty() && distinctive.all { mentions(lowerSentence, it) }) bonus += 200
+        return bonus
     }
 
     private fun satisfiesShape(q: Question, lowerSentence: String): Boolean = when (q.need) {
@@ -382,11 +602,14 @@ object AnswerCheck {
         // at a student who asked for a ruling -- a loosening with no verdict
         // behind it, on the one path where a wrong answer reads as permission.
         Need.ELIGIBILITY -> lowerSentence.any(Char::isDigit)
-        // Declared on [Need] ahead of the classifier change that will emit
-        // them; [parse] cannot produce either value yet, so they behave as
-        // [OTHER] -- topic overlap only, no shape enforced -- until the rule
-        // each one is meant to carry is written.
-        Need.CONSEQUENCE, Need.PERMISSION -> true
+        // The only shape rule in this file that ADDS abstentions, and the
+        // justification is that the alternative is not silence but a
+        // confident irrelevance. See [CONSEQUENCE_TEXT].
+        Need.CONSEQUENCE -> CONSEQUENCE_TEXT.containsMatchIn(lowerSentence)
+        // No shape enforced. The rule PERMISSION carries is a preference in
+        // [permissionBonus], not a filter -- see [RULE_TEXT] for the measured
+        // reason a filter was wrong here and right one line above.
+        Need.PERMISSION -> true
         Need.OTHER -> true
     }
 
@@ -825,25 +1048,38 @@ object AnswerCheck {
      * widening this to any question carrying a number is how a scholarship
      * cut-off would end up being answered against the attendance tiers.
      */
+    /**
+     * The retrieved chunks that are about the same subject as the question.
+     *
+     * Only judge against a rule that is about the same subject as the
+     * question. Both attendance and scholarship cut-offs are percentages,
+     * and both documents say "examination"; sharing a unit or a piece of
+     * background vocabulary is not sharing a topic.
+     *
+     * The subject is approximated by the question's longest content word.
+     * Crude, but it is the one signal available without corpus statistics,
+     * and it is right for the case that matters: in "can I write the exam
+     * with 60% attendance" the longest word is "attendance", which the
+     * scholarship matrix does not contain and the attendance policy does.
+     *
+     * Lifted out of [applyToStated] so [tierConsequences] can share it. That
+     * sharing is the point rather than a convenience: three compositions that
+     * disagreed about which chunks a question is about would be three
+     * different answers to the same question depending on which one fired.
+     */
+    fun subjectRelevant(q: Question, chunks: List<RetrievedChunk>): List<RetrievedChunk> {
+        val longest = q.terms.maxByOrNull { it.length }?.length ?: return emptyList()
+        val subject = q.terms.filter { it.length == longest }
+        return chunks.filter { c ->
+            val lower = c.content.lowercase()
+            subject.any { mentions(lower, it) }
+        }
+    }
+
     fun applyToStated(q: Question, chunks: List<RetrievedChunk>): String? {
         if (q.need != Need.ELIGIBILITY) return null
         val stated = q.statedPercent ?: return null
-        // Only judge against a rule that is about the same subject as the
-        // question. Both attendance and scholarship cut-offs are percentages,
-        // and both documents say "examination"; sharing a unit or a piece of
-        // background vocabulary is not sharing a topic.
-        //
-        // The subject is approximated by the question's longest content word.
-        // Crude, but it is the one signal available without corpus statistics,
-        // and it is right for the case that matters: in "can I write the exam
-        // with 60% attendance" the longest word is "attendance", which the
-        // scholarship matrix does not contain and the attendance policy does.
-        val subject = q.terms.maxByOrNull { it.length }?.length ?: return null
-        val subjectTerms = q.terms.filter { it.length == subject }
-        val relevant = chunks.filter { c ->
-            val lower = c.content.lowercase()
-            subjectTerms.any { mentions(lower, it) }
-        }
+        val relevant = subjectRelevant(q, chunks)
         if (relevant.isEmpty()) return null
         val text = relevant.joinToString("\n") { it.content }
         val bands = parseBands(text)
@@ -928,6 +1164,106 @@ object AnswerCheck {
                 met.joinToString(", ") { it.scope!! } + "."
         }
         return head + tail
+    }
+
+    // --- what follows, and what a scheme asks for -------------------------
+
+    /**
+     * The answer to "what happens if ...", when the rule is stated as a tier
+     * table rather than as a sentence.
+     *
+     * [applyToStated] already reads these tiers, but only to place a number
+     * the student supplied. A consequence question supplies no number and
+     * wants the whole ladder: the tiers ARE the answer, and every one of them
+     * is a verbatim cell from a document, so nothing here is composed in the
+     * sense of being invented -- the range label names the row and the cell
+     * speaks for itself.
+     *
+     * Deduplicated on (label, cell) because the identical tier table appears
+     * in both the Attendance Policy and the Defaulter List Procedure, and a
+     * retrieval pass that returns both would otherwise print each tier twice.
+     */
+    fun tierConsequences(q: Question, chunks: List<RetrievedChunk>): String? {
+        if (q.need != Need.CONSEQUENCE) return null
+        val relevant = subjectRelevant(q, chunks)
+        if (relevant.isEmpty()) return null
+        val bands = parseBands(relevant.joinToString("\n") { it.content })
+        if (bands.isEmpty()) return null
+        return bands
+            .map { it.label to it.consequence }
+            .distinct()
+            .joinToString(" ") { (label, cell) ->
+                label.replaceFirstChar { it.uppercase() } + ": " + cell.trimEnd('.') + "."
+            }
+    }
+
+    /**
+     * Words that identify no condition on their own, for [schemeConditions].
+     *
+     * The same argument the answer's-form entries in [STOPWORDS] make: "apply"
+     * and "scholarship" are in the question because it is a question about
+     * applying for a scholarship, and every row of the matrix is about that.
+     */
+    private val CONDITION_STOPWORDS = setOf(
+        "student", "students", "apply", "applying", "scholarship", "scholarships",
+        "scheme", "schemes", "merit", "grant", "freeship", "eligible",
+        "eligibility", "college", "institute",
+    )
+
+    /**
+     * The answer to "can a student with a backlog apply for X", when the
+     * corpus states the condition as a cell of the eligibility matrix.
+     *
+     * Reads the same five-cell row [requiredMinimums] reads -- which
+     * [parseBands] cannot, its PIPE_ROW being anchored to two cells -- but
+     * keyed on the question's condition word instead of on a percentage.
+     * Measured, this is the question that had nowhere else to go: asked
+     * whether a student with a backlog may apply for the merit scholarship,
+     * the highest topic overlap was "After submission: The Scholarship SPOC
+     * verifies the CGPA and no-backlog declaration against examination
+     * records ..." -- the procedure that follows a successful application,
+     * offered to a student asking whether they may make one. The matrix says
+     * plainly what that scheme requires; nobody was reading it.
+     *
+     * Two conditions before it will speak, and both are about not guessing.
+     * The question has to name the scheme -- "merit" identifies the KRIET
+     * Alumni Merit Grant among five rows -- because five schemes' document
+     * lists recited at once is not an answer to a question about one. And the
+     * condition word has to be the question's own, not the matrix's: keyed on
+     * anything looser, "what happens if I miss the fee deadline" matched a
+     * Disbursement Timeline cell on the word "fee" and answered that the
+     * Alumni Merit Grant requires being credited to the tuition-fee ledger,
+     * which is a sentence about nothing.
+     *
+     * Phrased as a requirement rather than as a yes or no on purpose. The
+     * matrix says the grant requires a no-backlog declaration; whether a
+     * particular student can sign one is a fact about the student that no
+     * document here holds, and answering "no" would be inventing it.
+     */
+    fun schemeConditions(q: Question, chunks: List<RetrievedChunk>): String? {
+        if (q.need != Need.PERMISSION) return null
+        val condition = q.terms.filter { it !in CONDITION_STOPWORDS }
+        if (condition.isEmpty()) return null
+
+        val rows = ArrayList<Pair<String, String>>()
+        for (chunk in chunks) {
+            for (line in chunk.content.lineSequence()) {
+                val t = line.trim()
+                if (!t.startsWith("|")) continue
+                val cells = t.trim('|').split("|").map { it.trim() }
+                if (cells.size < 3 || !SCHEME_CELL.containsMatchIn(cells[0])) continue
+                val cell = cells.drop(1).firstOrNull { c ->
+                    val lower = c.lowercase()
+                    condition.any { mentions(lower, it) }
+                } ?: continue
+                rows += schemeLabel(cells[0]) to normalise(cell)
+            }
+        }
+        val named = rows.filter { questionNames(it.first, q.raw) }.distinct()
+        if (named.isEmpty()) return null
+        return "The records answer that as a requirement rather than a yes or no: " +
+            named.joinToString("; ") { (scheme, cell) -> "$scheme requires ${cell.trimEnd('.')}" } +
+            "."
     }
 
     // --- helpers ----------------------------------------------------------
