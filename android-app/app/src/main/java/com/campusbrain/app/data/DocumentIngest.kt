@@ -400,7 +400,7 @@ class DocumentIngest internal constructor(
      */
     private fun decodeText(bytes: ByteArray): String {
         val text = String(bytes, Charsets.UTF_8)
-        return if (text.startsWith("﻿")) text.substring(1) else text
+        return if (text.startsWith("\uFEFF")) text.substring(1) else text
     }
 
     private fun readBytes(uri: Uri): ByteArray? = runCatching {

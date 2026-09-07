@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!--
       Dark is not a preference here, it is the use scene: a phone held in a
       corridor, at low brightness, between classes. DayNight would hand half
@@ -20,7 +20,12 @@
         <item name="android:statusBarColor">@color/ink</item>
         <item name="android:navigationBarColor">@color/ink</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar">false</item>
+        <!-- API 27+. Ignored below that, which is exactly the behaviour
+             wanted: API 26 already draws light icons on a near-black
+             navigation bar, so there is nothing to fall back to. Declared
+             with tools:targetApi rather than a values-v27 override, which
+             would have to restate the whole theme to add one line. -->
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
         <item name="android:windowBackground">@color/ink</item>
 
         <!-- Selection and caret are part of the design; left at the platform
