@@ -408,6 +408,30 @@ class CloudAnswer(
             return if (internal.exists()) internal else null
         }
 
+        /**
+         * Whether a configured model URL may be used.
+         *
+         * https anywhere; http only to loopback. Loopback is not a weaker
+         * choice, it is the strongest one available here -- a model served on
+         * the phone itself, where the question never reaches a network at all.
+         * Refusing it would have removed the most private tier in the name of
+         * transport security it does not need.
+         *
+         * Everything else must be https, and is rejected here rather than at
+         * request time: the manifest permits cleartext only to localhost, so an
+         * http:// LAN address fails inside the request with nothing naming the
+         * cause. A config that is refused is simply absent, which every caller
+         * already handles. AuthConfig has had this guard from the start.
+         */
+        private fun isPermittedModelUrl(url: String): Boolean {
+            val u = url.trim()
+            if (u.startsWith("https://", ignoreCase = true)) return true
+            if (!u.startsWith("http://", ignoreCase = true)) return false
+            val host = u.removePrefix("http://").removePrefix("HTTP://")
+                .substringBefore('/').substringBefore(':').lowercase()
+            return host == "localhost" || host == "127.0.0.1" || host == "[::1]" || host == "::1"
+        }
+
         /** Parses {"groq_api_key": "...", "groq_model": "..."}. The model
          * key is optional and defaults to groq/compound-mini; a missing or
          * blank api key means "no config", same as a missing file. */
@@ -417,10 +441,19 @@ class CloudAnswer(
             val model = json.optString("groq_model").takeIf { it.isNotBlank() } ?: DEFAULT_MODEL
             // Optional. Absent means no laptop fallback, which is the correct
             // default for a device that is meant to work with no host nearby.
-            val ollama = json.optString("ollama_url").takeIf { it.isNotBlank() }
+            // https, or http to loopback only. See isPermittedModelUrl.
+            //
+            // The manifest declares no usesCleartextTraffic and no network
+            // security config, so on this targetSdk the platform blocks http://
+            // outright. An operator who writes one today gets a failed request
+            // and an answer that never arrives, with nothing naming the cause.
+            // Refusing it at parse time turns that into a config that is simply
+            // absent, which every caller already handles. AuthConfig has had
+            // this guard from the start; same rule, same reason.
+            val ollama = json.optString("ollama_url").takeIf { it.isNotBlank() }?.takeIf(::isPermittedModelUrl)
             val ollamaModel = json.optString("ollama_model")
                 .takeIf { it.isNotBlank() } ?: DEFAULT_OLLAMA_MODEL
-            val device = json.optString("device_url").takeIf { it.isNotBlank() }
+            val device = json.optString("device_url").takeIf { it.isNotBlank() }?.takeIf(::isPermittedModelUrl)
             val deviceModel = json.optString("device_model")
                 .takeIf { it.isNotBlank() } ?: DEFAULT_DEVICE_MODEL
             // A config with no cloud key but a reachable local model is valid,

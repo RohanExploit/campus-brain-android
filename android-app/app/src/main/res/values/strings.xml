@@ -276,7 +276,19 @@
     <string name="welcome_offline_body">The documents, the search index and the language model are all on this phone already. Turn on airplane mode and ask the same question — you get the same answer. There is no server here to be slow or to be down.</string>
 
     <string name="welcome_private_title">Your records never leave the phone</string>
-    <string name="welcome_private_body">Questions, marks and attendance are read on the device and are never uploaded. This is structural rather than a promise: nothing on the path from your question to its answer opens a connection at all.</string>
+    <!--
+      This claim has to survive someone checking it, so it says what is true of
+      the build in front of the reader rather than what is true of the design.
+
+      Retrieval is genuinely local: the router, the index and the records never
+      leave the phone, and with no optional helper configured nothing on the
+      answer path opens a connection at all. But an institution CAN configure a
+      fallback for questions the documents do not cover, and when it does, the
+      question and the passages that were found are sent to it. Saying "nothing
+      ever opens a connection" was false in exactly the configuration a college
+      is most likely to deploy, and it was printed on the welcome screen.
+    -->
+    <string name="welcome_private_body">Your marks, attendance and the documents from your college stay on this phone. They are read here and never uploaded. If your college has switched on the optional helper for questions the documents do not cover, only then is a question sent out, and the Sources line under every answer always shows where it came from.</string>
 
     <string name="welcome_yours_title">Add your own documents</string>
     <string name="welcome_yours_body">Share a timetable, a notice or a syllabus to Campus Brain from any app and it is searched alongside the college\'s own. It stays on this phone too, and you can remove it whenever you like.</string>

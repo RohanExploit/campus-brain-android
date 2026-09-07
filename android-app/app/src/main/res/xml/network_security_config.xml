@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cleartext is refused everywhere except loopback.
+
+  The app can be configured to use a model served on the phone itself
+  (device_url, typically http://127.0.0.1:11434). That traffic never reaches a
+  network, so requiring TLS on it would buy nothing, and refusing it would
+  remove the most private of the optional answer tiers.
+
+  Every other destination, meaning the hosted model endpoints and Supabase, is
+  https and stays that way. CloudAnswer.isPermittedModelUrl enforces the same
+  rule at config-parse time, so a bad URL is refused legibly instead of failing
+  inside a request with nothing naming the cause.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+    <base-config cleartextTrafficPermitted="false"/>
+</network-security-config>
