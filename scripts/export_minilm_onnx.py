@@ -15,9 +15,39 @@ simply wrong. So this script embeds sample sentences with BOTH sentence-
 transformers and the exported graph and refuses to write the model unless they
 agree to 1e-4.
 
-fp32 (~86MB) is deliberate. int8 dynamic quantisation gets to ~23MB but shifts
-the vectors, and the entire value of the vector arm is agreeing with the corpus
-it scores against. Ship the big one; the APK is sideloaded.
+fp32 (~86MB) is deliberate, and int8 per-channel dynamic quantisation to ~23MB
+was measured rather than argued about. The conclusion stands; the original
+reason undersold it.
+
+The vectors barely shift: mean cos(fp32, int8) is 0.994 over 89 real questions,
+and the vector arm's top-1 is unchanged on 93% of them. The damage arrives
+through two amplifiers instead.
+
+  1. HybridSearch calls this arm at perArm = 20 and fuses with RRF, where rank
+     1 is worth 0.01639 and rank 20 is worth 0.01250. Reordering inside the
+     window costs ~0.0002; a chunk CROSSING the rank-20 boundary costs 50x
+     that, and with no FTS support it leaves the fused list altogether. So the
+     shallow churn is free and the deep churn is what hurts.
+  2. RoutePrototypes.classify scores the same query vector against three
+     prototypes with MARGIN = 0.05. 13 of 89 queries sit within 0.01 of that
+     margin and the largest observed shift is 0.0253, so int8 flips the ROUTE
+     on 3 of 89 -- which changes topK, switches on dedupe-by-document, or
+     diverts to the graph path.
+
+Measured effect: the packed context set differs on 45% of queries. Worst case,
+"what documents are needed for the post matric scholarship" flips FACT ->
+GLOBAL, dedupe-by-document then discards the rest of the correct document, and
+the chunk actually headed "Documents to attach" disappears from the answer --
+while the vector top-20 set is IDENTICAL. That is why cosine and top-5 are the
+wrong metrics here.
+
+int8 did ship once and scored 22/23 adversarial, 14/20 hard. Both things are
+true: it changes retrieval on ~45% of queries, and the extractive composer
+absorbed most of it. That is the margin that build was surviving on.
+
+Ship the big one. The 64MB is recoverable later by excluding the embedding
+Gather from quantisation, or by widening RoutePrototypes.MARGIN so the
+classifier stops sitting on a knife edge.
 
 Usage:
     python scripts/export_minilm_onnx.py

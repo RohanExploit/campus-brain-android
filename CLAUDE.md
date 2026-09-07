@@ -18,25 +18,27 @@ Android SDK and the Gradle cache. Any path starting `R:\` in older notes,
 `local.properties`, or a comment is stale. This repo was recovered by cloning
 from GitHub, so **only committed work survived**.
 
-## Lost with the drive, and what to do about it
+## Lost with the drive, and what has been done about it
 
-- **Android SDK** (`R:\toolchains\android-sdk`) — must be reinstalled before any
-  local build. `ANDROID_HOME` still points at the dead path. Cloud CI is
-  unaffected: the runner brings its own.
-- **Play upload keystore** (`android-app/keystore/campus-brain-upload.jks`) and
-  its `keystore.properties`. Gitignored, so never on GitHub. The app has **not**
-  been published, so generating a fresh upload key costs nothing — do that
-  rather than trying to recover it. Once published, this becomes unrecoverable
-  without a Play key reset.
-- **Licence signing private key** (`campus_brain_license_private.pem`). Its
-  public half is compiled into `LicenseKey.PUBLIC_KEY_B64`, so that constant is
-  now useless: nobody can mint a key that matches it. Generate a new pair with
-  `scripts/issue_license.py --generate-keypair` and replace the constant. No
-  licence has been issued to anyone, so nothing breaks.
-- **`app/src/main/assets/minilm/`** (~23 MB ONNX embedder). Gitignored and
-  regenerable via `scripts/export_minilm_onnx.py`. Without it the app falls back
-  to keyword-only retrieval, which it handles and states in the UI.
-- **One agent's uncommitted multi-hop work** — see "Known open work" below.
+All of these were gitignored, so none of them was ever on GitHub. All are now
+regenerated and living in `android-app/keystore/`, which is gitignored.
+**That folder is the only thing here not backed up by git — copy it somewhere
+off this machine.** The previous copy died with the drive.
+
+- **Android SDK** — reinstalled at `E:/toolchains/android-sdk`.
+  `local.properties` and `ANDROID_HOME` point at it.
+- **Play upload keystore** — regenerated (RSA 4096, alias `campus-brain`).
+  Passwords in `keystore.properties` beside it. Nothing is published yet, so
+  this was free to replace; after the first upload it would not be.
+- **Licence signing key** — regenerated. `ShippedKeyTest` now verifies a
+  genuinely issued licence through the DEFAULT parameter, so the compiled
+  `PUBLIC_KEY_B64` and the private half can never silently drift apart again.
+  That gap is how a public key with no matching private half shipped unnoticed.
+- **`app/src/main/assets/minilm/`** — regenerated fp32 (86 MB), verified against
+  sentence-transformers to 1.19e-07. Keep fp32: int8 was measured and flips the
+  retrieval ROUTE on 3 of 89 real questions. See the header of
+  `scripts/export_minilm_onnx.py` for the numbers.
+- **One agent's uncommitted multi-hop work** — rebuilt, see below.
 
 `brain.db` **is** committed (deliberately, see its note in `android-app/.gitignore`),
 so the corpus survived and a CI-built APK can still answer.
@@ -61,13 +63,23 @@ unavailable, push and read CI — that is the faster path, not a fallback.
 
 **Retrieval must never gate on auth or licence state.** A user with no licence,
 an expired one, or a storage failure still gets every answer, in airplane mode,
-forever. The corpus, student records and query text never leave the device;
-only identity does. This is the product's entire commercial claim.
+forever. Retrieval is local, the records live on the phone, and only identity
+goes to a server. This is the product's entire commercial claim — state it with
+the caveat below, not more strongly than that.
 
 Enforced structurally rather than by convention: there are no entitlement
 references anywhere outside `data/auth/` except three lines of `MainActivity`
-startup, and `QueryLog.record` has no string-shaped parameter, so query text
-cannot enter the counters. Keep it that way.
+startup, and `QueryLog.record` takes doc ids and route labels, never text.
+Keep it that way.
+
+**One important caveat, stated because the welcome screen once got it wrong.**
+"Nothing ever leaves the device" is true of a bare build and false of a
+configured one. If an operator installs a `config.json` with a model key,
+`QueryRouter` joins the retrieved passages into `contextText` and `CloudAnswer`
+POSTs them with the question — including passages from the user's own imported
+documents. It is off by default and the file is neither in the repo nor written
+by the app, but it is a **configuration** boundary, not a structural one.
+Describe it that way, in code comments and to anyone asking.
 
 Every licence failure resolves **downward to free, never to locked** — an
 expired licence, an unreadable store or a corrupt key all yield the free
@@ -92,22 +104,24 @@ hidden or deleted.
 
 ## Known open work
 
-- **Multi-hop answers.** An agent diagnosed and fixed these, and the work was
-  lost with the drive before it could be committed. Only the two enum names
-  `Need.CONSEQUENCE` and `Need.PERMISSION` survive, stubbed to `OTHER`.
-  The diagnosis was: `Need` had nothing between `ELIGIBILITY` (requires a stated
-  number) and `OTHER` (no shape enforced), so numberless multi-hop questions were
-  decided by topic overlap alone — and topic overlap cannot tell a rule from the
-  paperwork beside it. Also found: `SENTENCE_SPLIT` breaks after `Rs.`, which
-  truncates every money figure, and `mentions()` has no word boundary, so `miss`
-  matches inside `submission`.
+- **Multi-hop answers — rebuilt and shipped.** `Need.CONSEQUENCE` and
+  `Need.PERMISSION` are emitted and gated. Still open underneath it: the
+  65-74% condonation chunks sit outside `FACT_TOP_K`, so the compound
+  attendance answer names only the Below-65% tier, and the battery's
+  expectation is met lexically rather than substantively.
+- **A measured, unshipped retrieval lead**: dropping the stoplist from
+  `FtsSearch.sanitize`'s OR expression moves a needed chunk from rank >20 to
+  rank 4, with 0 losses and 3 gains in isolation — but it reshapes ranks for
+  every query and re-fuses against the vector arm. Worth trying on hardware.
 - **`what happens to my scholarship if I am debarred`** is genuinely
   unanswerable — no document states it. It should abstain, not answer.
 - **Device verification** — nothing has run on hardware since roughly 2026-09-06
   18:00. The release build has never run on a device at all.
-- **Play submission** — needs a Data Safety declaration and a privacy policy URL.
-  Be accurate: identity (email/password) is transmitted to Supabase; content and
-  queries never are.
+- **Play submission** — the package is drafted in `docs/play/`: privacy policy,
+  Data Safety answers, store listing, release checklist. Two known blockers in
+  there: Play requires an account-deletion route for apps that create accounts,
+  and `ControlPlane` has none; and the contact email / policy URL are still
+  TODO placeholders.
 
 ## Package name
 
