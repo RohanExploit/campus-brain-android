@@ -51,9 +51,11 @@ object JvmCorpus {
      *  keyword-only rather than failing). */
     val embedder: QueryEmbedder? get() = pipeline.embedder
 
-    /** True when `app/src/main/assets/minilm/model.onnx` exists at all, which
-     *  separates "this machine has no model" from "the model would not load". */
-    val modelAssetPresent: Boolean by lazy { locate("minilm/model.onnx") != null }
+    /** True when both embedder assets exist at all, which separates "this
+     *  machine has no complete asset set" from "the model would not load". */
+    val modelAssetPresent: Boolean by lazy {
+        locate("minilm/model.onnx") != null && locate("minilm/vocab.txt") != null
+    }
 
     val db: BrainDb get() = pipeline.db
     val router: QueryRouter get() = pipeline.router

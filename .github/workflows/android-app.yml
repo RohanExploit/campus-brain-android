@@ -70,7 +70,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p app/src/main/assets/minilm
-          gh release download assets-v1 --repo "$GITHUB_REPOSITORY"             --pattern model.onnx --dir app/src/main/assets/minilm --clobber
+          gh release download assets-v1 --repo "$GITHUB_REPOSITORY"             --pattern model.onnx --pattern vocab.txt --dir app/src/main/assets/minilm --clobber
           ls -la app/src/main/assets/minilm/
 
       # Said out loud, before the suite runs, because the previous behaviour was
@@ -89,22 +89,23 @@ jobs:
         shell: bash
         run: |
           model=app/src/main/assets/minilm/model.onnx
-          if [ -s "$model" ]; then
+          vocab=app/src/main/assets/minilm/vocab.txt
+          if [ -s "$model" ] && [ -s "$vocab" ]; then
             size=$(du -h "$model" | cut -f1)
-            echo "::notice title=Retrieval coverage::ONNX embedder present ($size). The JVM batteries should run fts5+vector and enforce their regression floors."
+            echo "::notice title=Retrieval coverage::ONNX embedder assets present (model=$size, vocab present). The JVM batteries should run fts5+vector and enforce their regression floors."
             {
               echo "### Retrieval coverage"
               echo
-              echo "- ONNX embedder: **present** ($size)"
+              echo "- ONNX embedder assets: **present** (model=$size, vocab present)"
               echo "- Expected arms: **fts5 + vector**"
               echo "- Battery regression floors: **expected to be enforced**"
             } >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "::warning title=Retrieval coverage REDUCED::ONNX embedder MISSING. The JVM batteries will run KEYWORD-ONLY and will SKIP their regression floors. A green build here verified less than it appears to."
+            echo "::warning title=Retrieval coverage REDUCED::ONNX embedder assets INCOMPLETE. The JVM batteries will run KEYWORD-ONLY and will SKIP their regression floors. A green build here verified less than it appears to."
             {
               echo "### Retrieval coverage -- REDUCED"
               echo
-              echo "- ONNX embedder: **missing** (the \`assets-v1\` download did not produce \`model.onnx\`)"
+              echo "- ONNX embedder assets: **incomplete** (need both \`model.onnx\` and \`vocab.txt\` from \`assets-v1\`)"
               echo "- Expected arms: **KEYWORD-ONLY**"
               echo "- Battery regression floors: **skipped** -- \`JvmAdversarialBatteryTest\` and"
               echo "  \`JvmHardQueryBatteryTest\` guard their assertions with \`if (JvmCorpus.vectorArm)\`."
